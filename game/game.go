@@ -1,8 +1,6 @@
 package game
 
 import (
-	"fmt"
-
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -36,7 +34,7 @@ func (g *DashlandGame) init() {
 }
 
 func (g *DashlandGame) Update(deltaTime float32) {
-	fmt.Println(deltaTime)
+	//fmt.Println(deltaTime)
 
 	g.BlockMap.Update(deltaTime)
 	g.Player.Update(deltaTime)
