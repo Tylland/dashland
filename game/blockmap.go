@@ -18,7 +18,7 @@ type BlockMap struct {
 	blocks []Block
 }
 
-// @remove code
+// nocommit
 // func (bm *BlockMap) getBlockTypes(tiles []*tiled.LayerTile) []uint32 {
 // 	blockTypes := make([]uint32, len(tiles))
 
