@@ -2,7 +2,6 @@ package game
 
 import (
 	"fmt"
-	"path"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/lafriks/go-tiled"
@@ -14,74 +13,32 @@ type BlockMap struct {
 	blockWidth    float32
 	blockHeight   float32
 	blockTextures rl.Texture2D
-	//	blockTypes    []uint32
-	blocks []Block
+	blocks        []*Block
 }
 
-// nocommit
-// func (bm *BlockMap) getBlockTypes(tiles []*tiled.LayerTile) []uint32 {
-// 	blockTypes := make([]uint32, len(tiles))
+// func (bm *BlockMap) createBlock(tile *tiled.LayerTile, x int, y int) *Block {
+// 	return NewBlock(bm, BlockType(tile.ID), x, y)
 
-// 	for index, tile := range tiles {
-// 		blockTypes[index] = tile.ID
-// 	}
+// 	// switch BlockType(tile.ID) {
+// 	// case Diamond:
+// 	// 	return &Block{blockMap: bm, blockType: BlockType(tile.ID), position: BlockPosition{X: x, Y: y}, behavior: CanFall | Collectable}
+// 	// case Boulder:
+// 	// 	return &Block{blockMap: bm, blockType: BlockType(tile.ID), position: BlockPosition{X: x, Y: y}, behavior: CanFall | Obstacle}
+// 	// default:
+// 	// 	return &Block{blockMap: bm, blockType: BlockType(tile.ID), position: BlockPosition{X: x, Y: y}, behavior: NoBehavior}
+// 	// }
 
-// 	return blockTypes
 // }
 
-func (bm *BlockMap) createBlock(tile *tiled.LayerTile, x int, y int) Block {
-
-	switch BlockType(tile.ID) {
-	case Diamond:
-		return Block{blockMap: bm, blockType: BlockType(tile.ID), position: BlockPosition{X: x, Y: y}, flags: CanFall | Collectable}
-	case Boulder:
-		return Block{blockMap: bm, blockType: BlockType(tile.ID), position: BlockPosition{X: x, Y: y}, flags: CanFall | Obstacle}
-	default:
-		return Block{blockMap: bm, blockType: BlockType(tile.ID), position: BlockPosition{X: x, Y: y}}
-	}
-
-}
-
-func (bm *BlockMap) createBlocks(tiles []*tiled.LayerTile) []Block {
-	blocks := make([]Block, len(tiles))
+func (bm *BlockMap) createBlocks(world *world, tiles []*tiled.LayerTile) []*Block {
+	blocks := make([]*Block, len(tiles))
 
 	for index, tile := range tiles {
-		blocks[index] = bm.createBlock(tile, index%bm.width, index/bm.width)
+		blocks[index] = NewBlock(world, BlockType(tile.ID), index%bm.width, index/bm.width)
 	}
 
 	return blocks
 
-}
-
-func loadBlockMapFromFile(filepath string) (BlockMap, error) {
-	var blockMap BlockMap
-
-	tiledMap, err := tiled.LoadFile(filepath)
-
-	if err != nil {
-		return blockMap, err
-	}
-
-	relativeImagePath := tiledMap.Tilesets[0].Image.Source
-
-	fileName := path.Join(path.Dir(mapPath), relativeImagePath)
-
-	blockTexture := rl.LoadTexture(fileName)
-
-	fmt.Print(blockTexture)
-
-	blockMap = BlockMap{
-		width:         tiledMap.Width,
-		height:        tiledMap.Height,
-		blockWidth:    float32(tiledMap.TileWidth),
-		blockHeight:   float32(tiledMap.TileHeight),
-		blockTextures: blockTexture,
-	}
-
-	//blockMap.blockTypes = blockMap.getBlockTypes(tiledMap.Layers[0].Tiles)
-	blockMap.blocks = blockMap.createBlocks(tiledMap.Layers[0].Tiles)
-
-	return blockMap, err
 }
 
 func (bm *BlockMap) SetBlock(block *Block, pos BlockPosition) {
@@ -92,7 +49,7 @@ func (bm *BlockMap) SetBlock(block *Block, pos BlockPosition) {
 
 	block.position = pos
 
-	bm.blocks[pos.Y*bm.width+pos.X] = *block
+	bm.blocks[pos.Y*bm.width+pos.X] = block
 }
 
 func (bm *BlockMap) GetBlock(x int, y int) (*Block, bool) {
@@ -101,7 +58,7 @@ func (bm *BlockMap) GetBlock(x int, y int) (*Block, bool) {
 		return &Block{blockType: Unknown}, false
 	}
 
-	return &bm.blocks[y*bm.width+x], true
+	return bm.blocks[y*bm.width+x], true
 }
 
 func (bm *BlockMap) getPosition(position BlockPosition) rl.Vector2 {
@@ -116,40 +73,26 @@ func (bm *BlockMap) SwapBlock(source *Block, pos BlockPosition) {
 	target, succes := bm.GetBlock(pos.X, pos.Y)
 
 	if succes {
-		temp := source.blockType
+		tempBlockType := source.blockType
+		tempBehavior := source.behavior
 		bm.Print()
 		source.blockType = target.blockType
-		target.blockType = temp
+		source.behavior = target.behavior
+		target.blockType = tempBlockType
+		target.behavior = tempBehavior
 		bm.Print()
 	}
 
 }
 
-func (bm *BlockMap) ObstacleForPlayer(player *Player, position BlockPosition) bool {
-	block, success := bm.GetBlock(position.X, position.Y)
-
-	if !success {
-		return true
-	}
-
-	return block.ObstacleForPlayer(player)
-}
-
-func (bm *BlockMap) VisitBlock(position BlockPosition) {
-
-	fmt.Printf("Block at position %d,%d changed type from %d", position.X, position.Y, bm.blocks[position.Y*bm.width+position.X].blockType)
-	bm.blocks[position.Y*bm.width+position.X].blockType = Void
-	fmt.Printf(" to %d \n", bm.blocks[position.Y*bm.width+position.X].blockType)
-}
-
-func (bm *BlockMap) Update(deltaTime float32) {
+func (bm *BlockMap) update(deltaTime float32) {
 
 	for i := len(bm.blocks) - 1; i >= 0; i-- {
-		bm.blocks[i].Update(deltaTime)
+		bm.blocks[i].update(deltaTime)
 	}
 }
 
-func (bm *BlockMap) Render() {
+func (bm *BlockMap) render() {
 	// for index, block := range bm.blocks {
 	// 	x := index % int(bm.width)
 	// 	y := index / int(bm.width)

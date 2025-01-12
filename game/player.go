@@ -40,7 +40,7 @@ func (bp BlockPosition) IsSame(other BlockPosition) bool {
 
 type Player struct {
 	game                *DashlandGame
-	lastBlockPosition   BlockPosition
+	blockPosition       BlockPosition
 	targetBlockPosition BlockPosition
 	Position            rl.Vector2
 	TargetVector        rl.Vector2
@@ -59,60 +59,44 @@ func (p *Player) UpdateTargetPosition() {
 
 	if !p.movement.moving {
 		if rl.IsKeyDown(rl.KeyRight) {
-			p.targetBlockPosition = p.lastBlockPosition.Offset(1, 0)
+			p.targetBlockPosition = p.blockPosition.Offset(1, 0)
 			p.TargetVector = rl.NewVector2(32, 0)
 		} else if rl.IsKeyDown(rl.KeyLeft) {
-			p.targetBlockPosition = p.lastBlockPosition.Offset(-1, 0)
+			p.targetBlockPosition = p.blockPosition.Offset(-1, 0)
 			p.TargetVector = rl.NewVector2(-32, 0)
 		} else if rl.IsKeyDown(rl.KeyDown) {
-			p.targetBlockPosition = p.lastBlockPosition.Offset(0, 1)
+			p.targetBlockPosition = p.blockPosition.Offset(0, 1)
 			p.TargetVector = rl.NewVector2(0, 32)
 		} else if rl.IsKeyDown(rl.KeyUp) {
-			p.targetBlockPosition = p.lastBlockPosition.Offset(0, -1)
+			p.targetBlockPosition = p.blockPosition.Offset(0, -1)
 			p.TargetVector = rl.NewVector2(0, -32)
 		}
 
-		if p.game.BlockMap.ObstacleForPlayer(p, p.targetBlockPosition) {
-			p.targetBlockPosition = p.lastBlockPosition
+		if p.game.world.obstacleForPlayer(p, p.targetBlockPosition) {
+			p.targetBlockPosition = p.blockPosition
 			p.TargetVector = rl.NewVector2(0, 0)
 		}
 	}
 }
 
-func (p *Player) Update(deltaTime float32) {
+func (p *Player) update(deltaTime float32) {
 	const speed float32 = 128 //pixel per sec
-	//	const blockSize float32 = 32 //pixel per sec
 
 	p.UpdateTargetPosition()
 
-	if !p.lastBlockPosition.IsSame(p.targetBlockPosition) {
+	if !p.blockPosition.IsSame(p.targetBlockPosition) {
 		p.movement = Movement{}
-		p.movement.Start(p.game.BlockMap.getPosition(p.lastBlockPosition), p.game.BlockMap.getPosition(p.targetBlockPosition), speed)
-		p.game.BlockMap.VisitBlock(p.targetBlockPosition)
-		p.lastBlockPosition = p.targetBlockPosition
+		p.movement.Start(p.game.world.blockMap.getPosition(p.blockPosition), p.game.world.blockMap.getPosition(p.targetBlockPosition), speed)
+		p.game.world.VisitBlock(p.targetBlockPosition)
+		p.blockPosition = p.targetBlockPosition
 	}
 
 	if p.movement.moving {
 		p.movement.Update(deltaTime)
 		p.Position = p.movement.position
 	}
-
-	// if p.IsMoving {
-	// 	p.Progress += speed * deltaTime
-
-	// 	movment := rl.Vector2Scale(p.TargetVector, rl.Clamp(p.Progress, 0, blockSize)/blockSize)
-
-	// 	p.Position = rl.NewVector2(float32(p.lastBlockPosition.X)*32+16+movment.X, float32(p.lastBlockPosition.Y)*32+16+movment.Y)
-
-	// 	if p.Progress >= blockSize {
-	// 		p.TargetVector = rl.NewVector2(0, 0)
-	// 		p.Progress = 0
-	// 		p.IsMoving = false
-	// 	}
-
-	// }
 }
 
-func (p *Player) Render() {
+func (p *Player) render() {
 	rl.DrawCircle(int32(p.Position.X+16), int32(p.Position.Y+16), 16, rl.Red)
 }

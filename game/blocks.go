@@ -1,13 +1,5 @@
 package game
 
-// import (
-// 	"fmt"
-// 	"path"
-
-// 	rl "github.com/gen2brain/raylib-go/raylib"
-// 	"github.com/lafriks/go-tiled"
-// )
-
 type BlockType uint32
 
 const (
@@ -19,46 +11,58 @@ const (
 	Boulder
 )
 
-type BlockFlags uint8
+type BlockBehavior uint16
 
 const (
-	Obstacle BlockFlags = 1 << iota
+	NoBehavior               = BlockBehavior(0)
+	Obstacle   BlockBehavior = 1 << iota
 	CanFall
 	Collectable
+	Pushable
 )
 
 type Block struct {
-	blockMap  *BlockMap
+	//	blockMap  *BlockMap
+	world     *world
 	blockType BlockType
 	position  BlockPosition
-	flags     BlockFlags
+	behavior  BlockBehavior
 }
 
-func NewBlock(blockMap *BlockMap, blockType BlockType, position BlockPosition) Block {
-	return Block{blockMap: blockMap, blockType: blockType, position: position}
+func NewBlock(world *world, blockType BlockType, x int, y int) *Block {
+	switch blockType {
+	case Diamond:
+		return &Block{world: world, blockType: blockType, position: BlockPosition{X: x, Y: y}, behavior: CanFall | Collectable}
+	case Boulder:
+		return &Block{world: world, blockType: blockType, position: BlockPosition{X: x, Y: y}, behavior: CanFall | Obstacle | Pushable}
+	default:
+		return &Block{world: world, blockType: blockType, position: BlockPosition{X: x, Y: y}, behavior: NoBehavior}
+	}
+
 }
 
-func (b *Block) MoveTo(pos BlockPosition) {
-	b.position = pos
-	b.blockMap.blocks[pos.Y*b.blockMap.width+pos.X] = *b
-}
+func (b *Block) update(deltaTime float32) {
+	if b.behavior&CanFall == CanFall {
+		under := b.position.Offset(0, 1)
 
-func (b *Block) Update(deltaTime float32) {
-	if b.flags&CanFall == CanFall {
-		if !b.blockMap.CheckTypeAtPosition(Soil, b.position.Offset(0, 1)) {
+		if !b.world.blockMap.CheckTypeAtPosition(Soil, under) && !b.world.checkPlayerAtPosition(under) {
 
-			if b.blockMap.CheckTypeAtPosition(Void, b.position.Offset(0, 1)) {
-				b.blockMap.SwapBlock(b, b.position.Offset(0, 1))
+			if !b.world.checkPositionOccupied(under) {
+				b.world.blockMap.SwapBlock(b, under)
 			}
 
-			if b.blockMap.CheckTypeAtPosition(Void, b.position.Offset(1, 0)) &&
-				b.blockMap.CheckTypeAtPosition(Void, b.position.Offset(1, 1)) {
-				b.blockMap.SwapBlock(b, b.position.Offset(1, 1))
+			right := b.position.Offset(1, 0)
+			rightUnder := b.position.Offset(1, 1)
+
+			if !b.world.checkPositionOccupied(right) && !b.world.checkPositionOccupied(rightUnder) {
+				b.world.blockMap.SwapBlock(b, rightUnder)
 			}
 
-			if b.blockMap.CheckTypeAtPosition(Void, b.position.Offset(-1, 0)) &&
-				b.blockMap.CheckTypeAtPosition(Void, b.position.Offset(-1, 1)) {
-				b.blockMap.SwapBlock(b, b.position.Offset(-1, 1))
+			left := b.position.Offset(-1, 0)
+			leftUnder := b.position.Offset(-1, 1)
+
+			if !b.world.checkPositionOccupied(left) && !b.world.checkPositionOccupied(leftUnder) {
+				b.world.blockMap.SwapBlock(b, leftUnder)
 			}
 		}
 
