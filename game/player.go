@@ -44,11 +44,11 @@ type Player struct {
 	targetBlockPosition BlockPosition
 	Position            rl.Vector2
 	TargetVector        rl.Vector2
-	Progress            float32
-	Speed               float32
-	Pickaxe             bool
-	IsMoving            bool
-	movement            Movement
+	//Progress            float32
+	//Speed               float32
+	pickaxe bool
+	//	IsMoving            bool
+	movement Movement
 }
 
 func NewPlayer() *Player {
@@ -86,7 +86,7 @@ func (p *Player) update(deltaTime float32) {
 
 	if !p.blockPosition.IsSame(p.targetBlockPosition) {
 		p.movement = Movement{}
-		p.movement.Start(p.game.world.blockMap.getPosition(p.blockPosition), p.game.world.blockMap.getPosition(p.targetBlockPosition), speed)
+		p.movement.Start(p.game.world.getPosition(p.blockPosition), p.game.world.getPosition(p.targetBlockPosition), speed)
 		p.game.world.VisitBlock(p.targetBlockPosition)
 		p.blockPosition = p.targetBlockPosition
 	}

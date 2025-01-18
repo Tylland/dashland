@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/lafriks/go-tiled"
 )
 
 type BlockMap struct {
@@ -29,17 +28,6 @@ type BlockMap struct {
 // 	// }
 
 // }
-
-func (bm *BlockMap) createBlocks(world *world, tiles []*tiled.LayerTile) []*Block {
-	blocks := make([]*Block, len(tiles))
-
-	for index, tile := range tiles {
-		blocks[index] = NewBlock(world, BlockType(tile.ID), index%bm.width, index/bm.width)
-	}
-
-	return blocks
-
-}
 
 func (bm *BlockMap) SetBlock(block *Block, pos BlockPosition) {
 

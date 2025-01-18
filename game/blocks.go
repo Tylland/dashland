@@ -22,7 +22,6 @@ const (
 )
 
 type Block struct {
-	//	blockMap  *BlockMap
 	world     *world
 	blockType BlockType
 	position  BlockPosition
@@ -45,24 +44,24 @@ func (b *Block) update(deltaTime float32) {
 	if b.behavior&CanFall == CanFall {
 		under := b.position.Offset(0, 1)
 
-		if !b.world.blockMap.CheckTypeAtPosition(Soil, under) && !b.world.checkPlayerAtPosition(under) {
+		if !b.world.CheckTypeAtPosition(Soil, under) && !b.world.checkPlayerAtPosition(under) {
 
 			if !b.world.checkPositionOccupied(under) {
-				b.world.blockMap.SwapBlock(b, under)
+				b.world.SwapBlock(b, under)
 			}
 
 			right := b.position.Offset(1, 0)
 			rightUnder := b.position.Offset(1, 1)
 
 			if !b.world.checkPositionOccupied(right) && !b.world.checkPositionOccupied(rightUnder) {
-				b.world.blockMap.SwapBlock(b, rightUnder)
+				b.world.SwapBlock(b, rightUnder)
 			}
 
 			left := b.position.Offset(-1, 0)
 			leftUnder := b.position.Offset(-1, 1)
 
 			if !b.world.checkPositionOccupied(left) && !b.world.checkPositionOccupied(leftUnder) {
-				b.world.blockMap.SwapBlock(b, leftUnder)
+				b.world.SwapBlock(b, leftUnder)
 			}
 		}
 
@@ -88,5 +87,5 @@ type BoulderBlock struct {
 }
 
 func (b BoulderBlock) ObstacleForPlayer(player *Player) bool {
-	return !player.Pickaxe
+	return !player.pickaxe
 }
