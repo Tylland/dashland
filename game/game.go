@@ -23,8 +23,13 @@ func NewGame(screenWidth int, screenHeight int) *DashlandGame {
 
 func (g *DashlandGame) init() {
 
-	g.world = NewWorld()
-	g.world.initFromFile(mapPath)
+	world, err := LoadWorldFromFile(mapPath)
+
+	if err != nil {
+		return
+	}
+
+	g.world = world
 
 	g.player = &Player{game: g, blockPosition: BlockPosition{27, 2}, targetBlockPosition: BlockPosition{27, 2}}
 	g.world.initPlayer(g.player)

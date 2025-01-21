@@ -14,7 +14,9 @@ type actor interface {
 }
 
 type world struct {
-	BlockMap
+	MapSize
+	*BlockMap
+	*GroundMap
 	player *Player
 	actors []actor
 }
@@ -28,12 +30,12 @@ func (w *world) initPlayer(player *Player) {
 	w.addActor(player)
 }
 
-func (w *world) initFromFile(filepath string) error {
+func LoadWorldFromFile(filepath string) (*world, error) {
 
 	tiledMap, err := tiled.LoadFile(filepath)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	relativeImagePath := tiledMap.Tilesets[0].Image.Source
@@ -44,33 +46,35 @@ func (w *world) initFromFile(filepath string) error {
 
 	fmt.Print(blockTexture)
 
-	w.width = tiledMap.Width
+	mapSize := MapSize{width: tiledMap.Width, height: tiledMap.Height, blockWidth: float32(tiledMap.TileWidth), blockHeight: float32(tiledMap.TileHeight)}
+	world := &world{MapSize: mapSize, BlockMap: &BlockMap{MapSize: mapSize}, GroundMap: &GroundMap{MapSize: mapSize}}
 
-	w.height = tiledMap.Height
-	w.blockWidth = float32(tiledMap.TileWidth)
-	w.blockHeight = float32(tiledMap.TileHeight)
-	w.blockTextures = blockTexture
+	world.blockTextures = blockTexture
 
-	fmt.Printf("Reading tiles from layer %s \n", tiledMap.Layers[0].Name)
-	w.blocks = w.createBlocks(tiledMap.Layers[0].Tiles)
+	fmt.Printf("Reading blocks from layer %s \n", tiledMap.Layers[0].Name)
+	world.InitBlocks(world, tiledMap.Layers[0].Tiles)
 
-	return nil
+	world.objectTextures = blockTexture
+
+	fmt.Printf("Reading objects from layer \"%s\" \n", tiledMap.Layers[1].Name)
+	world.InitObjects(world, tiledMap.Layers[1].Tiles)
+
+	return world, nil
 }
 
-func (w *world) createBlocks(tiles []*tiled.LayerTile) []*Block {
-	blocks := make([]*Block, len(tiles))
-
-	for index, tile := range tiles {
-		blocks[index] = NewBlock(w, BlockType(tile.ID), index%w.width, index/w.width)
-	}
-
-	return blocks
-
+func (w *world) GetPosition(position BlockPosition) rl.Vector2 {
+	return rl.NewVector2(float32(position.X)*w.blockWidth, float32(position.Y)*w.blockHeight)
 }
 
 func (w *world) update(deltaTime float32) {
 	for _, block := range w.blocks {
 		block.update(deltaTime)
+	}
+
+	for _, obj := range w.objects {
+		if obj != nil {
+			obj.update(deltaTime)
+		}
 	}
 
 	for _, act := range w.actors {
@@ -81,6 +85,12 @@ func (w *world) update(deltaTime float32) {
 func (w *world) render() {
 	for _, block := range w.blocks {
 		rl.DrawTextureRec(w.blockTextures, rl.NewRectangle(float32(block.blockType)*w.blockWidth, 0, w.blockWidth, w.blockHeight), rl.NewVector2(float32(block.position.X)*w.blockWidth, float32(block.position.Y)*w.blockHeight), rl.White)
+	}
+
+	for _, obj := range w.objects {
+		if obj != nil {
+			obj.render()
+		}
 	}
 
 	for _, act := range w.actors {
@@ -99,20 +109,80 @@ func (w *world) obstacleForPlayer(player *Player, position BlockPosition) bool {
 		return true
 	}
 
-	return block.ObstacleForPlayer(player)
+	if block.ObstacleForPlayer(player) {
+		return true
+	}
+
+	object, success := w.GetObject(position)
+
+	if !success || object == nil {
+		return false
+	}
+
+	return object.isObstacle()
 }
 
 func (w *world) VisitBlock(position BlockPosition) {
-
 	fmt.Printf("Block at position %d,%d changed type from %d", position.X, position.Y, w.blocks[position.Y*w.width+position.X].blockType)
-	w.blocks[position.Y*w.width+position.X] = NewBlock(w, Void, position.X, position.Y)
+	w.SetBlock(NewBlock(w, Void, position.X, position.Y), position)
 	fmt.Printf(" to %d \n", w.blocks[position.Y*w.width+position.X].blockType)
 }
 
 func (w *world) checkPositionOccupied(position BlockPosition) bool {
-	return !w.CheckTypeAtPosition(Void, position) || w.player.blockPosition.IsSame(position)
+	if !w.CheckBlockAtPosition(Void, position) {
+		return true
+	}
+
+	if w.player.blockPosition.IsSame(position) {
+		return true
+	}
+
+	object, ok := w.GetObject(position)
+
+	if !ok || object == nil {
+		return false
+	}
+
+	return true
 }
 
 func (w *world) checkPlayerAtPosition(position BlockPosition) bool {
 	return w.player.blockPosition.IsSame(position)
+}
+
+func (w *world) ApplyGravity(bo FallingObject, deltaTime float32) {
+	fmt.Println("Boulder Upadtes")
+
+	bo.UpdateFalling(deltaTime)
+
+	if bo.HasBehavior(CanFall) && !bo.IsFalling() {
+		current := bo.getBlockPosition()
+
+		under := current.Offset(0, 1)
+
+		if !w.CheckBlockAtPosition(Soil, under) && !w.checkPlayerAtPosition(under) {
+
+			if !w.checkPositionOccupied(under) {
+				bo.StartFalling(w.GetPosition(current), w.GetPosition(under))
+				w.MoveObject(bo, under)
+			}
+
+			right := current.Offset(1, 0)
+			rightUnder := current.Offset(1, 1)
+
+			if !w.checkPositionOccupied(right) && !w.checkPositionOccupied(rightUnder) {
+				bo.StartFalling(w.GetPosition(current), w.GetPosition(rightUnder))
+				w.MoveObject(bo, rightUnder)
+			}
+
+			left := current.Offset(-1, 0)
+			leftUnder := current.Offset(-1, 1)
+
+			if !w.checkPositionOccupied(left) && !w.checkPositionOccupied(leftUnder) {
+				bo.StartFalling(w.GetPosition(current), w.GetPosition(leftUnder))
+				w.MoveObject(bo, leftUnder)
+			}
+		}
+
+	}
 }

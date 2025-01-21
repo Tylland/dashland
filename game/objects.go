@@ -1,0 +1,211 @@
+package game
+
+import (
+	"fmt"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
+	"github.com/lafriks/go-tiled"
+)
+
+type GroundObject interface {
+	isObstacle() bool
+	GetBlockType() BlockType
+	getBlockPosition() BlockPosition
+	SetBlockPosition(position BlockPosition)
+	HasBehavior(behavior BlockBehavior) bool
+	update(deltaTime float32)
+	render()
+}
+
+type FallingObject interface {
+	GroundObject
+	StartFalling(startPos rl.Vector2, endPos rl.Vector2)
+	IsFalling() bool
+	UpdateFalling(float32)
+}
+
+func NewGroundObject(world *world, blockType BlockType, x int, y int) (GroundObject, error) {
+	blockPosition := BlockPosition{X: x, Y: y}
+	movement := Movement{position: world.GetPosition(blockPosition)}
+
+	switch blockType {
+	// case Bedrock:
+	// 	return &BedrockObject{BlockObject: BlockObject{world: world, blockType: blockType, blockPosition: BlockPosition{X: x, Y: y}, behavior: Obstacle}}, nil
+	// case Void:
+	// 	return &VoidObject{BlockObject: BlockObject{world: world, blockType: blockType, blockPosition: BlockPosition{X: x, Y: y}}}, nil
+	// case Soil:
+	// 	return &SoilObject{BlockObject: BlockObject{world: world, blockType: blockType, blockPosition: BlockPosition{X: x, Y: y}}}, nil
+	case Boulder:
+		return &BoulderObject{GravityObject: GravityObject{
+			BlockObject: BlockObject{world: world, blockType: blockType, blockPosition: blockPosition, behavior: CanFall | Obstacle | Pushable},
+			Movement:    movement}}, nil
+	case Diamond:
+		return &DiamondObject{GravityObject: GravityObject{
+			BlockObject: BlockObject{world: world, blockType: blockType, blockPosition: BlockPosition{X: x, Y: y}, behavior: CanFall | Collectable},
+			Movement:    movement}}, nil
+	default:
+		return nil, fmt.Errorf("%v (%d) is unknown blocktype", blockType, int(blockType))
+	}
+}
+
+type GroundMap struct {
+	MapSize
+	objectTextures rl.Texture2D
+	objects        []GroundObject
+}
+
+func (gm *GroundMap) InitObjects(world *world, tiles []*tiled.LayerTile) {
+	gm.objects = make([]GroundObject, len(tiles))
+
+	for index, tile := range tiles {
+		object, err := NewGroundObject(world, BlockType(tile.ID), index%world.width, index/world.width)
+
+		if err != nil {
+
+		}
+
+		gm.objects[index] = object
+	}
+}
+
+func (gm *GroundMap) GetObject(position BlockPosition) (GroundObject, bool) {
+
+	if position.X < 0 || position.X >= gm.width || position.Y < 0 || position.Y >= gm.height {
+		return &NullObject{BlockObject: BlockObject{blockType: Unknown}}, false
+	}
+
+	return gm.objects[position.Y*gm.width+position.X], true
+}
+
+func (gm *GroundMap) CheckObjectAtPosition(blockType BlockType, position BlockPosition) bool {
+	return gm.objects[position.Y*gm.width+position.X].GetBlockType() == blockType
+}
+
+func (gm *GroundMap) MoveObject(source GroundObject, targetPos BlockPosition) {
+	sourcePosition := source.getBlockPosition()
+
+	gm.objects[targetPos.Y*gm.width+targetPos.X] = source
+	gm.objects[sourcePosition.Y*gm.width+sourcePosition.X] = nil
+
+	source.SetBlockPosition(targetPos)
+}
+
+func (gm *GroundMap) SwapObject(source GroundObject, targetPos BlockPosition) {
+
+	target, ok := gm.GetObject(targetPos)
+
+	if !ok || target == nil {
+		return
+	}
+
+	sourcePos := source.getBlockPosition()
+
+	gm.objects[targetPos.Y*gm.width+targetPos.X], gm.objects[sourcePos.Y*gm.width+sourcePos.X] = gm.objects[sourcePos.Y*gm.width+sourcePos.X], gm.objects[targetPos.Y*gm.width+targetPos.X]
+
+	target.SetBlockPosition(sourcePos)
+	source.SetBlockPosition(targetPos)
+}
+
+type GravityObject struct {
+	BlockObject
+	Movement
+}
+
+func (g *GravityObject) StartFalling(startPos rl.Vector2, endPos rl.Vector2) {
+	const gravitySpeed float32 = 128
+
+	g.Start(startPos, endPos, gravitySpeed)
+}
+
+func (g *GravityObject) IsFalling() bool {
+	return g.moving
+}
+
+func (g *GravityObject) UpdateFalling(deltaTime float32) {
+	g.Update(deltaTime)
+}
+
+type BlockObject struct {
+	world         *world
+	blockType     BlockType
+	blockPosition BlockPosition
+	behavior      BlockBehavior
+}
+
+func (bo *BlockObject) isObstacle() bool {
+	return bo.HasBehavior(Obstacle)
+}
+
+func (bo *BlockObject) GetBlockType() BlockType {
+	return bo.blockType
+}
+
+func (bo *BlockObject) getBlockPosition() BlockPosition {
+	return bo.blockPosition
+}
+
+func (bo *BlockObject) SetBlockPosition(position BlockPosition) {
+	bo.blockPosition = position
+}
+
+func (bo *BlockObject) HasBehavior(b BlockBehavior) bool {
+	return bo.behavior&b == b
+}
+
+func (bo *BlockObject) update(deltaTime float32) {
+
+}
+
+func (bo *BlockObject) render() {
+	bm := bo.world
+
+	rl.DrawTextureRec(bm.objectTextures, rl.NewRectangle(float32(bo.blockType)*bm.blockWidth, 0, bm.blockWidth, bm.blockHeight), rl.NewVector2(float32(bo.blockPosition.X)*bm.blockWidth, float32(bo.blockPosition.Y)*bm.blockHeight), rl.White)
+}
+
+type NullObject struct {
+	BlockObject
+}
+
+type BedrockObject struct {
+	BlockObject
+}
+
+type SoilObject struct {
+	BlockObject
+}
+
+type VoidObject struct {
+	BlockObject
+}
+
+type BoulderObject struct {
+	GravityObject
+}
+
+func (bo *BoulderObject) update(deltaTime float32) {
+	fmt.Println("Upadte BoulderObject")
+
+	bo.world.ApplyGravity(bo, deltaTime)
+}
+
+func (bo *BoulderObject) render() {
+	bm := bo.world
+
+	rl.DrawTextureRec(bm.objectTextures, rl.NewRectangle(float32(bo.blockType)*bm.blockWidth, 0, bm.blockWidth, bm.blockHeight), bo.position, rl.White)
+}
+
+type DiamondObject struct {
+	GravityObject
+}
+
+func (bo *DiamondObject) update(deltaTime float32) {
+	fmt.Println("Upadte DiamondObject")
+
+	bo.world.ApplyGravity(bo, deltaTime)
+}
+
+func (bo *DiamondObject) render() {
+	bm := bo.world
+
+	rl.DrawTextureRec(bm.objectTextures, rl.NewRectangle(float32(bo.blockType)*bm.blockWidth, 0, bm.blockWidth, bm.blockHeight), bo.position, rl.White)
+}

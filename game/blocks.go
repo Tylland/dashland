@@ -1,6 +1,6 @@
 package game
 
-type BlockType uint32
+type BlockType uint16
 
 const (
 	Unknown BlockType = iota
@@ -9,6 +9,7 @@ const (
 	Soil
 	Diamond
 	Boulder
+	All = BlockType(0xFFFF)
 )
 
 type BlockBehavior uint16
@@ -41,31 +42,31 @@ func NewBlock(world *world, blockType BlockType, x int, y int) *Block {
 }
 
 func (b *Block) update(deltaTime float32) {
-	if b.behavior&CanFall == CanFall {
-		under := b.position.Offset(0, 1)
+	// if b.behavior&CanFall == CanFall {
+	// 	under := b.position.Offset(0, 1)
 
-		if !b.world.CheckTypeAtPosition(Soil, under) && !b.world.checkPlayerAtPosition(under) {
+	// 	if !b.world.CheckBlockAtPosition(Soil, under) && !b.world.checkPlayerAtPosition(under) {
 
-			if !b.world.checkPositionOccupied(under) {
-				b.world.SwapBlock(b, under)
-			}
+	// 		if !b.world.checkPositionOccupied(under) {
+	// 			b.world.SwapBlock(b, under)
+	// 		}
 
-			right := b.position.Offset(1, 0)
-			rightUnder := b.position.Offset(1, 1)
+	// 		right := b.position.Offset(1, 0)
+	// 		rightUnder := b.position.Offset(1, 1)
 
-			if !b.world.checkPositionOccupied(right) && !b.world.checkPositionOccupied(rightUnder) {
-				b.world.SwapBlock(b, rightUnder)
-			}
+	// 		if !b.world.checkPositionOccupied(right) && !b.world.checkPositionOccupied(rightUnder) {
+	// 			b.world.SwapBlock(b, rightUnder)
+	// 		}
 
-			left := b.position.Offset(-1, 0)
-			leftUnder := b.position.Offset(-1, 1)
+	// 		left := b.position.Offset(-1, 0)
+	// 		leftUnder := b.position.Offset(-1, 1)
 
-			if !b.world.checkPositionOccupied(left) && !b.world.checkPositionOccupied(leftUnder) {
-				b.world.SwapBlock(b, leftUnder)
-			}
-		}
+	// 		if !b.world.checkPositionOccupied(left) && !b.world.checkPositionOccupied(leftUnder) {
+	// 			b.world.SwapBlock(b, leftUnder)
+	// 		}
+	// 	}
 
-	}
+	// }
 }
 
 func (b *Block) ObstacleForPlayer(player *Player) bool {

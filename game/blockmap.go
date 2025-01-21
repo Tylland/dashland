@@ -4,30 +4,66 @@ import (
 	"fmt"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"github.com/lafriks/go-tiled"
 )
 
+type MapSize struct {
+	width       int
+	height      int
+	blockWidth  float32
+	blockHeight float32
+}
+
 type BlockMap struct {
-	width         int
-	height        int
-	blockWidth    float32
-	blockHeight   float32
+	MapSize
 	blockTextures rl.Texture2D
 	blocks        []*Block
 }
 
-// func (bm *BlockMap) createBlock(tile *tiled.LayerTile, x int, y int) *Block {
-// 	return NewBlock(bm, BlockType(tile.ID), x, y)
+func (bm *BlockMap) InitBlocks(world *world, tiles []*tiled.LayerTile) {
+	bm.blocks = make([]*Block, len(tiles))
 
-// 	// switch BlockType(tile.ID) {
-// 	// case Diamond:
-// 	// 	return &Block{blockMap: bm, blockType: BlockType(tile.ID), position: BlockPosition{X: x, Y: y}, behavior: CanFall | Collectable}
-// 	// case Boulder:
-// 	// 	return &Block{blockMap: bm, blockType: BlockType(tile.ID), position: BlockPosition{X: x, Y: y}, behavior: CanFall | Obstacle}
-// 	// default:
-// 	// 	return &Block{blockMap: bm, blockType: BlockType(tile.ID), position: BlockPosition{X: x, Y: y}, behavior: NoBehavior}
-// 	// }
+	for index, tile := range tiles {
+		bm.blocks[index] = NewBlock(world, BlockType(tile.ID), index%bm.width, index/bm.width)
+	}
+}
 
-// }
+func (bm *BlockMap) CheckBlockAtPosition(blockType BlockType, position BlockPosition) bool {
+	return bm.blocks[position.Y*bm.width+position.X].blockType == blockType
+}
+
+func (bm *BlockMap) PrintBlockMap() {
+	fmt.Println("BlockMap")
+
+	for y := 0; y < bm.height; y++ {
+		row := ""
+
+		for x := 0; x < bm.width; x++ {
+			if row != "" {
+				row += ", "
+			}
+
+			row += fmt.Sprintf("%d", int(bm.blocks[y*bm.width+x].blockType))
+		}
+
+		fmt.Println(row)
+	}
+}
+
+func (bm *BlockMap) SwapBlock(source *Block, pos BlockPosition) {
+	target, succes := bm.GetBlock(pos.X, pos.Y)
+
+	if succes {
+		tempBlockType := source.blockType
+		tempBehavior := source.behavior
+		bm.PrintBlockMap()
+		source.blockType = target.blockType
+		source.behavior = target.behavior
+		target.blockType = tempBlockType
+		target.behavior = tempBehavior
+		bm.PrintBlockMap()
+	}
+}
 
 func (bm *BlockMap) SetBlock(block *Block, pos BlockPosition) {
 
@@ -49,30 +85,6 @@ func (bm *BlockMap) GetBlock(x int, y int) (*Block, bool) {
 	return bm.blocks[y*bm.width+x], true
 }
 
-func (bm *BlockMap) getPosition(position BlockPosition) rl.Vector2 {
-	return rl.NewVector2(float32(position.X)*bm.blockWidth, float32(position.Y)*bm.blockHeight)
-}
-
-func (bm *BlockMap) CheckTypeAtPosition(blockType BlockType, position BlockPosition) bool {
-	return bm.blocks[position.Y*bm.width+position.X].blockType == blockType
-}
-
-func (bm *BlockMap) SwapBlock(source *Block, pos BlockPosition) {
-	target, succes := bm.GetBlock(pos.X, pos.Y)
-
-	if succes {
-		tempBlockType := source.blockType
-		tempBehavior := source.behavior
-		bm.Print()
-		source.blockType = target.blockType
-		source.behavior = target.behavior
-		target.blockType = tempBlockType
-		target.behavior = tempBehavior
-		bm.Print()
-	}
-
-}
-
 func (bm *BlockMap) update(deltaTime float32) {
 
 	for i := len(bm.blocks) - 1; i >= 0; i-- {
@@ -88,25 +100,7 @@ func (bm *BlockMap) render() {
 	// 	rl.DrawTextureRec(bm.blockTextures, rl.NewRectangle(float32(block.blockType)*bm.blockWidth, 0, bm.blockWidth, bm.blockHeight), rl.NewVector2(float32(x)*bm.blockWidth, float32(y)*bm.blockHeight), rl.White)
 	// }
 
-	for _, block := range bm.blocks {
-		rl.DrawTextureRec(bm.blockTextures, rl.NewRectangle(float32(block.blockType)*bm.blockWidth, 0, bm.blockWidth, bm.blockHeight), rl.NewVector2(float32(block.position.X)*bm.blockWidth, float32(block.position.Y)*bm.blockHeight), rl.White)
-	}
-}
-
-func (bm *BlockMap) Print() {
-	fmt.Println("BlockMap")
-
-	for y := 0; y < bm.height; y++ {
-		row := ""
-
-		for x := 0; x < bm.width; x++ {
-			if row != "" {
-				row += ", "
-			}
-
-			row += fmt.Sprintf("%d", int(bm.blocks[y*bm.width+x].blockType))
-		}
-
-		fmt.Println(row)
-	}
+	// for _, block := range bm.blocks {
+	// 	rl.DrawTextureRec(bm.blockTextures, rl.NewRectangle(float32(block.blockType)*bm.blockWidth, 0, bm.blockWidth, bm.blockHeight), rl.NewVector2(float32(block.position.X)*bm.blockWidth, float32(block.position.Y)*bm.blockHeight), rl.White)
+	// }
 }

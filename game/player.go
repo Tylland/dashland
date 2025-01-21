@@ -86,7 +86,7 @@ func (p *Player) update(deltaTime float32) {
 
 	if !p.blockPosition.IsSame(p.targetBlockPosition) {
 		p.movement = Movement{}
-		p.movement.Start(p.game.world.getPosition(p.blockPosition), p.game.world.getPosition(p.targetBlockPosition), speed)
+		p.movement.Start(p.game.world.GetPosition(p.blockPosition), p.game.world.GetPosition(p.targetBlockPosition), speed)
 		p.game.world.VisitBlock(p.targetBlockPosition)
 		p.blockPosition = p.targetBlockPosition
 	}
