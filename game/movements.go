@@ -11,9 +11,10 @@ type Movement struct {
 	progress float32
 	position rl.Vector2
 	moving   bool
+	finished func()
 }
 
-func (m *Movement) Start(startPos rl.Vector2, endPos rl.Vector2, speed float32) {
+func (m *Movement) Start(startPos rl.Vector2, endPos rl.Vector2, speed float32, finished func()) {
 	m.startPos = startPos
 	m.endPos = endPos
 	m.vector = rl.Vector2Subtract(endPos, startPos)
@@ -21,6 +22,7 @@ func (m *Movement) Start(startPos rl.Vector2, endPos rl.Vector2, speed float32) 
 	m.speed = speed
 	m.progress = 0.0
 	m.moving = true
+	m.finished = finished
 }
 
 func (m *Movement) Update(deltaTime float32) {
@@ -35,6 +37,11 @@ func (m *Movement) Update(deltaTime float32) {
 		if m.progress >= m.length {
 			m.progress = 0
 			m.moving = false
+
+			if m.finished != nil {
+				m.finished()
+				m.finished = nil
+			}
 		}
 	}
 }

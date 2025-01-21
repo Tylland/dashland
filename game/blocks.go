@@ -69,24 +69,24 @@ func (b *Block) update(deltaTime float32) {
 	// }
 }
 
-func (b *Block) ObstacleForPlayer(player *Player) bool {
+func (b *Block) IsObstacleForPlayer(player *Player) bool {
 	return b.blockType == Bedrock || b.blockType == Boulder
 }
 
 type IBlock interface {
-	ObstacleForPlayer(player *Player) bool
+	IsObstacleForPlayer(player *Player) bool
 }
 
 type UnknownBlock struct {
 }
 
-func (ub UnknownBlock) ObstacleForPlayer(player *Player) bool {
+func (ub UnknownBlock) IsObstacleForPlayer(player *Player) bool {
 	return false
 }
 
 type BoulderBlock struct {
 }
 
-func (b BoulderBlock) ObstacleForPlayer(player *Player) bool {
+func (b BoulderBlock) IsObstacleForPlayer(player *Player) bool {
 	return !player.pickaxe
 }

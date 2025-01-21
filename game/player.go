@@ -34,6 +34,10 @@ func (bp BlockPosition) Add(position BlockPosition) BlockPosition {
 	return BlockPosition{X: bp.X + position.X, Y: bp.Y + position.Y}
 }
 
+func (bp BlockPosition) Subtract(position BlockPosition) BlockPosition {
+	return BlockPosition{X: bp.X - position.X, Y: bp.Y - position.Y}
+}
+
 func (bp BlockPosition) IsSame(other BlockPosition) bool {
 	return bp.X == other.X && bp.Y == other.Y
 }
@@ -44,11 +48,8 @@ type Player struct {
 	targetBlockPosition BlockPosition
 	Position            rl.Vector2
 	TargetVector        rl.Vector2
-	//Progress            float32
-	//Speed               float32
-	pickaxe bool
-	//	IsMoving            bool
-	movement Movement
+	pickaxe             bool
+	movement            Movement
 }
 
 func NewPlayer() *Player {
@@ -72,7 +73,7 @@ func (p *Player) UpdateTargetPosition() {
 			p.TargetVector = rl.NewVector2(0, -32)
 		}
 
-		if p.game.world.obstacleForPlayer(p, p.targetBlockPosition) {
+		if p.game.world.IsObstacleForPlayer(p, p.targetBlockPosition) {
 			p.targetBlockPosition = p.blockPosition
 			p.TargetVector = rl.NewVector2(0, 0)
 		}
@@ -86,8 +87,10 @@ func (p *Player) update(deltaTime float32) {
 
 	if !p.blockPosition.IsSame(p.targetBlockPosition) {
 		p.movement = Movement{}
-		p.movement.Start(p.game.world.GetPosition(p.blockPosition), p.game.world.GetPosition(p.targetBlockPosition), speed)
+		p.movement.Start(p.game.world.GetPosition(p.blockPosition), p.game.world.GetPosition(p.targetBlockPosition), speed, nil)
 		p.game.world.VisitBlock(p.targetBlockPosition)
+		p.game.world.VisitObject(p, p.targetBlockPosition)
+
 		p.blockPosition = p.targetBlockPosition
 	}
 
@@ -99,4 +102,12 @@ func (p *Player) update(deltaTime float32) {
 
 func (p *Player) render() {
 	rl.DrawCircle(int32(p.Position.X+16), int32(p.Position.Y+16), 16, rl.Red)
+}
+
+func (p *Player) Collect(co CollectableObject) {
+	co.Collected()
+}
+
+func (p *Player) PushTo(po PushableObject, position BlockPosition) {
+	po.Pushed(p, position)
 }

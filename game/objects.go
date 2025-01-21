@@ -9,8 +9,9 @@ import (
 
 type GroundObject interface {
 	isObstacle() bool
+	IsObstacleForPlayer(player *Player) bool
 	GetBlockType() BlockType
-	getBlockPosition() BlockPosition
+	GetBlockPosition() BlockPosition
 	SetBlockPosition(position BlockPosition)
 	HasBehavior(behavior BlockBehavior) bool
 	update(deltaTime float32)
@@ -23,6 +24,38 @@ type FallingObject interface {
 	IsFalling() bool
 	UpdateFalling(float32)
 }
+
+type CollectableObject interface {
+	Collected()
+}
+
+type PushableObject interface {
+	GroundObject
+	Pushed(player *Player, position BlockPosition)
+	// StartPushing(startPos rl.Vector2, endPos rl.Vector2)
+	// IsPushing() bool
+	// UpdatePushing(float32)
+}
+
+type CollectableBehavior struct {
+	collected bool
+}
+
+func (cb *CollectableBehavior) Collected() {
+	cb.collected = true
+}
+
+// type PushableBehavior struct {
+// 	pushing bool
+// }
+
+// func (p *PushableBehavior) StartPushing(startPos rl.Vector2, endPos rl.Vector2){
+// 	p.pushing = true
+
+// }
+
+// func (p *PushableBehavior) IsFalling() bool
+// UpdateFalling(float32)
 
 func NewGroundObject(world *world, blockType BlockType, x int, y int) (GroundObject, error) {
 	blockPosition := BlockPosition{X: x, Y: y}
@@ -68,13 +101,13 @@ func (gm *GroundMap) InitObjects(world *world, tiles []*tiled.LayerTile) {
 	}
 }
 
-func (gm *GroundMap) GetObject(position BlockPosition) (GroundObject, bool) {
+func (gm *GroundMap) GetObject(position BlockPosition) GroundObject {
 
 	if position.X < 0 || position.X >= gm.width || position.Y < 0 || position.Y >= gm.height {
-		return &NullObject{BlockObject: BlockObject{blockType: Unknown}}, false
+		return nil
 	}
 
-	return gm.objects[position.Y*gm.width+position.X], true
+	return gm.objects[position.Y*gm.width+position.X]
 }
 
 func (gm *GroundMap) CheckObjectAtPosition(blockType BlockType, position BlockPosition) bool {
@@ -82,7 +115,7 @@ func (gm *GroundMap) CheckObjectAtPosition(blockType BlockType, position BlockPo
 }
 
 func (gm *GroundMap) MoveObject(source GroundObject, targetPos BlockPosition) {
-	sourcePosition := source.getBlockPosition()
+	sourcePosition := source.GetBlockPosition()
 
 	gm.objects[targetPos.Y*gm.width+targetPos.X] = source
 	gm.objects[sourcePosition.Y*gm.width+sourcePosition.X] = nil
@@ -90,15 +123,21 @@ func (gm *GroundMap) MoveObject(source GroundObject, targetPos BlockPosition) {
 	source.SetBlockPosition(targetPos)
 }
 
+func (gm *GroundMap) RemoveObject(doomed GroundObject) {
+	sourcePosition := doomed.GetBlockPosition()
+
+	gm.objects[sourcePosition.Y*gm.width+sourcePosition.X] = nil
+}
+
 func (gm *GroundMap) SwapObject(source GroundObject, targetPos BlockPosition) {
 
-	target, ok := gm.GetObject(targetPos)
+	target := gm.GetObject(targetPos)
 
-	if !ok || target == nil {
+	if target == nil {
 		return
 	}
 
-	sourcePos := source.getBlockPosition()
+	sourcePos := source.GetBlockPosition()
 
 	gm.objects[targetPos.Y*gm.width+targetPos.X], gm.objects[sourcePos.Y*gm.width+sourcePos.X] = gm.objects[sourcePos.Y*gm.width+sourcePos.X], gm.objects[targetPos.Y*gm.width+targetPos.X]
 
@@ -114,7 +153,7 @@ type GravityObject struct {
 func (g *GravityObject) StartFalling(startPos rl.Vector2, endPos rl.Vector2) {
 	const gravitySpeed float32 = 128
 
-	g.Start(startPos, endPos, gravitySpeed)
+	g.Start(startPos, endPos, gravitySpeed, nil)
 }
 
 func (g *GravityObject) IsFalling() bool {
@@ -136,11 +175,15 @@ func (bo *BlockObject) isObstacle() bool {
 	return bo.HasBehavior(Obstacle)
 }
 
+func (bo *BlockObject) IsObstacleForPlayer(player *Player) bool {
+	return bo.HasBehavior(Obstacle)
+}
+
 func (bo *BlockObject) GetBlockType() BlockType {
 	return bo.blockType
 }
 
-func (bo *BlockObject) getBlockPosition() BlockPosition {
+func (bo *BlockObject) GetBlockPosition() BlockPosition {
 	return bo.blockPosition
 }
 
@@ -162,24 +205,43 @@ func (bo *BlockObject) render() {
 	rl.DrawTextureRec(bm.objectTextures, rl.NewRectangle(float32(bo.blockType)*bm.blockWidth, 0, bm.blockWidth, bm.blockHeight), rl.NewVector2(float32(bo.blockPosition.X)*bm.blockWidth, float32(bo.blockPosition.Y)*bm.blockHeight), rl.White)
 }
 
-type NullObject struct {
-	BlockObject
-}
+// type NullObject struct {
+// 	BlockObject
+// }
 
-type BedrockObject struct {
-	BlockObject
-}
+// type BedrockObject struct {
+// 	BlockObject
+// }
 
-type SoilObject struct {
-	BlockObject
-}
+// type SoilObject struct {
+// 	BlockObject
+// }
 
-type VoidObject struct {
-	BlockObject
-}
+// type VoidObject struct {
+// 	BlockObject
+// }
 
 type BoulderObject struct {
 	GravityObject
+}
+
+func (bo *BoulderObject) IsObstacleForPlayer(player *Player) bool {
+
+	if bo.moving {
+		return true
+	}
+
+	offset := bo.blockPosition.Subtract(player.blockPosition)
+
+	if offset.Y != 0 {
+		return true
+	}
+
+	return bo.world.checkPositionOccupied(bo.blockPosition.Add(offset))
+}
+
+func (bo *BoulderObject) Pushed(player *Player, position BlockPosition) {
+	bo.Start(bo.world.GetPosition(bo.blockPosition), bo.world.GetPosition(position), 64, func() { bo.world.MoveObject(bo, position) })
 }
 
 func (bo *BoulderObject) update(deltaTime float32) {
@@ -196,6 +258,13 @@ func (bo *BoulderObject) render() {
 
 type DiamondObject struct {
 	GravityObject
+	CollectableBehavior
+}
+
+func (bo *DiamondObject) Collected() {
+	fmt.Println("DiamondObject Collected")
+
+	bo.world.RemoveObject(bo)
 }
 
 func (bo *DiamondObject) update(deltaTime float32) {
@@ -207,5 +276,7 @@ func (bo *DiamondObject) update(deltaTime float32) {
 func (bo *DiamondObject) render() {
 	bm := bo.world
 
-	rl.DrawTextureRec(bm.objectTextures, rl.NewRectangle(float32(bo.blockType)*bm.blockWidth, 0, bm.blockWidth, bm.blockHeight), bo.position, rl.White)
+	if !bo.collected {
+		rl.DrawTextureRec(bm.objectTextures, rl.NewRectangle(float32(bo.blockType)*bm.blockWidth, 0, bm.blockWidth, bm.blockHeight), bo.position, rl.White)
+	}
 }

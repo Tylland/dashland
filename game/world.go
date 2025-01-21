@@ -102,30 +102,56 @@ func (w *world) addActor(actor actor) {
 	w.actors = append(w.actors, actor)
 }
 
-func (w *world) obstacleForPlayer(player *Player, position BlockPosition) bool {
+func (w *world) IsObstacleForPlayer(player *Player, position BlockPosition) bool {
 	block, success := w.GetBlock(position.X, position.Y)
 
 	if !success {
 		return true
 	}
 
-	if block.ObstacleForPlayer(player) {
+	if block.IsObstacleForPlayer(player) {
 		return true
 	}
 
-	object, success := w.GetObject(position)
+	object := w.GetObject(position)
 
-	if !success || object == nil {
+	if object == nil {
 		return false
 	}
 
-	return object.isObstacle()
+	return object.IsObstacleForPlayer(player)
 }
 
 func (w *world) VisitBlock(position BlockPosition) {
 	fmt.Printf("Block at position %d,%d changed type from %d", position.X, position.Y, w.blocks[position.Y*w.width+position.X].blockType)
 	w.SetBlock(NewBlock(w, Void, position.X, position.Y), position)
 	fmt.Printf(" to %d \n", w.blocks[position.Y*w.width+position.X].blockType)
+}
+
+func (w *world) VisitObject(player *Player, position BlockPosition) {
+
+	obj := w.GetObject(position)
+
+	if obj != nil {
+		co, ok := obj.(CollectableObject)
+
+		if ok && co != nil {
+			player.Collect(co)
+		}
+
+		po, ok := obj.(PushableObject)
+
+		if ok && po != nil {
+
+			pushablePosition := po.GetBlockPosition()
+
+			offset := pushablePosition.Subtract(player.blockPosition)
+
+			if offset.Y == 0 {
+				player.PushTo(po, pushablePosition.Add(BlockPosition{X: offset.X, Y: 0}))
+			}
+		}
+	}
 }
 
 func (w *world) checkPositionOccupied(position BlockPosition) bool {
@@ -137,13 +163,7 @@ func (w *world) checkPositionOccupied(position BlockPosition) bool {
 		return true
 	}
 
-	object, ok := w.GetObject(position)
-
-	if !ok || object == nil {
-		return false
-	}
-
-	return true
+	return w.GetObject(position) != nil
 }
 
 func (w *world) checkPlayerAtPosition(position BlockPosition) bool {
@@ -156,7 +176,7 @@ func (w *world) ApplyGravity(bo FallingObject, deltaTime float32) {
 	bo.UpdateFalling(deltaTime)
 
 	if bo.HasBehavior(CanFall) && !bo.IsFalling() {
-		current := bo.getBlockPosition()
+		current := bo.GetBlockPosition()
 
 		under := current.Offset(0, 1)
 
@@ -165,6 +185,7 @@ func (w *world) ApplyGravity(bo FallingObject, deltaTime float32) {
 			if !w.checkPositionOccupied(under) {
 				bo.StartFalling(w.GetPosition(current), w.GetPosition(under))
 				w.MoveObject(bo, under)
+				return
 			}
 
 			right := current.Offset(1, 0)
@@ -173,6 +194,7 @@ func (w *world) ApplyGravity(bo FallingObject, deltaTime float32) {
 			if !w.checkPositionOccupied(right) && !w.checkPositionOccupied(rightUnder) {
 				bo.StartFalling(w.GetPosition(current), w.GetPosition(rightUnder))
 				w.MoveObject(bo, rightUnder)
+				return
 			}
 
 			left := current.Offset(-1, 0)
@@ -181,8 +203,49 @@ func (w *world) ApplyGravity(bo FallingObject, deltaTime float32) {
 			if !w.checkPositionOccupied(left) && !w.checkPositionOccupied(leftUnder) {
 				bo.StartFalling(w.GetPosition(current), w.GetPosition(leftUnder))
 				w.MoveObject(bo, leftUnder)
+				return
 			}
 		}
 
 	}
 }
+
+// func (w *world) ApplyPush(bo PushableObject, deltaTime float32) {
+// 	fmt.Println("Boulder Upadtes")
+
+// 	bo.UpdateFalling(deltaTime)
+
+// 	if bo.HasBehavior(CanFall) && !bo.IsFalling() {
+// 		current := bo.getBlockPosition()
+
+// 		under := current.Offset(0, 1)
+
+// 		if !w.CheckBlockAtPosition(Soil, under) && !w.checkPlayerAtPosition(under) {
+
+// 			if !w.checkPositionOccupied(under) {
+// 				bo.StartFalling(w.GetPosition(current), w.GetPosition(under))
+// 				w.MoveObject(bo, under)
+// 				return
+// 			}
+
+// 			right := current.Offset(1, 0)
+// 			rightUnder := current.Offset(1, 1)
+
+// 			if !w.checkPositionOccupied(right) && !w.checkPositionOccupied(rightUnder) {
+// 				bo.StartFalling(w.GetPosition(current), w.GetPosition(rightUnder))
+// 				w.MoveObject(bo, rightUnder)
+// 				return
+// 			}
+
+// 			left := current.Offset(-1, 0)
+// 			leftUnder := current.Offset(-1, 1)
+
+// 			if !w.checkPositionOccupied(left) && !w.checkPositionOccupied(leftUnder) {
+// 				bo.StartFalling(w.GetPosition(current), w.GetPosition(leftUnder))
+// 				w.MoveObject(bo, leftUnder)
+// 				return
+// 			}
+// 		}
+
+// 	}
+// }
