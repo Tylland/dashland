@@ -107,7 +107,3 @@ func (p *Player) render() {
 func (p *Player) Collect(co CollectableObject) {
 	co.Collected()
 }
-
-func (p *Player) PushTo(po PushableObject, position BlockPosition) {
-	po.Pushed(p, position)
-}

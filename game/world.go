@@ -2,10 +2,8 @@ package game
 
 import (
 	"fmt"
-	"path"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/lafriks/go-tiled"
 )
 
 type actor interface {
@@ -15,6 +13,7 @@ type actor interface {
 
 type world struct {
 	MapSize
+	SoundPlayer
 	*BlockMap
 	*GroundMap
 	player *Player
@@ -28,38 +27,6 @@ func NewWorld() *world {
 func (w *world) initPlayer(player *Player) {
 	w.player = player
 	w.addActor(player)
-}
-
-func LoadWorldFromFile(filepath string) (*world, error) {
-
-	tiledMap, err := tiled.LoadFile(filepath)
-
-	if err != nil {
-		return nil, err
-	}
-
-	relativeImagePath := tiledMap.Tilesets[0].Image.Source
-
-	fileName := path.Join(path.Dir(mapPath), relativeImagePath)
-
-	blockTexture := rl.LoadTexture(fileName)
-
-	fmt.Print(blockTexture)
-
-	mapSize := MapSize{width: tiledMap.Width, height: tiledMap.Height, blockWidth: float32(tiledMap.TileWidth), blockHeight: float32(tiledMap.TileHeight)}
-	world := &world{MapSize: mapSize, BlockMap: &BlockMap{MapSize: mapSize}, GroundMap: &GroundMap{MapSize: mapSize}}
-
-	world.blockTextures = blockTexture
-
-	fmt.Printf("Reading blocks from layer %s \n", tiledMap.Layers[0].Name)
-	world.InitBlocks(world, tiledMap.Layers[0].Tiles)
-
-	world.objectTextures = blockTexture
-
-	fmt.Printf("Reading objects from layer \"%s\" \n", tiledMap.Layers[1].Name)
-	world.InitObjects(world, tiledMap.Layers[1].Tiles)
-
-	return world, nil
 }
 
 func (w *world) GetPosition(position BlockPosition) rl.Vector2 {
@@ -148,7 +115,9 @@ func (w *world) VisitObject(player *Player, position BlockPosition) {
 			offset := pushablePosition.Subtract(player.blockPosition)
 
 			if offset.Y == 0 {
-				player.PushTo(po, pushablePosition.Add(BlockPosition{X: offset.X, Y: 0}))
+				po.Pushed(player, pushablePosition.Add(BlockPosition{X: offset.X, Y: 0}))
+
+				//player.PushTo(po, pushablePosition.Add(BlockPosition{X: offset.X, Y: 0}))
 			}
 		}
 	}

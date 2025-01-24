@@ -205,23 +205,8 @@ func (bo *BlockObject) render() {
 	rl.DrawTextureRec(bm.objectTextures, rl.NewRectangle(float32(bo.blockType)*bm.blockWidth, 0, bm.blockWidth, bm.blockHeight), rl.NewVector2(float32(bo.blockPosition.X)*bm.blockWidth, float32(bo.blockPosition.Y)*bm.blockHeight), rl.White)
 }
 
-// type NullObject struct {
-// 	BlockObject
-// }
-
-// type BedrockObject struct {
-// 	BlockObject
-// }
-
-// type SoilObject struct {
-// 	BlockObject
-// }
-
-// type VoidObject struct {
-// 	BlockObject
-// }
-
 type BoulderObject struct {
+	Box
 	GravityObject
 }
 
@@ -262,13 +247,17 @@ type DiamondObject struct {
 }
 
 func (bo *DiamondObject) Collected() {
-	fmt.Println("DiamondObject Collected")
-
+	bo.world.PlayFx("diamond_collected")
 	bo.world.RemoveObject(bo)
 }
 
+func (bo *DiamondObject) StartFalling(startPos rl.Vector2, endPos rl.Vector2) {
+	bo.GravityObject.StartFalling(startPos, endPos)
+
+	//	bo.world.PlayFx("diamond_collected")
+}
+
 func (bo *DiamondObject) update(deltaTime float32) {
-	fmt.Println("Upadte DiamondObject")
 
 	bo.world.ApplyGravity(bo, deltaTime)
 }

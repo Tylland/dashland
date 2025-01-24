@@ -8,15 +8,15 @@ import (
 const (
 	screenWidth  = 1600
 	screenHeight = 900
-	// gravity         = 400
-	// playerJumpSpeed = 350.0
-	// playerHORSpeed  = 200.0
 )
 
 func main() {
 	rl.InitWindow(screenWidth, screenHeight, "Dashland")
 
+	rl.InitAudioDevice()
+
 	game := game.NewGame(screenWidth, screenHeight)
+	defer game.Unload()
 
 	rl.SetTargetFPS(60)
 
@@ -26,6 +26,8 @@ func main() {
 		game.Update(deltaTime)
 		game.Render()
 	}
+
+	rl.CloseAudioDevice()
 }
 
 // package main
