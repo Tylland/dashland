@@ -59,7 +59,7 @@ func (cb *CollectableBehavior) Collected() {
 
 func NewGroundObject(world *world, blockType BlockType, x int, y int) (GroundObject, error) {
 	blockPosition := BlockPosition{X: x, Y: y}
-	movement := Movement{position: world.GetPosition(blockPosition)}
+	//body := BoxBody{position: world.GetPosition(blockPosition), Width: world.blockWidth, Height: world.blockHeight}
 
 	switch blockType {
 	// case Bedrock:
@@ -69,13 +69,15 @@ func NewGroundObject(world *world, blockType BlockType, x int, y int) (GroundObj
 	// case Soil:
 	// 	return &SoilObject{BlockObject: BlockObject{world: world, blockType: blockType, blockPosition: BlockPosition{X: x, Y: y}}}, nil
 	case Boulder:
-		return &BoulderObject{GravityObject: GravityObject{
-			BlockObject: BlockObject{world: world, blockType: blockType, blockPosition: blockPosition, behavior: CanFall | Obstacle | Pushable},
-			Movement:    movement}}, nil
+		return NewBoulderObject(world, blockPosition), nil
+		// &BoulderObject{GravityObject: GravityObject{
+		// 	BlockObject: BlockObject{world: world, blockType: blockType, blockPosition: blockPosition, behavior: CanFall | Obstacle | Pushable},
+		// 	falling:     MovementTimer{ProgressTimer: ProgressTimer{}}}}, nil
 	case Diamond:
-		return &DiamondObject{GravityObject: GravityObject{
-			BlockObject: BlockObject{world: world, blockType: blockType, blockPosition: BlockPosition{X: x, Y: y}, behavior: CanFall | Collectable},
-			Movement:    movement}}, nil
+		return NewDiamondObject(world, blockPosition), nil
+		//  {GravityObject: GravityObject{
+		// 	BlockObject: BlockObject{world: world, blockType: blockType, blockPosition: BlockPosition{X: x, Y: y}, behavior: },
+		// 	falling:     MovementTimer{ProgressTimer: ProgressTimer{}}}}, nil
 	default:
 		return nil, fmt.Errorf("%v (%d) is unknown blocktype", blockType, int(blockType))
 	}
@@ -84,6 +86,7 @@ func NewGroundObject(world *world, blockType BlockType, x int, y int) (GroundObj
 type GroundMap struct {
 	MapSize
 	objectTextures rl.Texture2D
+	groundCorners  rl.Texture2D
 	objects        []GroundObject
 }
 
@@ -147,21 +150,35 @@ func (gm *GroundMap) SwapObject(source GroundObject, targetPos BlockPosition) {
 
 type GravityObject struct {
 	BlockObject
-	Movement
+	BoxBody
+	falling MovementTimer
+}
+
+func NewGravityObject(world *world, blockPosition BlockPosition, blockType BlockType, behavior BlockBehavior) GravityObject {
+	return GravityObject{
+		BlockObject: BlockObject{world: world, blockType: blockType, blockPosition: blockPosition, behavior: behavior},
+		BoxBody:     BoxBody{position: world.GetPosition(blockPosition), Width: world.blockWidth, Height: world.blockHeight},
+		falling:     MovementTimer{ProgressTimer: ProgressTimer{}}}
 }
 
 func (g *GravityObject) StartFalling(startPos rl.Vector2, endPos rl.Vector2) {
-	const gravitySpeed float32 = 128
+	const gravitySpeed float32 = 0.4
 
-	g.Start(startPos, endPos, gravitySpeed, nil)
+	vector := rl.Vector2Subtract(endPos, g.position)
+
+	g.falling.StartMovment(startPos, vector, gravitySpeed, nil)
 }
 
 func (g *GravityObject) IsFalling() bool {
-	return g.moving
+	return g.falling.running
 }
 
 func (g *GravityObject) UpdateFalling(deltaTime float32) {
-	g.Update(deltaTime)
+	if g.falling.running {
+		g.falling.UpdateTimer(deltaTime)
+
+		g.position = g.falling.Position()
+	}
 }
 
 type BlockObject struct {
@@ -206,15 +223,22 @@ func (bo *BlockObject) render() {
 }
 
 type BoulderObject struct {
-	Box
 	GravityObject
+	pushing MovementTimer
+}
+
+func NewBoulderObject(world *world, blockPosition BlockPosition) *BoulderObject {
+	return &BoulderObject{
+		GravityObject: NewGravityObject(world, blockPosition, Boulder, CanFall|Obstacle|Pushable),
+		pushing:       MovementTimer{ProgressTimer: ProgressTimer{}},
+	}
 }
 
 func (bo *BoulderObject) IsObstacleForPlayer(player *Player) bool {
 
-	if bo.moving {
-		return true
-	}
+	// if bo.falling. {
+	// 	return true
+	// }
 
 	offset := bo.blockPosition.Subtract(player.blockPosition)
 
@@ -226,7 +250,11 @@ func (bo *BoulderObject) IsObstacleForPlayer(player *Player) bool {
 }
 
 func (bo *BoulderObject) Pushed(player *Player, position BlockPosition) {
-	bo.Start(bo.world.GetPosition(bo.blockPosition), bo.world.GetPosition(position), 64, func() { bo.world.MoveObject(bo, position) })
+	bo.pushing.StartMovment(bo.world.GetPosition(bo.blockPosition), bo.world.GetPosition(position), 64, func() { bo.world.MoveObject(bo, position) })
+}
+
+func (bo *BoulderObject) Body() Body {
+	return &bo.BoxBody
 }
 
 func (bo *BoulderObject) update(deltaTime float32) {
@@ -244,6 +272,12 @@ func (bo *BoulderObject) render() {
 type DiamondObject struct {
 	GravityObject
 	CollectableBehavior
+}
+
+func NewDiamondObject(world *world, blockPosition BlockPosition) *DiamondObject {
+	return &DiamondObject{
+		GravityObject: NewGravityObject(world, blockPosition, Diamond, CanFall|Collectable),
+	}
 }
 
 func (bo *DiamondObject) Collected() {

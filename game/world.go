@@ -51,7 +51,8 @@ func (w *world) update(deltaTime float32) {
 
 func (w *world) render() {
 	for _, block := range w.blocks {
-		rl.DrawTextureRec(w.blockTextures, rl.NewRectangle(float32(block.blockType)*w.blockWidth, 0, w.blockWidth, w.blockHeight), rl.NewVector2(float32(block.position.X)*w.blockWidth, float32(block.position.Y)*w.blockHeight), rl.White)
+		//		rl.DrawTextureRec(w.blockTextures, rl.NewRectangle(float32(block.blockType)*w.blockWidth, 0, w.blockWidth, w.blockHeight), rl.NewVector2(float32(block.position.X)*w.blockWidth, float32(block.position.Y)*w.blockHeight), rl.White)
+		block.render()
 	}
 
 	for _, obj := range w.objects {
@@ -154,6 +155,8 @@ func (w *world) ApplyGravity(bo FallingObject, deltaTime float32) {
 			if !w.checkPositionOccupied(under) {
 				bo.StartFalling(w.GetPosition(current), w.GetPosition(under))
 				w.MoveObject(bo, under)
+				w.CheckForCollision(bo)
+
 				return
 			}
 
@@ -176,6 +179,19 @@ func (w *world) ApplyGravity(bo FallingObject, deltaTime float32) {
 			}
 		}
 
+	}
+}
+
+func (w *world) CheckForCollision(bo GroundObject) {
+
+	collider, ok := bo.(Collider)
+
+	if !ok {
+		return
+	}
+
+	if collider.Body().IsColliding(w.player.Body()) {
+		fmt.Println("Object colliding with Player")
 	}
 }
 

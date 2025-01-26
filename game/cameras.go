@@ -44,7 +44,7 @@ func (c *SmoothFollowCamera) GetCamera() rl.Camera2D {
 func (c *SmoothFollowCamera) Update(deltaTime float32) {
 	var minSpeed, minEffectLength, fractionSpeed float32 = 30.0, 10.0, 0.8
 
-	diff := rl.Vector2Subtract(c.player.Position, c.camera.Target)
+	diff := rl.Vector2Subtract(c.player.position, c.camera.Target)
 	length := rl.Vector2Length(diff)
 
 	if length > minEffectLength {

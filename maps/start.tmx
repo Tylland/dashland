@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="4" nextobjectid="3">
+<map version="1.10" tiledversion="1.11.1" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="4" nextobjectid="3">
  <tileset firstgid="1" name="Start" tilewidth="32" tileheight="32" tilecount="6" columns="6">
   <image source="../images/blocks_start.png" width="192" height="32"/>
+  <wangsets>
+   <wangset name="Soil" type="corner" tile="-1">
+    <wangcolor name="Digging" color="#ff0000" tile="-1" probability="1"/>
+   </wangset>
+  </wangsets>
+ </tileset>
+ <tileset firstgid="7" name="GroundCorners" tilewidth="16" tileheight="16" tilecount="10" columns="5">
+  <image source="../images/ground_corners.png" width="80" height="32"/>
  </tileset>
  <layer id="1" name="Blocks" width="30" height="20">
   <data encoding="csv">

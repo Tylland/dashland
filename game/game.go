@@ -31,6 +31,35 @@ func (g *DashlandGame) Unload() {
 	g.UnloadSounds()
 }
 
+// func (g *DashlandGame) CteateTextureFromFile(source string) *rl.Texture2D {
+// 	fileName := path.Join(path.Dir(mapPath), source)
+
+// 	file, err := os.Open(fileName)
+// 	defer file.Close()
+
+// 	if err != nil {
+// 		return nil
+// 	}
+
+// 	buf := new(bytes.Buffer)
+
+// 	var new_image image.Image
+
+// 	png.Encode(buf, new_image)
+
+// 	rl.NewImage(buf.Bytes())
+
+// 	rl.LoadImage(fileName)
+
+// 	return rl.LoadTexture(fileName)
+// }
+
+func (g *DashlandGame) LoadTextureFromFile(source string) rl.Texture2D {
+	fileName := path.Join(path.Dir(mapPath), source)
+
+	return rl.LoadTexture(fileName)
+}
+
 func (g *DashlandGame) LoadWorldFromFile(filepath string) (*world, error) {
 
 	tiledMap, err := tiled.LoadFile(filepath)
@@ -39,11 +68,8 @@ func (g *DashlandGame) LoadWorldFromFile(filepath string) (*world, error) {
 		return nil, err
 	}
 
-	relativeImagePath := tiledMap.Tilesets[0].Image.Source
-
-	fileName := path.Join(path.Dir(mapPath), relativeImagePath)
-
-	blockTexture := rl.LoadTexture(fileName)
+	blockTexture := g.LoadTextureFromFile(tiledMap.Tilesets[0].Image.Source)
+	groundCorners := g.LoadTextureFromFile(tiledMap.Tilesets[1].Image.Source)
 
 	fmt.Print(blockTexture)
 
@@ -51,6 +77,7 @@ func (g *DashlandGame) LoadWorldFromFile(filepath string) (*world, error) {
 	world := &world{MapSize: mapSize, SoundPlayer: &g.Sounds, BlockMap: &BlockMap{MapSize: mapSize}, GroundMap: &GroundMap{MapSize: mapSize}}
 
 	world.blockTextures = blockTexture
+	world.groundCorners = groundCorners
 
 	fmt.Printf("Reading blocks from layer %s \n", tiledMap.Layers[0].Name)
 	world.InitBlocks(world, tiledMap.Layers[0].Tiles)
@@ -73,7 +100,9 @@ func (g *DashlandGame) init() {
 
 	g.world = world
 
-	g.player = &Player{game: g, blockPosition: BlockPosition{27, 2}, targetBlockPosition: BlockPosition{27, 2}}
+	g.player = NewPlayer(g)
+	g.player.InitPosition(BlockPosition{27, 2})
+
 	g.world.initPlayer(g.player)
 
 	g.Camera = NewSmoothFollowCamera(&g.Screen, g.player)

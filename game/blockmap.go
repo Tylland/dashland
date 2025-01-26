@@ -32,6 +32,25 @@ func (bm *BlockMap) CheckBlockAtPosition(blockType BlockType, position BlockPosi
 	return bm.blocks[position.Y*bm.width+position.X].blockType == blockType
 }
 
+func (bm *BlockMap) CheckNeighbourTypes(blockType BlockType, position BlockPosition) (neighbours [9]bool) {
+	x := position.X
+	y := position.Y
+
+	neighbours[OverLeft] = bm.blocks[(y+BlockOver)*bm.width+x+BlockLeft].blockType == blockType
+	neighbours[OverCenter] = bm.blocks[(y+BlockOver)*bm.width+x+BlockCenter].blockType == blockType
+	neighbours[OverRight] = bm.blocks[(y+BlockOver)*bm.width+x+BlockRight].blockType == blockType
+
+	neighbours[MiddleLeft] = bm.blocks[(y+BlockMiddle)*bm.width+x+BlockLeft].blockType == blockType
+	neighbours[MiddleCenter] = bm.blocks[(y+BlockMiddle)*bm.width+x+BlockCenter].blockType == blockType
+	neighbours[MiddleRight] = bm.blocks[(y+BlockMiddle)*bm.width+x+BlockRight].blockType == blockType
+
+	neighbours[UnderLeft] = bm.blocks[(y+BlockUnder)*bm.width+x+BlockLeft].blockType == blockType
+	neighbours[UnderCenter] = bm.blocks[(y+BlockUnder)*bm.width+x+BlockCenter].blockType == blockType
+	neighbours[UnderRight] = bm.blocks[(y+BlockUnder)*bm.width+x+BlockRight].blockType == blockType
+
+	return
+}
+
 func (bm *BlockMap) PrintBlockMap() {
 	fmt.Println("BlockMap")
 

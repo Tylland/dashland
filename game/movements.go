@@ -45,3 +45,66 @@ func (m *Movement) Update(deltaTime float32) {
 		}
 	}
 }
+
+type ProgressTimer struct {
+	duration    float32
+	elapsedTime float32
+	progress    float32
+	running     bool
+	onFinished  func()
+}
+
+func (pt *ProgressTimer) StartTimer(duration float32, onFinished func()) {
+	pt.duration = duration
+	pt.elapsedTime = 0.0
+	pt.progress = 0.0
+	pt.running = true
+	pt.onFinished = onFinished
+}
+
+func (pt *ProgressTimer) ResetTimer() {
+	pt.duration = 0
+	pt.elapsedTime = 0.0
+	pt.progress = 0.0
+	pt.running = false
+	pt.onFinished = nil
+}
+
+func (pt *ProgressTimer) UpdateTimer(deltaTime float32) {
+
+	if !pt.running {
+		return
+	}
+
+	pt.elapsedTime += deltaTime
+	pt.progress = pt.elapsedTime / pt.duration
+
+	if pt.progress >= 1.0 {
+		pt.progress = 1
+
+		if pt.onFinished != nil {
+			pt.onFinished()
+		}
+
+		pt.running = false
+	}
+}
+
+type MovementTimer struct {
+	ProgressTimer
+	startPos rl.Vector2
+	vector   rl.Vector2
+}
+
+func (mt *MovementTimer) StartMovment(startPos rl.Vector2, vector rl.Vector2, duration float32, onFinished func()) {
+	mt.startPos = startPos
+	mt.vector = vector
+
+	mt.StartTimer(duration, onFinished)
+}
+
+func (mt *MovementTimer) Position() rl.Vector2 {
+	progressVector := rl.Vector2Scale(mt.vector, mt.progress)
+
+	return rl.Vector2Add(mt.startPos, progressVector)
+}
