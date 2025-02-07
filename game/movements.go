@@ -96,7 +96,7 @@ type MovementTimer struct {
 	vector   rl.Vector2
 }
 
-func (mt *MovementTimer) StartMovment(startPos rl.Vector2, vector rl.Vector2, duration float32, onFinished func()) {
+func (mt *MovementTimer) StartMovement(startPos rl.Vector2, vector rl.Vector2, duration float32, onFinished func()) {
 	mt.startPos = startPos
 	mt.vector = vector
 

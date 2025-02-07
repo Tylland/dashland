@@ -1,6 +1,9 @@
 package game
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+import (
+	rl "github.com/gen2brain/raylib-go/raylib"
+	"github.com/tylland/dashland/game/core"
+)
 
 type BlockType uint16
 
@@ -24,40 +27,10 @@ const (
 	Pushable
 )
 
-type BlockPosition struct {
-	X int
-	Y int
-}
-
-func (bp BlockPosition) Offset(deltaX int, deltaY int) BlockPosition {
-	return BlockPosition{X: bp.X + deltaX, Y: bp.Y + deltaY}
-}
-
-func (bp BlockPosition) Add(position BlockPosition) BlockPosition {
-	return BlockPosition{X: bp.X + position.X, Y: bp.Y + position.Y}
-}
-
-func (bp BlockPosition) Subtract(position BlockPosition) BlockPosition {
-	return BlockPosition{X: bp.X - position.X, Y: bp.Y - position.Y}
-}
-
-func (bp BlockPosition) IsSame(other BlockPosition) bool {
-	return bp.X == other.X && bp.Y == other.Y
-}
-
-type BlockRectangle struct {
-	center rl.Vector2
-	size   rl.Vector2
-}
-
-func (br *BlockRectangle) Rectangle() rl.Rectangle {
-	return rl.Rectangle{X: br.center.X - br.size.X/2, Y: br.center.Y - br.size.Y/2, Width: br.size.X, Height: br.size.Y}
-}
-
 type Block struct {
 	world     *world
 	blockType BlockType
-	position  BlockPosition
+	position  core.BlockPosition
 	behavior  BlockBehavior
 	corners   [4]uint8
 }
@@ -65,11 +38,11 @@ type Block struct {
 func NewBlock(world *world, blockType BlockType, x int, y int) *Block {
 	switch blockType {
 	case Diamond:
-		return &Block{world: world, blockType: blockType, position: BlockPosition{X: x, Y: y}, behavior: CanFall | Collectable}
+		return &Block{world: world, blockType: blockType, position: core.BlockPosition{X: x, Y: y}, behavior: CanFall | Collectable}
 	case Boulder:
-		return &Block{world: world, blockType: blockType, position: BlockPosition{X: x, Y: y}, behavior: CanFall | Obstacle | Pushable}
+		return &Block{world: world, blockType: blockType, position: core.BlockPosition{X: x, Y: y}, behavior: CanFall | Obstacle | Pushable}
 	default:
-		return &Block{world: world, blockType: blockType, position: BlockPosition{X: x, Y: y}, behavior: NoBehavior}
+		return &Block{world: world, blockType: blockType, position: core.BlockPosition{X: x, Y: y}, behavior: NoBehavior}
 	}
 
 }
@@ -104,44 +77,47 @@ const (
 	CornerUnderRight
 )
 
-func (b *Block) cornerIndex(voids [9]bool, corner CornerPosition) uint8 {
+func (b *Block) cornerIndex(neighbors [9]bool, corner CornerPosition, strict bool) uint8 {
 
-	if corner == CornerOverLeft && voids[MiddleLeft] && voids[OverLeft] && voids[OverCenter] {
+	if corner == CornerOverLeft && neighbors[MiddleLeft] && (neighbors[OverLeft] || !strict) && neighbors[OverCenter] {
 		return 1
 	}
 
-	if corner == CornerOverRight && voids[OverCenter] && voids[OverRight] && voids[MiddleRight] {
+	if corner == CornerOverRight && neighbors[OverCenter] && (neighbors[OverRight] || !strict) && neighbors[MiddleRight] {
 		return 2
 	}
 
-	if corner == CornerUnderRight && voids[MiddleRight] && voids[UnderRight] && voids[UnderCenter] {
+	if corner == CornerUnderRight && neighbors[MiddleRight] && (neighbors[UnderRight] || !strict) && neighbors[UnderCenter] {
 		return 3
 	}
 
-	if corner == CornerUnderLeft && voids[UnderCenter] && voids[UnderLeft] && voids[MiddleLeft] {
+	if corner == CornerUnderLeft && neighbors[UnderCenter] && (neighbors[UnderLeft] || !strict) && neighbors[MiddleLeft] {
 		return 4
 	}
 
 	return 0
 }
+
 func (b *Block) update(deltaTime float32) {
 
 	if b.blockType == Soil {
 		voids := b.world.CheckNeighbourTypes(Void, b.position)
+		strict := true
 
-		b.corners[CornerOverLeft] = b.cornerIndex(voids, CornerOverLeft)
-		b.corners[CornerOverRight] = b.cornerIndex(voids, CornerOverRight)
-		b.corners[CornerUnderRight] = b.cornerIndex(voids, CornerUnderRight)
-		b.corners[CornerUnderLeft] = b.cornerIndex(voids, CornerUnderLeft)
+		b.corners[CornerOverLeft] = b.cornerIndex(voids, CornerOverLeft, strict)
+		b.corners[CornerOverRight] = b.cornerIndex(voids, CornerOverRight, strict)
+		b.corners[CornerUnderRight] = b.cornerIndex(voids, CornerUnderRight, strict)
+		b.corners[CornerUnderLeft] = b.cornerIndex(voids, CornerUnderLeft, strict)
 	}
 
 	if b.blockType == Void {
 		soils := b.world.CheckNeighbourTypes(Soil, b.position)
+		strict := false
 
-		b.corners[CornerOverLeft] = b.cornerIndex(soils, CornerOverLeft)
-		b.corners[CornerOverRight] = b.cornerIndex(soils, CornerOverRight)
-		b.corners[CornerUnderRight] = b.cornerIndex(soils, CornerUnderRight)
-		b.corners[CornerUnderLeft] = b.cornerIndex(soils, CornerUnderLeft)
+		b.corners[CornerOverLeft] = b.cornerIndex(soils, CornerOverLeft, strict)
+		b.corners[CornerOverRight] = b.cornerIndex(soils, CornerOverRight, strict)
+		b.corners[CornerUnderRight] = b.cornerIndex(soils, CornerUnderRight, strict)
+		b.corners[CornerUnderLeft] = b.cornerIndex(soils, CornerUnderLeft, strict)
 	}
 }
 
@@ -167,6 +143,10 @@ func (b *Block) render() {
 
 func (b *Block) IsObstacleForPlayer(player *Player) bool {
 	return b.blockType == Bedrock || b.blockType == Boulder
+}
+
+func (b *Block) Rectangle() rl.Rectangle {
+	return rl.Rectangle{X: float32(b.position.X) * b.world.blockWidth, Y: float32(b.position.Y) * b.world.blockHeight, Width: b.world.blockWidth, Height: b.world.blockHeight}
 }
 
 type IBlock interface {

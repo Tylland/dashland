@@ -5,6 +5,7 @@ import (
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/lafriks/go-tiled"
+	"github.com/tylland/dashland/game/core"
 )
 
 type MapSize struct {
@@ -28,11 +29,11 @@ func (bm *BlockMap) InitBlocks(world *world, tiles []*tiled.LayerTile) {
 	}
 }
 
-func (bm *BlockMap) CheckBlockAtPosition(blockType BlockType, position BlockPosition) bool {
+func (bm *BlockMap) CheckBlockAtPosition(blockType BlockType, position core.BlockPosition) bool {
 	return bm.blocks[position.Y*bm.width+position.X].blockType == blockType
 }
 
-func (bm *BlockMap) CheckNeighbourTypes(blockType BlockType, position BlockPosition) (neighbours [9]bool) {
+func (bm *BlockMap) CheckNeighbourTypes(blockType BlockType, position core.BlockPosition) (neighbours [9]bool) {
 	x := position.X
 	y := position.Y
 
@@ -69,7 +70,7 @@ func (bm *BlockMap) PrintBlockMap() {
 	}
 }
 
-func (bm *BlockMap) SwapBlock(source *Block, pos BlockPosition) {
+func (bm *BlockMap) SwapBlock(source *Block, pos core.BlockPosition) {
 	target, succes := bm.GetBlock(pos.X, pos.Y)
 
 	if succes {
@@ -84,7 +85,7 @@ func (bm *BlockMap) SwapBlock(source *Block, pos BlockPosition) {
 	}
 }
 
-func (bm *BlockMap) SetBlock(block *Block, pos BlockPosition) {
+func (bm *BlockMap) SetBlock(block *Block, pos core.BlockPosition) {
 
 	if pos.X < 0 || pos.X >= bm.width || pos.Y < 0 || pos.Y >= bm.height {
 		return
@@ -102,6 +103,15 @@ func (bm *BlockMap) GetBlock(x int, y int) (*Block, bool) {
 	}
 
 	return bm.blocks[y*bm.width+x], true
+}
+
+func (bm *BlockMap) GetBlockAtPosition(position core.BlockPosition) (*Block, bool) {
+
+	if position.X < 0 || position.X >= bm.width || position.Y < 0 || position.Y >= bm.height {
+		return &Block{blockType: Unknown}, false
+	}
+
+	return bm.blocks[position.Y*bm.width+position.X], true
 }
 
 func (bm *BlockMap) update(deltaTime float32) {

@@ -6,6 +6,7 @@ import (
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/lafriks/go-tiled"
+	"github.com/tylland/dashland/game/core"
 )
 
 const mapPath = "maps/start.tmx" // Path to your Tiled Map.
@@ -74,7 +75,8 @@ func (g *DashlandGame) LoadWorldFromFile(filepath string) (*world, error) {
 	fmt.Print(blockTexture)
 
 	mapSize := MapSize{width: tiledMap.Width, height: tiledMap.Height, blockWidth: float32(tiledMap.TileWidth), blockHeight: float32(tiledMap.TileHeight)}
-	world := &world{MapSize: mapSize, SoundPlayer: &g.Sounds, BlockMap: &BlockMap{MapSize: mapSize}, GroundMap: &GroundMap{MapSize: mapSize}}
+	world := &world{MapSize: mapSize, SoundPlayer: &g.Sounds, BlockMap: &BlockMap{MapSize: mapSize}, GroundMap: &GroundMap{MapSize: mapSize, entities: []*Entity{}}}
+	world.RenderSystem = NewRenderSystem(world)
 
 	world.blockTextures = blockTexture
 	world.groundCorners = groundCorners
@@ -84,8 +86,11 @@ func (g *DashlandGame) LoadWorldFromFile(filepath string) (*world, error) {
 
 	world.objectTextures = blockTexture
 
-	fmt.Printf("Reading objects from layer \"%s\" \n", tiledMap.Layers[1].Name)
-	world.InitObjects(world, tiledMap.Layers[1].Tiles)
+	fmt.Printf("Reading entities from layer \"%s\" \n", tiledMap.Layers[1].Name)
+	//world.InitObjects(world, tiledMap.Layers[1].Tiles)
+
+	//world.InitEntities(world, tiledMap.Layers[0].Tiles)
+	world.InitEntities(world, tiledMap.Layers[1].Tiles)
 
 	return world, nil
 }
@@ -101,7 +106,7 @@ func (g *DashlandGame) init() {
 	g.world = world
 
 	g.player = NewPlayer(g)
-	g.player.InitPosition(BlockPosition{27, 2})
+	g.player.InitPosition(core.BlockPosition{X: 27, Y: 2})
 
 	g.world.initPlayer(g.player)
 

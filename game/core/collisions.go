@@ -1,6 +1,8 @@
-package game
+package core
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+import (
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
 
 type Position struct {
 	position rl.Vector2
@@ -70,34 +72,29 @@ func (b *Box) IsColliding(body Body) bool {
 }
 
 type BoxBody struct {
-	position rl.Vector2
-	Width    float32
-	Height   float32
+	Width  float32
+	Height float32
 }
 
-func (b *BoxBody) Position() rl.Vector2 {
-	return b.position
-}
-
-func (b *BoxBody) SetPosition(pos rl.Vector2) {
-	b.position.X = pos.X
-	b.position.Y = pos.Y
-}
-
-func (b *BoxBody) Rectangle() rl.Rectangle {
-	return rl.Rectangle{X: b.position.X, Y: b.position.Y, Width: b.Width, Height: b.Height}
-}
-
-func (b *BoxBody) IsColliding(body Body) bool {
-	box, ok := body.(*BoxBody)
-
-	if ok {
-		return b.Overlaps(box)
+func NewBoxBody(width, height float32) *BoxBody {
+	return &BoxBody{
+		Width:  width,
+		Height: height,
 	}
-
-	return false
 }
 
-func (tb *BoxBody) Overlaps(ob *BoxBody) bool {
-	return tb.position.X > ob.position.X+ob.Width && tb.position.X+tb.Width > ob.position.X && tb.position.Y > ob.position.Y+ob.Height && tb.position.Y+tb.Height < ob.position.Y
+func (b *BoxBody) Rectangle(pos rl.Vector2) rl.Rectangle {
+	return rl.Rectangle{
+		X:      pos.X,
+		Y:      pos.Y,
+		Width:  b.Width,
+		Height: b.Height,
+	}
+}
+
+func (b *BoxBody) Overlaps(pos1 rl.Vector2, pos2 rl.Vector2, other *BoxBody) bool {
+	return pos1.X < pos2.X+other.Width &&
+		pos1.X+b.Width > pos2.X &&
+		pos1.Y < pos2.Y+other.Height &&
+		pos1.Y+b.Height > pos2.Y
 }

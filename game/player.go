@@ -4,6 +4,8 @@ import (
 	"math"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"github.com/tylland/dashland/game/components"
+	"github.com/tylland/dashland/game/core"
 )
 
 type Vector struct {
@@ -22,10 +24,11 @@ func (v Vector) Normalized() Vector {
 }
 
 type Player struct {
-	game                *DashlandGame
-	blockPosition       BlockPosition
-	targetBlockPosition BlockPosition
-	BoxBody
+	game *DashlandGame
+	// targetBlockPosition   core.BlockPosition
+	// previousBlockPosition core.BlockPosition
+	Position *components.PositionComponent
+	core.BoxBody
 	pickaxe  bool
 	movement Movement
 }
@@ -34,12 +37,14 @@ func NewPlayer(g *DashlandGame) *Player {
 	return &Player{game: g}
 }
 
-func (p *Player) InitPosition(blockPosition BlockPosition) {
+func (p *Player) InitPosition(blockPosition core.BlockPosition) {
 	position := p.game.world.GetPosition(blockPosition)
 
-	p.BoxBody = BoxBody{position: position, Width: 32, Height: 32}
-	p.blockPosition = blockPosition
-	p.targetBlockPosition = blockPosition
+	p.Position = components.NewPositionComponent(blockPosition, position)
+
+	p.BoxBody = core.BoxBody{Width: 32, Height: 32}
+
+	//p.targetBlockPosition = blockPosition
 	//p.Position = p.game.world.GetPosition(pos)
 	//	p.SetPosition(position)
 }
@@ -47,19 +52,21 @@ func (p *Player) InitPosition(blockPosition BlockPosition) {
 func (p *Player) UpdateTargetPosition() {
 
 	if !p.movement.moving {
+
 		if rl.IsKeyDown(rl.KeyRight) {
-			p.targetBlockPosition = p.blockPosition.Offset(1, 0)
+			p.Position.SetTarget(core.NewBlockVector(1, 0))
 		} else if rl.IsKeyDown(rl.KeyLeft) {
-			p.targetBlockPosition = p.blockPosition.Offset(-1, 0)
+			p.Position.SetTarget(core.NewBlockVector(-1, 0))
 		} else if rl.IsKeyDown(rl.KeyDown) {
-			p.targetBlockPosition = p.blockPosition.Offset(0, 1)
+			p.Position.SetTarget(core.NewBlockVector(0, 1))
 		} else if rl.IsKeyDown(rl.KeyUp) {
-			p.targetBlockPosition = p.blockPosition.Offset(0, -1)
+			p.Position.SetTarget(core.NewBlockVector(0, -1))
 		}
 
-		if p.game.world.IsObstacleForPlayer(p, p.targetBlockPosition) {
-			p.targetBlockPosition = p.blockPosition
+		if p.game.world.IsObstacleForPlayer(p, p.Position.TargetBlockPosition) {
+			p.Position.CancelTarget()
 		}
+
 	}
 }
 
@@ -68,35 +75,31 @@ func (p *Player) update(deltaTime float32) {
 
 	p.UpdateTargetPosition()
 
-	if !p.blockPosition.IsSame(p.targetBlockPosition) {
+	if !p.Position.CurrentBlockPosition.IsSame(p.Position.TargetBlockPosition) {
 		p.movement = Movement{}
 
-		targetPosition := p.game.world.GetPosition(p.targetBlockPosition)
-		p.movement.Start(p.game.world.GetPosition(p.blockPosition), targetPosition, speed, nil)
-		p.game.world.VisitBlock(p.targetBlockPosition)
-		p.game.world.VisitObject(p, p.targetBlockPosition)
+		targetPosition := p.game.world.GetPosition(p.Position.TargetBlockPosition)
+		p.movement.Start(p.game.world.GetPosition(p.Position.CurrentBlockPosition), targetPosition, speed, nil)
+		p.game.world.VisitBlock(p.Position.TargetBlockPosition)
+		//		p.game.world.VisitObject(p, p.targetBlockPosition)
 
-		p.blockPosition = p.targetBlockPosition
+		p.Position.UseTarget()
 
-		p.SetPosition(targetPosition)
+		p.Position.Vector2 = targetPosition
 	}
 
 	if p.movement.moving {
 		p.movement.Update(deltaTime)
-		p.position = p.movement.position
+		p.Position.Vector2 = p.movement.position
 	}
 }
 
-func (p *Player) Body() Body {
-	return &p.BoxBody
-}
-
 func (p *Player) render() {
-	rl.DrawCircle(int32(p.position.X+16), int32(p.position.Y+16), 16, rl.Gold)
+	rl.DrawCircle(int32(p.Position.Vector2.X+16), int32(p.Position.Vector2.Y+16), 16, rl.Gold)
 
-	rl.DrawRectangleRec(p.BoxBody.Rectangle(), rl.Red)
+	//rl.DrawRectangleRec(rl.Rectangle{X: p.Position.Vector2.X, Y: p.Position.Vector2.Y, Width: p.BoxBody.Width, Height: p.BoxBody.Height}, rl.Red)
 }
 
-func (p *Player) Collect(co CollectableObject) {
-	co.Collected()
+func (p *Player) Hurt(entity *Entity) {
+
 }
