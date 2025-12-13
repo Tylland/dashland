@@ -24,7 +24,7 @@ func main() {
 		deltaTime := rl.GetFrameTime()
 
 		game.Update(deltaTime)
-		game.Render()
+		game.Render(deltaTime)
 	}
 
 	rl.CloseAudioDevice()

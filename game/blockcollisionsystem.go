@@ -1,10 +1,12 @@
 package game
 
+import "github.com/tylland/dashland/game/characteristics"
+
 type BlockCollisionSystem struct {
-	world *world
+	world *World
 }
 
-func NewBlockCollisionSystem(world *world) *BlockCollisionSystem {
+func NewBlockCollisionSystem(world *World) *BlockCollisionSystem {
 	return &BlockCollisionSystem{
 		world: world,
 	}
@@ -12,8 +14,9 @@ func NewBlockCollisionSystem(world *world) *BlockCollisionSystem {
 
 func (s *BlockCollisionSystem) Update() {
 	// s.checkBlockCollisions()
-
-	s.checkPlayerCollisions()
+	if !s.world.player.IsDead {
+		s.checkPlayerCollisions()
+	}
 
 	for _, entity := range s.world.entities {
 		if entity != nil && entity.Position != nil && entity.Velocity != nil {
@@ -67,7 +70,6 @@ func (s *BlockCollisionSystem) checkEntityCollisions(entity *Entity) {
 }
 
 func (s *BlockCollisionSystem) checkPlayerCollisions() {
-
 	if !s.world.player.Position.HasTarget() {
 		return
 	}
@@ -80,16 +82,15 @@ func (s *BlockCollisionSystem) checkPlayerCollisions() {
 
 	entity := s.world.GetEntityAtPosition(targetPos)
 
-	if entity != nil && entity.Behavior&Collectable != 0 {
-		//s.world.player.Collect(entity)
-
-		// Dispatch player collision event
-		event := PlayerCollisionEvent{
-			Player: s.world.player,
-			Entity: entity,
+	if entity != nil && entity.HasCharacteristic(characteristics.Collectable) {
+		// Only collect if the diamond is not falling
+		if !entity.Velocity.IsFalling() {
+			event := PlayerCollisionEvent{
+				Player:        s.world.player,
+				Entity:        entity,
+				EntityFalling: false,
+			}
+			s.world.OnEvent(event)
 		}
-
-		s.world.OnEvent(event)
 	}
-
 }

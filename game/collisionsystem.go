@@ -6,10 +6,10 @@ import (
 )
 
 type CollisionSystem struct {
-	world *world
+	world *World
 }
 
-func NewCollisionSystem(world *world) *CollisionSystem {
+func NewCollisionSystem(world *World) *CollisionSystem {
 	return &CollisionSystem{
 		world: world,
 	}

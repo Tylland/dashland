@@ -24,17 +24,17 @@ func (v Vector) Normalized() Vector {
 }
 
 type Player struct {
-	game *DashlandGame
-	// targetBlockPosition   core.BlockPosition
-	// previousBlockPosition core.BlockPosition
+	game     *DashlandGame
 	Position *components.PositionComponent
+	Velocity *components.VelocityComponent
 	core.BoxBody
+	IsDead   bool
 	pickaxe  bool
 	movement Movement
 }
 
 func NewPlayer(g *DashlandGame) *Player {
-	return &Player{game: g}
+	return &Player{game: g, Velocity: components.NewVelocityComponentZero()}
 }
 
 func (p *Player) InitPosition(blockPosition core.BlockPosition) {
@@ -71,35 +71,38 @@ func (p *Player) UpdateTargetPosition() {
 }
 
 func (p *Player) update(deltaTime float32) {
-	const speed float32 = 128 //pixel per sec
+	if p.IsDead {
+		return
+	}
 
 	p.UpdateTargetPosition()
-
-	if !p.Position.CurrentBlockPosition.IsSame(p.Position.TargetBlockPosition) {
-		p.movement = Movement{}
-
-		targetPosition := p.game.world.GetPosition(p.Position.TargetBlockPosition)
-		p.movement.Start(p.game.world.GetPosition(p.Position.CurrentBlockPosition), targetPosition, speed, nil)
-		p.game.world.VisitBlock(p.Position.TargetBlockPosition)
-		//		p.game.world.VisitObject(p, p.targetBlockPosition)
-
-		p.Position.UseTarget()
-
-		p.Position.Vector2 = targetPosition
-	}
-
-	if p.movement.moving {
-		p.movement.Update(deltaTime)
-		p.Position.Vector2 = p.movement.position
-	}
 }
 
 func (p *Player) render() {
+	if p.IsDead {
+		return
+	}
+
 	rl.DrawCircle(int32(p.Position.Vector2.X+16), int32(p.Position.Vector2.Y+16), 16, rl.Gold)
 
 	//rl.DrawRectangleRec(rl.Rectangle{X: p.Position.Vector2.X, Y: p.Position.Vector2.Y, Width: p.BoxBody.Width, Height: p.BoxBody.Height}, rl.Red)
 }
 
 func (p *Player) Hurt(entity *Entity) {
+	p.IsDead = true
+
+	world := p.game.world
+	position := p.Position.CurrentBlockPosition
+
+	for y := -1; y <= 1; y++ {
+		for x := -1; x <= 1; x++ {
+			diamondPosition := position.Offset(x, y)
+			if !world.CheckBlockAtPosition(Bedrock, diamondPosition) {
+				world.SetBlock(NewBlock(world, Void, diamondPosition.X, diamondPosition.Y), diamondPosition)
+				entity := NewDiamond(world, NewEntityId(), diamondPosition, world.GetPosition(diamondPosition))
+				world.SetEntity(entity, diamondPosition)
+			}
+		}
+	}
 
 }

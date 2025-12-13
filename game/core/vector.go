@@ -5,6 +5,10 @@ type Vector struct {
 	Y float32
 }
 
+func NewVector(x float32, y float32) Vector {
+	return Vector{X: x, Y: y}
+}
+
 func (v *Vector) IsZero() bool {
 	return v.X == 0 && v.Y == 0
 }

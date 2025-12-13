@@ -1,16 +1,15 @@
 package game
 
 import (
+	"github.com/tylland/dashland/game/characteristics"
 	"github.com/tylland/dashland/game/components"
 )
 
-const gravitySpeed = 96 //Pixel per second
-
 type GravitySystem struct {
-	world *world
+	world *World
 }
 
-func NewGravitySystem(w *world) *GravitySystem {
+func NewGravitySystem(w *World) *GravitySystem {
 	return &GravitySystem{
 		world: w,
 	}
@@ -28,8 +27,11 @@ func (g *GravitySystem) ApplyGravityOnEntity(entity *Entity, position *component
 	current := position.CurrentBlockPosition
 	w := g.world
 
-	// Don't apply gravity if entity is still moving to its target position
+	if !entity.HasCharacteristic(characteristics.CanFall) {
+		return
+	}
 
+	// Don't apply gravity if entity is still moving to its target position
 	if position.Vector2 != w.GetPosition(current) {
 		return
 	}

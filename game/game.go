@@ -6,7 +6,6 @@ import (
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/lafriks/go-tiled"
-	"github.com/tylland/dashland/game/core"
 )
 
 const mapPath = "maps/start.tmx" // Path to your Tiled Map.
@@ -16,8 +15,7 @@ type DashlandGame struct {
 	Sounds
 	Camera Camera
 	player *Player
-	//	BlockMap BlockMap
-	world *world
+	world  *World
 }
 
 func NewGame(screenWidth int, screenHeight int) *DashlandGame {
@@ -55,13 +53,24 @@ func (g *DashlandGame) Unload() {
 // 	return rl.LoadTexture(fileName)
 // }
 
-func (g *DashlandGame) LoadTextureFromFile(source string) rl.Texture2D {
+func (g *DashlandGame) LoadTextureFromFile(source string) *rl.Texture2D {
 	fileName := path.Join(path.Dir(mapPath), source)
 
-	return rl.LoadTexture(fileName)
+	texture := rl.LoadTexture(fileName)
+	return &texture
 }
 
-func (g *DashlandGame) LoadWorldFromFile(filepath string) (*world, error) {
+func (g *DashlandGame) LoadTexture(tiledMap *tiled.Map, name string) *rl.Texture2D {
+	for _, tileset := range tiledMap.Tilesets {
+		if tileset.Name == name {
+			return g.LoadTextureFromFile(tileset.Image.Source)
+		}
+	}
+
+	return nil
+}
+
+func (g *DashlandGame) LoadWorldFromFile(filepath string) (*World, error) {
 
 	tiledMap, err := tiled.LoadFile(filepath)
 
@@ -69,28 +78,25 @@ func (g *DashlandGame) LoadWorldFromFile(filepath string) (*world, error) {
 		return nil, err
 	}
 
-	blockTexture := g.LoadTextureFromFile(tiledMap.Tilesets[0].Image.Source)
-	groundCorners := g.LoadTextureFromFile(tiledMap.Tilesets[1].Image.Source)
-
-	fmt.Print(blockTexture)
+	blockTexture := g.LoadTexture(tiledMap, "Blocks")
+	entityTextures := g.LoadTexture(tiledMap, "Entities")
+	groundCorners := g.LoadTexture(tiledMap, "GroundCorners")
+	enemyTexture := g.LoadTextureFromFile("../images/animations.png")
 
 	mapSize := MapSize{width: tiledMap.Width, height: tiledMap.Height, blockWidth: float32(tiledMap.TileWidth), blockHeight: float32(tiledMap.TileHeight)}
-	world := &world{MapSize: mapSize, SoundPlayer: &g.Sounds, BlockMap: &BlockMap{MapSize: mapSize}, GroundMap: &GroundMap{MapSize: mapSize, entities: []*Entity{}}}
+	world := &World{MapSize: mapSize, SoundPlayer: &g.Sounds, BlockMap: NewBlockMap(mapSize, blockTexture), GroundMap: NewGroundMap(mapSize, entityTextures, enemyTexture, groundCorners)}
 	world.RenderSystem = NewRenderSystem(world)
-
-	world.blockTextures = blockTexture
-	world.groundCorners = groundCorners
 
 	fmt.Printf("Reading blocks from layer %s \n", tiledMap.Layers[0].Name)
 	world.InitBlocks(world, tiledMap.Layers[0].Tiles)
 
-	world.objectTextures = blockTexture
-
 	fmt.Printf("Reading entities from layer \"%s\" \n", tiledMap.Layers[1].Name)
-	//world.InitObjects(world, tiledMap.Layers[1].Tiles)
 
-	//world.InitEntities(world, tiledMap.Layers[0].Tiles)
-	world.InitEntities(world, tiledMap.Layers[1].Tiles)
+	world.InitPlayerPosition(tiledMap.Layers[1].Tiles)
+
+	world.InitEntities(world, EntityCategoryObject, tiledMap.Layers[1].Tiles)
+	world.InitEntities(world, EntityCategoryEnemy, tiledMap.Layers[2].Tiles)
+	//	world.AddEntities(world, EntityCategoryEnemy, tiledMap.Layers[2].Tiles)
 
 	return world, nil
 }
@@ -106,7 +112,7 @@ func (g *DashlandGame) init() {
 	g.world = world
 
 	g.player = NewPlayer(g)
-	g.player.InitPosition(core.BlockPosition{X: 27, Y: 2})
+	g.player.InitPosition(world.initialPlayerPosition)
 
 	g.world.initPlayer(g.player)
 
@@ -123,13 +129,13 @@ func (g *DashlandGame) Update(deltaTime float32) {
 	g.Camera.Update(deltaTime)
 }
 
-func (g *DashlandGame) Render() {
+func (g *DashlandGame) Render(deltaTime float32) {
 	// Draw
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.Black)
 	rl.BeginMode2D(g.Camera.GetCamera())
 
-	g.world.render()
+	g.world.render(deltaTime)
 
 	rl.EndMode2D()
 

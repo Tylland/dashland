@@ -17,11 +17,15 @@ type MapSize struct {
 
 type BlockMap struct {
 	MapSize
-	blockTextures rl.Texture2D
+	blockTextures *rl.Texture2D
 	blocks        []*Block
 }
 
-func (bm *BlockMap) InitBlocks(world *world, tiles []*tiled.LayerTile) {
+func NewBlockMap(mapSize MapSize, blockTextures *rl.Texture2D) *BlockMap {
+	return &BlockMap{MapSize: mapSize, blockTextures: blockTextures}
+}
+
+func (bm *BlockMap) InitBlocks(world *World, tiles []*tiled.LayerTile) {
 	bm.blocks = make([]*Block, len(tiles))
 
 	for index, tile := range tiles {
@@ -30,24 +34,26 @@ func (bm *BlockMap) InitBlocks(world *world, tiles []*tiled.LayerTile) {
 }
 
 func (bm *BlockMap) CheckBlockAtPosition(blockType BlockType, position core.BlockPosition) bool {
+	if position.X < 0 || position.X >= bm.width || position.Y < 0 || position.Y >= bm.height {
+		return false
+	}
+
 	return bm.blocks[position.Y*bm.width+position.X].blockType == blockType
 }
 
 func (bm *BlockMap) CheckNeighbourTypes(blockType BlockType, position core.BlockPosition) (neighbours [9]bool) {
-	x := position.X
-	y := position.Y
 
-	neighbours[OverLeft] = bm.blocks[(y+BlockOver)*bm.width+x+BlockLeft].blockType == blockType
-	neighbours[OverCenter] = bm.blocks[(y+BlockOver)*bm.width+x+BlockCenter].blockType == blockType
-	neighbours[OverRight] = bm.blocks[(y+BlockOver)*bm.width+x+BlockRight].blockType == blockType
+	neighbours[OverLeft] = bm.CheckBlockAtPosition(blockType, position.Offset(BlockLeft, BlockOver))
+	neighbours[OverCenter] = bm.CheckBlockAtPosition(blockType, position.Offset(BlockCenter, BlockOver))
+	neighbours[OverRight] = bm.CheckBlockAtPosition(blockType, position.Offset(BlockRight, BlockOver))
 
-	neighbours[MiddleLeft] = bm.blocks[(y+BlockMiddle)*bm.width+x+BlockLeft].blockType == blockType
-	neighbours[MiddleCenter] = bm.blocks[(y+BlockMiddle)*bm.width+x+BlockCenter].blockType == blockType
-	neighbours[MiddleRight] = bm.blocks[(y+BlockMiddle)*bm.width+x+BlockRight].blockType == blockType
+	neighbours[MiddleLeft] = bm.CheckBlockAtPosition(blockType, position.Offset(BlockLeft, BlockMiddle))
+	neighbours[MiddleCenter] = bm.CheckBlockAtPosition(blockType, position.Offset(BlockCenter, BlockMiddle))
+	neighbours[MiddleRight] = bm.CheckBlockAtPosition(blockType, position.Offset(BlockRight, BlockMiddle))
 
-	neighbours[UnderLeft] = bm.blocks[(y+BlockUnder)*bm.width+x+BlockLeft].blockType == blockType
-	neighbours[UnderCenter] = bm.blocks[(y+BlockUnder)*bm.width+x+BlockCenter].blockType == blockType
-	neighbours[UnderRight] = bm.blocks[(y+BlockUnder)*bm.width+x+BlockRight].blockType == blockType
+	neighbours[UnderLeft] = bm.CheckBlockAtPosition(blockType, position.Offset(BlockLeft, BlockUnder))
+	neighbours[UnderCenter] = bm.CheckBlockAtPosition(blockType, position.Offset(BlockCenter, BlockUnder))
+	neighbours[UnderRight] = bm.CheckBlockAtPosition(blockType, position.Offset(BlockRight, BlockUnder))
 
 	return
 }
@@ -67,21 +73,6 @@ func (bm *BlockMap) PrintBlockMap() {
 		}
 
 		fmt.Println(row)
-	}
-}
-
-func (bm *BlockMap) SwapBlock(source *Block, pos core.BlockPosition) {
-	target, succes := bm.GetBlock(pos.X, pos.Y)
-
-	if succes {
-		tempBlockType := source.blockType
-		tempBehavior := source.behavior
-		bm.PrintBlockMap()
-		source.blockType = target.blockType
-		source.behavior = target.behavior
-		target.blockType = tempBlockType
-		target.behavior = tempBehavior
-		bm.PrintBlockMap()
 	}
 }
 
