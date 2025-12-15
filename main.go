@@ -2,7 +2,7 @@ package main
 
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/tylland/dashland/game"
+	"github.com/tylland/dashland/internal"
 )
 
 const (
@@ -15,7 +15,7 @@ func main() {
 
 	rl.InitAudioDevice()
 
-	game := game.NewGame(screenWidth, screenHeight)
+	game := internal.NewGame(screenWidth, screenHeight)
 	defer game.Unload()
 
 	rl.SetTargetFPS(60)
@@ -24,7 +24,6 @@ func main() {
 		deltaTime := rl.GetFrameTime()
 
 		game.Update(deltaTime)
-		game.Render(deltaTime)
 	}
 
 	rl.CloseAudioDevice()
@@ -68,7 +67,7 @@ func main() {
 
 // 	game := Game{}
 
-// 	rl.InitWindow(screenWidth, screenHeight, "raylib [core] example - 2d camera platformer")
+// 	rl.InitWindow(screenWidth, screenHeight, "raylib [common] example - 2d camera platformer")
 
 // 	player := Player{
 // 		position: rl.NewVector2(400, 280),
