@@ -2,10 +2,10 @@ package ecs
 
 type EntityCategory uint16
 type EntityType uint16
-type EntityId string
+type EntityID string
 
 type Entity struct {
-	Id   EntityId
+	ID   EntityID
 	Type EntityType
 	//	Characteristics characteristics.Characteristics
 	// Characteristic Component
@@ -17,9 +17,9 @@ type Entity struct {
 	// WallWalker     Component
 }
 
-func NewEntity(id EntityId, entityType EntityType) *Entity {
+func NewEntity(id EntityID, entityType EntityType) *Entity {
 	return &Entity{
-		Id:   id,
+		ID:   id,
 		Type: entityType,
 	}
 }

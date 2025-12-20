@@ -12,22 +12,20 @@ import (
 type BlockCollisionSystem struct {
 	stage *game.Stage
 	BlockResolver
-	PlayerResolver
 }
 
 func NewBlockCollisionSystem(stage *game.Stage) *BlockCollisionSystem {
 	return &BlockCollisionSystem{
-		BlockResolver:  stage,
-		PlayerResolver: stage,
-		stage:          stage,
+		BlockResolver: stage,
+		stage:         stage,
 	}
 }
 
 func (s *BlockCollisionSystem) Update(world *ecs.World, deltaTime float32) {
 	// s.checkBlockCollisions()
-	if !s.Player().IsDead {
-		s.CheckPlayerCollisions(world)
-	}
+	// if !s.Player().IsDead {
+	// 	s.CheckPlayerCollisions(world)
+	// }
 
 	for _, entity := range world.Entities() {
 		comps := world.GetComponents(entity)
@@ -43,7 +41,7 @@ func (s *BlockCollisionSystem) Update(world *ecs.World, deltaTime float32) {
 }
 
 func (s *BlockCollisionSystem) stopFalling(entity *ecs.Entity, velocity *components.VelocityComponent, characteristic *components.CharacteristicComponent) {
-	fmt.Printf("Entity %s stop falling!!\n", entity.Id)
+	fmt.Printf("Entity %s stop falling!!\n", entity.ID)
 
 	velocity.BlockVector.Clear()
 	characteristic.Add(characteristics.PlayerObstacle)
@@ -52,11 +50,11 @@ func (s *BlockCollisionSystem) stopFalling(entity *ecs.Entity, velocity *compone
 
 func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, entity *ecs.Entity, position *components.PositionComponent, velocity *components.VelocityComponent, characteristic *components.CharacteristicComponent) {
 
-	if position.CurrentBlockPosition.IsSame(s.Player().Position.CurrentBlockPosition) {
-		// Dispatch player collision event
-		s.stage.OnEvent(game.NewPlayerCollisionEvent(world, s.Player(), entity, position, velocity.IsFalling()))
-		return
-	}
+	// if position.CurrentBlockPosition.IsSame(s.Player().Position.CurrentBlockPosition) {
+	// 	// Dispatch player collision event
+	// 	s.stage.OnEvent(game.NewPlayerCollisionEvent(world, s.Player(), entity, position, velocity.IsFalling()))
+	// 	return
+	// }
 
 	if velocity.BlockVector.IsZero() {
 		return
@@ -77,7 +75,7 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, entity *e
 	//Get entity at entity position
 	entityAtPosition := s.stage.GetEntityAtPosition(position.TargetBlockPosition)
 
-	if entityAtPosition != nil && /* entityAtPosition.Type == Boulder && */ entity.Id != entityAtPosition.Id {
+	if entityAtPosition != nil && /* entityAtPosition.Type == Boulder && */ entity.ID != entityAtPosition.ID {
 		velocity.BlockVector.Clear()
 		position.CancelTarget()
 
@@ -88,27 +86,36 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, entity *e
 }
 
 func (s *BlockCollisionSystem) CheckPlayerCollisions(world *ecs.World) {
-	if !s.Player().Position.HasTarget() {
-		return
-	}
+	// if !s.Player().Position.HasTarget() {
+	// 	return
+	// }
 
-	targetPos := s.Player().Position.TargetBlockPosition
+	player := world.GetEntity("player")
+	playerComps := world.GetComponents(player)
+	position := ecs.GetComponent[components.PositionComponent](playerComps)
+
+	targetPos := position.TargetBlockPosition
 
 	if !s.CheckBlockAtPosition(game.Void, targetPos) {
 		return
 	}
 
 	entity := s.stage.GetEntityAtPosition(targetPos)
+
+	if entity == nil {
+		return
+	}
+
 	comps := world.GetComponents(entity)
 
 	characteristic := ecs.GetComponent[components.CharacteristicComponent](comps)
 	velocity := ecs.GetComponent[components.VelocityComponent](comps)
 
-	if entity != nil && characteristic.Has(characteristics.Collectable) {
+	if characteristic.Has(characteristics.Collectable) {
 		// Only collect if the diamond is not falling
 		if !velocity.IsFalling() {
 			position := ecs.GetComponent[components.PositionComponent](comps)
-			s.stage.OnEvent(game.NewPlayerCollisionEvent(world, s.Player(), entity, position, false))
+			s.stage.OnEvent(game.NewPlayerCollisionEvent(world, player, entity, position, false))
 		}
 	}
 }

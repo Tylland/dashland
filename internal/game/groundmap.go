@@ -4,11 +4,10 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/lafriks/go-tiled"
 	"github.com/tylland/dashland/internal/common"
-	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
 )
 
-type GroundMap struct {
+type EntityMap struct {
 	MapSize
 	entityTextures        *rl.Texture2D
 	enemyTextures         *rl.Texture2D
@@ -17,61 +16,57 @@ type GroundMap struct {
 	InitialPlayerPosition common.BlockPosition
 }
 
-func NewGroundMap(mapSize MapSize, entityTextures *rl.Texture2D, enemyTextures *rl.Texture2D, groundCorners *rl.Texture2D) *GroundMap {
-	return &GroundMap{MapSize: mapSize, entityTextures: entityTextures, enemyTextures: enemyTextures, groundCorners: groundCorners, entities: []*ecs.Entity{}}
+func NewGroundMap(mapSize MapSize, entityTextures *rl.Texture2D, enemyTextures *rl.Texture2D, groundCorners *rl.Texture2D) *EntityMap {
+	return &EntityMap{MapSize: mapSize, entityTextures: entityTextures, enemyTextures: enemyTextures, groundCorners: groundCorners, entities: []*ecs.Entity{}}
 }
 
-func (gm *GroundMap) InitPlayerPosition(tiles []*tiled.LayerTile) {
-	gm.entities = make([]*ecs.Entity, len(tiles))
+func (m *EntityMap) InitPlayerPosition(tiles []*tiled.LayerTile) {
+	m.entities = make([]*ecs.Entity, len(tiles))
 
 	for index, tile := range tiles {
 		if tile.ID == 1 {
-			gm.InitialPlayerPosition = common.BlockPosition{X: index % gm.Width, Y: index / gm.Width}
+			m.InitialPlayerPosition = common.BlockPosition{X: index % m.Width, Y: index / m.Width}
 			return
 		}
 	}
 }
 
-func (gm *GroundMap) SetEntity(entity *ecs.Entity, pos common.BlockPosition) {
+func (m *EntityMap) SetEntity(entity *ecs.Entity, pos common.BlockPosition) {
 
-	if pos.X < 0 || pos.X >= gm.Width || pos.Y < 0 || pos.Y >= gm.Height {
+	if pos.X < 0 || pos.X >= m.Width || pos.Y < 0 || pos.Y >= m.Height {
 		return
 	}
 
-	gm.entities[pos.Y*gm.Width+pos.X] = entity
+	m.entities[pos.Y*m.Width+pos.X] = entity
 }
 
-func (gm *GroundMap) GetEntity(position common.BlockPosition) *ecs.Entity {
-	if position.X < 0 || position.X >= gm.Width || position.Y < 0 || position.Y >= gm.Height {
+func (m *EntityMap) GetEntity(position common.BlockPosition) *ecs.Entity {
+	if position.X < 0 || position.X >= m.Width || position.Y < 0 || position.Y >= m.Height {
 		return nil
 	}
 
-	return gm.entities[position.Y*gm.Width+position.X]
+	return m.entities[position.Y*m.Width+position.X]
 }
-func (gm *GroundMap) GetEntityAtPosition(position common.BlockPosition) *ecs.Entity {
-	if position.X < 0 || position.X >= gm.Width || position.Y < 0 || position.Y >= gm.Height {
+func (m *EntityMap) GetEntityAtPosition(position common.BlockPosition) *ecs.Entity {
+	if position.X < 0 || position.X >= m.Width || position.Y < 0 || position.Y >= m.Height {
 		return nil
 	}
 
-	return gm.entities[position.Y*gm.Width+position.X]
+	return m.entities[position.Y*m.Width+position.X]
 }
 
-func (gm *GroundMap) CheckEntityAtPosition(entityType ecs.EntityType, position common.BlockPosition) bool {
-	return gm.entities[position.Y*gm.Width+position.X].Type == entityType
+func (m *EntityMap) CheckEntityAtPosition(entityType ecs.EntityType, position common.BlockPosition) bool {
+	return m.entities[position.Y*m.Width+position.X].Type == entityType
 }
 
-func (gm *GroundMap) MoveEntity(source *ecs.Entity, position *components.PositionComponent, targetPos common.BlockPosition) {
-	sourcePosition := position.CurrentBlockPosition
-
-	gm.entities[targetPos.Y*gm.Width+targetPos.X] = source
-	gm.entities[sourcePosition.Y*gm.Width+sourcePosition.X] = nil
-
-	position.Update(targetPos)
+func (m *EntityMap) MoveEntity(source *ecs.Entity, sourcePos common.BlockPosition, targetPos common.BlockPosition) {
+	m.entities[targetPos.Y*m.Width+targetPos.X] = source
+	m.entities[sourcePos.Y*m.Width+sourcePos.X] = nil
 }
 
-func (gm *GroundMap) RemoveEntity(doomed *ecs.Entity, position *components.PositionComponent) {
+func (m *EntityMap) RemoveEntity(doomed *ecs.Entity, position common.BlockPosition) {
 
-	sourcePosition := position.CurrentBlockPosition
+	//	sourcePosition := position.CurrentBlockPosition
 
-	gm.entities[sourcePosition.Y*gm.Width+sourcePosition.X] = nil
+	m.entities[position.Y*m.Width+position.X] = nil
 }

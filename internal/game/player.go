@@ -3,7 +3,7 @@ package game
 import (
 	"math"
 
-	rl "github.com/gen2brain/raylib-go/raylib"
+	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
@@ -38,6 +38,19 @@ func NewPlayer(stage *Stage) *Player {
 	return &Player{stage: stage, Velocity: components.NewVelocityComponentZero()}
 }
 
+func NewPlayerEntity(world *ecs.World, stage *Stage, position common.BlockPosition) (*ecs.Entity, *ecs.Components) {
+	player := ecs.NewEntity(ecs.EntityID("player"), EntityPlayer)
+
+	comps := ecs.NewComponents()
+	comps.AddComponent(components.NewCharacteristicsComponent(characteristics.IsPlayer | characteristics.CanHoldGravity))
+	comps.AddComponent(components.NewInputComponent())
+	comps.AddComponent(components.NewPositionComponent(position, stage.GetPosition(position)))
+	comps.AddComponent(components.NewVelocityComponentZero())
+	comps.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityPlayer)*stage.BlockWidth, 0, 1, 0)))
+
+	return player, comps
+}
+
 func (p *Player) InitPosition(blockPosition common.BlockPosition) {
 	position := p.stage.GetPosition(blockPosition)
 
@@ -50,44 +63,44 @@ func (p *Player) InitPosition(blockPosition common.BlockPosition) {
 	//	p.SetPosition(position)
 }
 
-func (p *Player) UpdateTargetPosition(world *ecs.World) {
+// func (p *Player) UpdateTargetPosition(world *ecs.World) {
 
-	if !p.Movement.Moving {
+// 	if !p.Movement.Moving {
 
-		if rl.IsKeyDown(rl.KeyRight) {
-			p.Position.SetTarget(common.NewBlockVector(1, 0))
-		} else if rl.IsKeyDown(rl.KeyLeft) {
-			p.Position.SetTarget(common.NewBlockVector(-1, 0))
-		} else if rl.IsKeyDown(rl.KeyDown) {
-			p.Position.SetTarget(common.NewBlockVector(0, 1))
-		} else if rl.IsKeyDown(rl.KeyUp) {
-			p.Position.SetTarget(common.NewBlockVector(0, -1))
-		}
+// 		if rl.IsKeyDown(rl.KeyRight) {
+// 			p.Position.SetTarget(common.NewBlockVector(1, 0))
+// 		} else if rl.IsKeyDown(rl.KeyLeft) {
+// 			p.Position.SetTarget(common.NewBlockVector(-1, 0))
+// 		} else if rl.IsKeyDown(rl.KeyDown) {
+// 			p.Position.SetTarget(common.NewBlockVector(0, 1))
+// 		} else if rl.IsKeyDown(rl.KeyUp) {
+// 			p.Position.SetTarget(common.NewBlockVector(0, -1))
+// 		}
 
-		if p.stage.IsObstacleForPlayer(world, p, p.Position.TargetBlockPosition) {
-			p.Position.CancelTarget()
-		}
+// 		if p.stage.IsObstacleForPlayer(world, p.Position.TargetBlockPosition) {
+// 			p.Position.CancelTarget()
+// 		}
 
-	}
-}
+// 	}
+// }
 
-func (p *Player) Update(world *ecs.World, deltaTime float32) {
-	if p.IsDead {
-		return
-	}
+// func (p *Player) Update(world *ecs.World, deltaTime float32) {
+// 	if p.IsDead {
+// 		return
+// 	}
 
-	p.UpdateTargetPosition(world)
-}
+// 	p.UpdateTargetPosition(world)
+// }
 
-func (p *Player) Render() {
-	if p.IsDead {
-		return
-	}
+// func (p *Player) Render() {
+// 	if p.IsDead {
+// 		return
+// 	}
 
-	rl.DrawCircle(int32(p.Position.Vector2.X+16), int32(p.Position.Vector2.Y+16), 16, rl.Gold)
+// 	rl.DrawCircle(int32(p.Position.Vector2.X+16), int32(p.Position.Vector2.Y+16), 16, rl.Gold)
 
-	//rl.DrawRectangleRec(rl.Rectangle{X: p.Position.Vector2.X, Y: p.Position.Vector2.Y, Width: p.BoxBody.Width, Height: p.BoxBody.Height}, rl.Red)
-}
+// 	//rl.DrawRectangleRec(rl.Rectangle{X: p.Position.Vector2.X, Y: p.Position.Vector2.Y, Width: p.BoxBody.Width, Height: p.BoxBody.Height}, rl.Red)
+// }
 
 func (p *Player) Hurt(entity *ecs.Entity) {
 	p.IsDead = true

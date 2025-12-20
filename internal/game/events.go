@@ -64,13 +64,13 @@ func (ce BlockCollisionEvent) IsEvent() {}
 
 type PlayerCollisionEvent struct {
 	world          *ecs.World
-	Player         *Player
+	Player         *ecs.Entity
 	Entity         *ecs.Entity
 	EntityPosition *components.PositionComponent
 	EntityFalling  bool
 }
 
-func NewPlayerCollisionEvent(world *ecs.World, player *Player, entity *ecs.Entity, entityPosition *components.PositionComponent, entityFalling bool) *PlayerCollisionEvent {
+func NewPlayerCollisionEvent(world *ecs.World, player *ecs.Entity, entity *ecs.Entity, entityPosition *components.PositionComponent, entityFalling bool) *PlayerCollisionEvent {
 	return &PlayerCollisionEvent{
 		world:          world,
 		Player:         player,

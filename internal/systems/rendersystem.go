@@ -50,8 +50,6 @@ func (s *RenderSystem) Update(world *ecs.World, deltaTime float32) {
 		}
 	}
 
-	s.player.Render()
-
 	rl.EndMode2D()
 	rl.EndDrawing()
 }

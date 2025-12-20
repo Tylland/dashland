@@ -12,10 +12,10 @@ import (
 
 var entityIdCounters map[string]int = make(map[string]int)
 
-func NewEntityId(prefix string) ecs.EntityId {
+func NewEntityId(prefix string) ecs.EntityID {
 	entityIdCounters[prefix]++
 
-	return ecs.EntityId(fmt.Sprintf("%s-%d", prefix, entityIdCounters[prefix]))
+	return ecs.EntityID(fmt.Sprintf("%s-%d", prefix, entityIdCounters[prefix]))
 }
 
 func NewGameEntity(world *ecs.World, stage *Stage, entityType ecs.EntityType, blockPosition common.BlockPosition) (*ecs.Entity, error) {
@@ -43,6 +43,7 @@ func NewBoulder(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 	comps.AddComponent(components.NewVelocityComponentZero())
 	comps.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityBoulder)*stage.BlockWidth, 0, 1, 0)))
 	comps.AddComponent(components.NewCollisionComponent(stage.BlockWidth, stage.BlockHeight, components.LayerAll))
+	comps.AddComponent(components.NewPushableComponent(1))
 
 	world.AddEntity(entity, comps)
 

@@ -6,6 +6,7 @@ import (
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/lafriks/go-tiled"
+	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
 	"github.com/tylland/dashland/internal/game"
 	"github.com/tylland/dashland/internal/systems"
@@ -88,7 +89,7 @@ func (g *DashlandGame) LoadStageFromFile(filepath string) (*game.Stage, error) {
 	enemyTexture := g.LoadTextureFromFile("../images/animations.png")
 
 	mapSize := game.MapSize{Width: tiledMap.Width, Height: tiledMap.Height, BlockWidth: float32(tiledMap.TileWidth), BlockHeight: float32(tiledMap.TileHeight)}
-	stage := &game.Stage{MapSize: mapSize, SoundPlayer: &g.Sounds, BlockMap: game.NewBlockMap(mapSize, blockTexture), GroundMap: game.NewGroundMap(mapSize, entityTextures, enemyTexture, groundCorners)}
+	stage := &game.Stage{MapSize: mapSize, SoundPlayer: &g.Sounds, BlockMap: game.NewBlockMap(mapSize, blockTexture), EntityMap: game.NewGroundMap(mapSize, entityTextures, enemyTexture, groundCorners)}
 
 	fmt.Printf("Reading blocks from layer %s \n", tiledMap.Layers[0].Name)
 	stage.InitBlocks(stage, tiledMap.Layers[0].Tiles)
@@ -98,7 +99,7 @@ func (g *DashlandGame) LoadStageFromFile(filepath string) (*game.Stage, error) {
 	stage.InitPlayerPosition(tiledMap.Layers[1].Tiles)
 
 	stage.InitEntities(g.world, game.EntityCategoryObject, tiledMap.Layers[1].Tiles)
-	stage.InitEntities(g.world, game.EntityCategoryEnemy, tiledMap.Layers[2].Tiles)
+	//	stage.InitEntities(g.world, game.EntityCategoryEnemy, tiledMap.Layers[2].Tiles)
 	//	stage.AddEntities(stage, entity.EntityCategoryEnemy, tiledMap.Layers[2].Tiles)
 
 	return stage, nil
@@ -112,18 +113,20 @@ func (g *DashlandGame) init() {
 		return
 	}
 
-	g.player = game.NewPlayer(stage)
-	g.player.InitPosition(stage.InitialPlayerPosition)
+	player, comps := game.NewPlayerEntity(g.world, stage, stage.InitialPlayerPosition)
+	g.world.AddEntityNamed("player", player, comps)
 
-	stage.InitPlayer(g.player)
+	playerPosition := ecs.GetComponent[components.PositionComponent](comps)
 
-	g.camera = game.NewSmoothFollowCamera(&g.Screen, g.player.Position)
+	g.camera = game.NewSmoothFollowCamera(&g.Screen, playerPosition)
 
 	g.world.AddSystems(
+		systems.NewInputSystem(),
+		systems.NewBlockMovementSystem(stage, stage),
 		systems.NewGravitySystem(stage),
 		systems.NewWallWalkerSystem(stage),
-		systems.NewBlockMovementSystem(stage, stage, stage),
 		systems.NewBlockCollisionSystem(stage),
+		systems.NewPushSystem(stage),
 	)
 
 	g.world.AddSystem(systems.NewRenderSystem(stage, g.player, g.camera))
@@ -135,7 +138,7 @@ func (g *DashlandGame) Update(deltaTime float32) {
 	//fmt.Println(deltaTime)
 	g.world.Update(deltaTime)
 
-	g.player.Update(g.world, deltaTime)
+	//	g.player.Update(g.world, deltaTime)
 
 	// g.BlockMap.Update(deltaTime)
 	// g.Player.update(deltaTime)

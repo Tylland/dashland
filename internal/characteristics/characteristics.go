@@ -12,8 +12,10 @@ const (
 	Collectable
 	Pushable
 	IsEnemy
-	PlayerObstacle
 	EnemyObstacle
+	IsPlayer
+	PlayerObstacle
+	CanHoldGravity
 )
 
 func (c Characteristics) String() string {

@@ -29,7 +29,7 @@ const (
 
 type Block struct {
 	bm *BlockMap
-	gm *GroundMap
+	gm *EntityMap
 
 	BlockType       BlockType
 	Position        common.BlockPosition
@@ -37,11 +37,11 @@ type Block struct {
 	Corners         [4]uint8
 }
 
-func NewBlockWithCharacteristics(bm *BlockMap, gm *GroundMap, blockType BlockType, position common.BlockPosition, characteristics characteristics.Characteristics) *Block {
+func NewBlockWithCharacteristics(bm *BlockMap, gm *EntityMap, blockType BlockType, position common.BlockPosition, characteristics characteristics.Characteristics) *Block {
 	return &Block{bm: bm, gm: gm, BlockType: blockType, Position: position, Characteristics: characteristics}
 }
 
-func NewBlock(bm *BlockMap, gm *GroundMap, blockType BlockType, position common.BlockPosition) *Block {
+func NewBlock(bm *BlockMap, gm *EntityMap, blockType BlockType, position common.BlockPosition) *Block {
 	switch blockType {
 	case Void:
 		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.Void)

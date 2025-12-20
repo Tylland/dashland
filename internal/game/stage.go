@@ -19,24 +19,15 @@ type Stage struct {
 	MapSize
 	SoundPlayer
 	*BlockMap
-	*GroundMap
-	player *Player
+	*EntityMap
+	//	player *Player
 	//	actors []actor
 }
 
 func New() *Stage {
-	w := &Stage{GroundMap: &GroundMap{entities: []*ecs.Entity{}}}
+	w := &Stage{EntityMap: &EntityMap{entities: []*ecs.Entity{}}}
 
 	return w
-}
-
-func (s *Stage) InitPlayer(player *Player) {
-	s.player = player
-	//	w.addActor(player)
-}
-
-func (s *Stage) Player() *Player {
-	return s.player
 }
 
 func (s *Stage) GetPosition(position common.BlockPosition) rl.Vector2 {
@@ -69,7 +60,7 @@ func (w *Stage) Render(deltaTime float32) {
 // 	w.actors = append(w.actors, actor)
 // }
 
-func (s *Stage) IsObstacleForPlayer(world *ecs.World, player *Player, position common.BlockPosition) bool {
+func (s *Stage) IsObstacleForPlayer(world *ecs.World, position common.BlockPosition) bool {
 	block, success := s.GetBlock(position.X, position.Y)
 
 	if !success {
@@ -99,27 +90,27 @@ func (s *Stage) IsObstacleForPlayer(world *ecs.World, player *Player, position c
 		return false
 	}
 
-	if characteristic.Has(characteristics.Pushable) {
-		// Calculate push direction based on player's position
-		pushPos := position
-		if player.Position.PreviousBlockPosition.X > position.X {
-			pushPos = pushPos.Offset(-1, 0)
-		} else if player.Position.PreviousBlockPosition.X < position.X {
-			pushPos = pushPos.Offset(1, 0)
-		}
+	// if characteristic.Has(characteristics.Pushable) {
+	// 	// Calculate push direction based on player's position
+	// 	pushPos := position
+	// 	if player.Position.PreviousBlockPosition.X > position.X {
+	// 		pushPos = pushPos.Offset(-1, 0)
+	// 	} else if player.Position.PreviousBlockPosition.X < position.X {
+	// 		pushPos = pushPos.Offset(1, 0)
+	// 	}
 
-		// Check if push position is free
-		if s.CheckBlockAtPosition(Void, pushPos) && s.GetEntity(pushPos) == nil {
-			return false
-		}
-	}
+	// 	// Check if push position is free
+	// 	if s.CheckBlockAtPosition(Void, pushPos) && s.GetEntity(pushPos) == nil {
+	// 		return false
+	// 	}
+	// }
 
 	return true
 }
 
 func (s *Stage) VisitBlock(position common.BlockPosition) {
 	fmt.Printf("Block at position %d,%d changed type from %d", position.X, position.Y, s.blocks[position.Y*s.Width+position.X].BlockType)
-	s.SetBlock(NewBlock(s.BlockMap, s.GroundMap, Void, position), position)
+	s.SetBlock(NewBlock(s.BlockMap, s.EntityMap, Void, position), position)
 	fmt.Printf(" to %d \n", s.blocks[position.Y*s.Width+position.X].BlockType)
 }
 
@@ -154,17 +145,18 @@ func (s *Stage) CheckPositionOccupied(position common.BlockPosition) bool {
 	return s.GetEntity(position) != nil
 }
 
-func (s *Stage) CheckPlayerAtPosition(position common.BlockPosition) bool {
-	if s.player.IsDead {
-		return false
-	}
+// func (s *Stage) CheckPlayerAtPosition(position common.BlockPosition) bool {
+// 	if s.player.IsDead {
+// 		return false
+// 	}
 
-	return s.player.Position.CurrentBlockPosition.IsSame(position)
-}
+// 	return s.player.Position.CurrentBlockPosition.IsSame(position)
+// }
 
 func (s *Stage) OnEvent(event GameEvent) {
+
 	switch e := event.(type) {
-	case EntityCollisionEvent:
+	case *EntityCollisionEvent:
 		fmt.Println("Entity collision detected!!")
 
 		if e.Entity1.Type == EntityBoulder && e.Entity2.Type == EntityEnemy {
@@ -174,7 +166,7 @@ func (s *Stage) OnEvent(event GameEvent) {
 			s.OnBoulderEnemyCollision(event.World(), e.Entity2, e.Entity1)
 		}
 
-	case BlockCollisionEvent:
+	case *BlockCollisionEvent:
 		fmt.Println("Block collision detected!!")
 
 		if e.Entity.Type == EntityBoulder && e.Block.BlockType == Soil {
@@ -182,18 +174,14 @@ func (s *Stage) OnEvent(event GameEvent) {
 			s.SoundPlayer.PlayFx("player_hurt")
 		}
 
-	case PlayerCollisionEvent:
-		if e.Player.IsDead {
-			return
-		}
-
+	case *PlayerCollisionEvent:
 		fmt.Println("Player collision detected!!")
 
 		if e.Entity.Type == EntityBoulder && e.EntityFalling {
 			fmt.Println("Player hit by boulder!!")
 			//Boulder is falling on player
 			s.SoundPlayer.PlayFx("player_hurt")
-			s.player.Hurt(e.Entity)
+			//			s.player.Hurt(e.Entity)
 		}
 
 		comps := e.World().GetComponents(e.Entity)
@@ -203,24 +191,25 @@ func (s *Stage) OnEvent(event GameEvent) {
 			fmt.Println("Player hit by enemy!!")
 
 			s.SoundPlayer.PlayFx("player_hurt")
-			s.player.Hurt(e.Entity)
+			//			s.player.Hurt(e.Entity)
 		}
 
 		if e.Entity.Type == EntityDiamond {
 			if e.EntityFalling {
 				fmt.Println("Player hit by falling diamond!!")
 				s.SoundPlayer.PlayFx("player_hurt")
-				s.player.Hurt(e.Entity)
+				//				s.player.Hurt(e.Entity)
 			} else {
 				fmt.Println("Player collected diamond!!")
 				s.SoundPlayer.PlayFx("diamond_collected")
 				position := ecs.GetComponent[components.PositionComponent](comps)
 				if position != nil {
-					s.RemoveEntity(e.Entity, position)
+					s.RemoveEntity(e.Entity, position.CurrentBlockPosition)
 				}
 			}
 		}
-
+	default:
+		fmt.Printf("Unknown event type %T \n", e)
 	}
 }
 
@@ -236,11 +225,11 @@ func (s *Stage) OnBoulderEnemyCollision(world *ecs.World, boulder *ecs.Entity, e
 
 	enemyPosition := ecs.GetComponent[components.PositionComponent](world.GetComponents(enemy))
 
-	s.RemoveEntity(enemy, enemyPosition)
+	s.RemoveEntity(enemy, enemyPosition.CurrentBlockPosition)
 
 	boulderPosition := ecs.GetComponent[components.PositionComponent](boulderComps)
 
-	s.RemoveEntity(boulder, boulderPosition)
+	s.RemoveEntity(boulder, boulderPosition.CurrentBlockPosition)
 
 	position := enemyPosition.CurrentBlockPosition
 
@@ -252,7 +241,7 @@ func (s *Stage) CreateDiamonds(world *ecs.World, position common.BlockPosition, 
 		for x := -width; x <= width; x++ {
 			diamondPosition := position.Offset(x, y)
 			if !s.CheckBlockAtPosition(Bedrock, diamondPosition) {
-				s.SetBlock(NewBlock(s.BlockMap, s.GroundMap, Void, diamondPosition), diamondPosition)
+				s.SetBlock(NewBlock(s.BlockMap, s.EntityMap, Void, diamondPosition), diamondPosition)
 				entity := NewDiamond(world, s, diamondPosition, s.GetPosition(diamondPosition))
 				s.SetEntity(entity, diamondPosition)
 			}
@@ -262,12 +251,12 @@ func (s *Stage) CreateDiamonds(world *ecs.World, position common.BlockPosition, 
 
 func (s *Stage) InitEntities(world *ecs.World, category ecs.EntityCategory, tiles []*tiled.LayerTile) {
 	for index, tile := range tiles {
-		blockPosition := common.NewBlockPositionFromIndex(index, s.GroundMap.Width)
+		blockPosition := common.NewBlockPositionFromIndex(index, s.EntityMap.Width)
 
 		entity, err := NewGameEntity(world, s, ecs.EntityType(uint32(category)+tile.ID), blockPosition)
 
 		if err == nil {
-			s.GroundMap.SetEntity(entity, blockPosition)
+			s.EntityMap.SetEntity(entity, blockPosition)
 		}
 	}
 }
@@ -277,7 +266,7 @@ func (s *Stage) InitBlocks(world *Stage, tiles []*tiled.LayerTile) {
 
 	for index, tile := range tiles {
 		blockPosition := common.NewBlockPositionFromIndex(index, s.BlockMap.Width)
-		s.BlockMap.SetBlock(NewBlock(s.BlockMap, s.GroundMap, BlockType(tile.ID), blockPosition), blockPosition)
+		s.BlockMap.SetBlock(NewBlock(s.BlockMap, s.EntityMap, BlockType(tile.ID), blockPosition), blockPosition)
 	}
 
 	s.BlockMap.PrintBlockMap()

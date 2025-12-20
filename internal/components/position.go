@@ -1,6 +1,8 @@
 package components
 
 import (
+	"fmt"
+
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/common"
 )
@@ -21,8 +23,18 @@ func NewPositionComponent(blockPosition common.BlockPosition, position rl.Vector
 	}
 }
 
+func NewPositionComponentZero() *PositionComponent {
+	return &PositionComponent{
+		PreviousBlockPosition: common.NewBlockPosition(0, 0),
+		CurrentBlockPosition:  common.NewBlockPosition(0, 0),
+		TargetBlockPosition:   common.NewBlockPosition(0, 0),
+		Vector2:               rl.NewVector2(0, 0),
+	}
+}
+
 func (p *PositionComponent) SetTarget(offset common.BlockVector) {
 	p.TargetBlockPosition = p.CurrentBlockPosition.Add(offset)
+	fmt.Printf("SetTarget to %v\n", p.TargetBlockPosition)
 }
 
 // check if has target position
@@ -33,6 +45,7 @@ func (p *PositionComponent) HasTarget() bool {
 // Cancel target position
 func (p *PositionComponent) CancelTarget() {
 	p.TargetBlockPosition = p.CurrentBlockPosition
+	fmt.Printf("CancelTarget to %v\n", p.TargetBlockPosition)
 }
 
 // Commit the target block position to the current block position
