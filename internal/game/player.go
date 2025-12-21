@@ -24,19 +24,19 @@ func (v Vector) Normalized() Vector {
 	return Vector{X: v.X / length, Y: v.Y / length}
 }
 
-type Player struct {
-	stage    *Stage
-	Position *components.PositionComponent
-	Velocity *components.VelocityComponent
-	common.BoxBody
-	IsDead   bool
-	pickaxe  bool
-	Movement common.Movement
-}
+// type Player struct {
+// 	stage    *Stage
+// 	Position *components.PositionComponent
+// 	Velocity *components.VelocityComponent
+// 	common.BoxBody
+// 	IsDead   bool
+// 	pickaxe  bool
+// 	Movement common.Movement
+// }
 
-func NewPlayer(stage *Stage) *Player {
-	return &Player{stage: stage, Velocity: components.NewVelocityComponentZero()}
-}
+// func NewPlayer(stage *Stage) *Player {
+// 	return &Player{stage: stage, Velocity: components.NewVelocityComponentZero()}
+// }
 
 func NewPlayerEntity(world *ecs.World, stage *Stage, position common.BlockPosition) (*ecs.Entity, *ecs.Components) {
 	player := ecs.NewEntity(ecs.EntityID("player"), EntityPlayer)
@@ -45,23 +45,24 @@ func NewPlayerEntity(world *ecs.World, stage *Stage, position common.BlockPositi
 	comps.AddComponent(components.NewCharacteristicsComponent(characteristics.IsPlayer | characteristics.CanHoldGravity))
 	comps.AddComponent(components.NewInputComponent())
 	comps.AddComponent(components.NewPositionComponent(position, stage.GetPosition(position)))
-	comps.AddComponent(components.NewVelocityComponentZero())
+	comps.AddComponent(components.NewBlockStep(stage.GetPosition(position)))
+	comps.AddComponent(components.NewColliderComponent(LayerPlayer, LayerAll))
 	comps.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityPlayer)*stage.BlockWidth, 0, 1, 0)))
 
 	return player, comps
 }
 
-func (p *Player) InitPosition(blockPosition common.BlockPosition) {
-	position := p.stage.GetPosition(blockPosition)
+// func (p *Player) InitPosition(blockPosition common.BlockPosition) {
+// 	position := p.stage.GetPosition(blockPosition)
 
-	p.Position = components.NewPositionComponent(blockPosition, position)
+// 	p.Position = components.NewPositionComponent(blockPosition, position)
 
-	p.BoxBody = common.BoxBody{Width: 32, Height: 32}
+// 	p.BoxBody = common.BoxBody{Width: 32, Height: 32}
 
-	//p.targetBlockPosition = blockPosition
-	//p.Position = p.game.world.GetPosition(pos)
-	//	p.SetPosition(position)
-}
+// 	//p.targetBlockPosition = blockPosition
+// 	//p.Position = p.game.world.GetPosition(pos)
+// 	//	p.SetPosition(position)
+// }
 
 // func (p *Player) UpdateTargetPosition(world *ecs.World) {
 
@@ -102,20 +103,20 @@ func (p *Player) InitPosition(blockPosition common.BlockPosition) {
 // 	//rl.DrawRectangleRec(rl.Rectangle{X: p.Position.Vector2.X, Y: p.Position.Vector2.Y, Width: p.BoxBody.Width, Height: p.BoxBody.Height}, rl.Red)
 // }
 
-func (p *Player) Hurt(entity *ecs.Entity) {
-	p.IsDead = true
+// func (p *Player) Hurt(entity *ecs.Entity) {
+// 	p.IsDead = true
 
-	// position := p.Position.CurrentBlockPosition
+// 	// position := p.Position.CurrentBlockPosition
 
-	// for y := -1; y <= 1; y++ {
-	// 	for x := -1; x <= 1; x++ {
-	// 		diamondPosition := position.Offset(x, y)
-	// 		if !p.blocks.CheckBlockAtPosition(game.Bedrock, diamondPosition) {
-	// 			world.SetBlock(NewBlock(world, Void, diamondPosition.X, diamondPosition.Y), diamondPosition)
-	// 			entity := NewDiamond(world, diamondPosition, p.blocks.GetPosition(diamondPosition))
-	// 			world.SetEntity(entity, diamondPosition)
-	// 		}
-	// 	}
-	// }
+// 	// for y := -1; y <= 1; y++ {
+// 	// 	for x := -1; x <= 1; x++ {
+// 	// 		diamondPosition := position.Offset(x, y)
+// 	// 		if !p.blocks.CheckBlockAtPosition(game.Bedrock, diamondPosition) {
+// 	// 			world.SetBlock(NewBlock(world, Void, diamondPosition.X, diamondPosition.Y), diamondPosition)
+// 	// 			entity := NewDiamond(world, diamondPosition, p.blocks.GetPosition(diamondPosition))
+// 	// 			world.SetEntity(entity, diamondPosition)
+// 	// 		}
+// 	// 	}
+// 	// }
 
-}
+// }

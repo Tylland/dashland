@@ -4,22 +4,11 @@ import (
 	"fmt"
 
 	"github.com/tylland/dashland/internal/characteristics"
+	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
 	"github.com/tylland/dashland/internal/game"
 )
-
-// type GravityWorld interface {
-// 	CheckBlockAtPosition(blockType game.BlockType, position common.BlockPosition) bool
-// 	GetPosition(blockPosition common.BlockPosition) rl.Vector2
-// 	checkPositionOccupied(position common.BlockPosition) bool
-// 	checkPlayerAtPosition(position common.BlockPosition) bool
-// }
-
-// type GravityWorld interface {
-// 	CheckBlockAtPosition(blockType BlockType, position common.BlockVector) bool
-// 	GetPosition(blockPosition common.BlockPosition) common.Vector2
-// }
 
 type GravitySystem struct {
 	stage *game.Stage
@@ -38,31 +27,31 @@ func (g *GravitySystem) Update(world *ecs.World, deltaTime float32) {
 		comps := world.GetComponents(entity)
 
 		position := ecs.GetComponent[components.PositionComponent](comps)
-		velocity := ecs.GetComponent[components.VelocityComponent](comps)
+		step := ecs.GetComponent[components.BlockStep](comps)
 		characteristic := ecs.GetComponent[components.CharacteristicComponent](comps)
 
-		if position != nil && velocity != nil && characteristic != nil {
-			g.ApplyGravityOnEntity(world, entity, position, velocity, characteristic)
+		if position != nil && step != nil && characteristic != nil {
+			g.ApplyGravityOnEntity(world, entity, position, step, characteristic)
 		}
 	}
 }
 
-func (g *GravitySystem) StartFalling(entity *ecs.Entity, velocity *components.VelocityComponent, characteristic *components.CharacteristicComponent) {
+func (g *GravitySystem) StartFalling(entity *ecs.Entity, characteristic *components.CharacteristicComponent) {
 	fmt.Printf("Entity %s start falling!!\n", entity.ID)
 
 	characteristic.Remove(characteristics.PlayerObstacle)
 	characteristic.Remove(characteristics.EnemyObstacle)
 }
 
-func (g *GravitySystem) StopFalling(entity *ecs.Entity, velocity *components.VelocityComponent, characteristic *components.CharacteristicComponent) {
+func (g *GravitySystem) StopFalling(entity *ecs.Entity, step *components.BlockStep, characteristic *components.CharacteristicComponent) {
 	fmt.Printf("Entity %s stop falling!!\n", entity.ID)
 
-	velocity.BlockVector.Clear()
+	step.Increment.Clear()
 	characteristic.Add(characteristics.PlayerObstacle)
 	characteristic.Add(characteristics.EnemyObstacle)
 }
 
-func (g *GravitySystem) ApplyGravityOnEntity(world *ecs.World, entity *ecs.Entity, position *components.PositionComponent, velocity *components.VelocityComponent, characteristic *components.CharacteristicComponent) {
+func (g *GravitySystem) ApplyGravityOnEntity(world *ecs.World, entity *ecs.Entity, position *components.PositionComponent, step *components.BlockStep, characteristic *components.CharacteristicComponent) {
 	current := position.CurrentBlockPosition
 
 	if !characteristic.Has(characteristics.CanFall) {
@@ -75,28 +64,27 @@ func (g *GravitySystem) ApplyGravityOnEntity(world *ecs.World, entity *ecs.Entit
 	}
 
 	// If already falling, continue with current velocity
-	if velocity.BlockVector.Y > 0 {
+	if step.Increment.Y > 0 {
 		return
 	}
 
-	under := current.Offset(0, 1)
+	under := current.Add(common.DirectionDown)
 
 	// Start falling if no support below
 	if !g.stage.CheckBlockAtPosition(game.Soil, under) && !g.stage.CheckCharacteristics(world, under, characteristics.CanHoldGravity) {
 		if !g.stage.CheckPositionOccupied(under) {
-			velocity.BlockVector.X = 0
-			velocity.BlockVector.Y = 1
-			g.StartFalling(entity, velocity, characteristic)
+			step.Move(common.DirectionDown, g.stage.GetPosition(under), moveSpeed)
+			g.StartFalling(entity, characteristic)
 			return
 		}
 
 		// Try falling diagonally
-		right := current.Offset(1, 0)
-		rightUnder := current.Offset(1, 1)
+		right := current.Add(common.DirectionRight)
+		rightUnder := current.Add(common.DirectionRightDown)
 
 		if !g.stage.CheckPositionOccupied(right) && !g.stage.CheckPositionOccupied(rightUnder) && !g.stage.CheckCharacteristics(world, rightUnder, characteristics.CanHoldGravity) {
-			position.TargetBlockPosition = rightUnder
-			g.StartFalling(entity, velocity, characteristic)
+			step.Move(common.DirectionRightDown, g.stage.GetPosition(rightUnder), moveSpeed)
+			g.StartFalling(entity, characteristic)
 			return
 		}
 
@@ -104,15 +92,15 @@ func (g *GravitySystem) ApplyGravityOnEntity(world *ecs.World, entity *ecs.Entit
 		leftUnder := current.Offset(-1, 1)
 
 		if !g.stage.CheckPositionOccupied(left) && !g.stage.CheckPositionOccupied(leftUnder) && !g.stage.CheckCharacteristics(world, leftUnder, characteristics.CanHoldGravity) {
-			position.TargetBlockPosition = leftUnder
-			g.StartFalling(entity, velocity, characteristic)
+			step.Move(common.DirectionLeftDown, g.stage.GetPosition(leftUnder), moveSpeed)
+			g.StartFalling(entity, characteristic)
 			return
 		}
 
 	}
 
-	// If we reach here, there's something blocking the fall
-	if velocity.IsFalling() {
-		g.StopFalling(entity, velocity, characteristic)
-	}
+	// // If we reach here, there's something blocking the fall
+	// if step.Increment() {
+	// 	g.StopFalling(entity, step, characteristic)
+	// }
 }

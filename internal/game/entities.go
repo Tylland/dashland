@@ -38,11 +38,11 @@ func NewBoulder(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 	entity := ecs.NewEntity(NewEntityId("boulder"), EntityBoulder)
 
 	comps := ecs.NewComponents()
-	comps.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.Pushable | characteristics.EnemyObstacle))
+	comps.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall))
 	comps.AddComponent(components.NewPositionComponent(blockPosition, position))
-	comps.AddComponent(components.NewVelocityComponentZero())
+	comps.AddComponent(components.NewBlockStep(position))
 	comps.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityBoulder)*stage.BlockWidth, 0, 1, 0)))
-	comps.AddComponent(components.NewCollisionComponent(stage.BlockWidth, stage.BlockHeight, components.LayerAll))
+	comps.AddComponent(components.NewColliderComponent(LayerItem, LayerAll))
 	comps.AddComponent(components.NewPushableComponent(1))
 
 	world.AddEntity(entity, comps)
@@ -56,9 +56,9 @@ func NewDiamond(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 	comps := ecs.NewComponents()
 	comps.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.Collectable | characteristics.EnemyObstacle))
 	comps.AddComponent(components.NewPositionComponent(blockPosition, position))
-	comps.AddComponent(components.NewVelocityComponentZero())
+	comps.AddComponent(components.NewBlockStep(position))
 	comps.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDiamond)*stage.BlockWidth, 0, 1, 0)))
-	comps.AddComponent(components.NewCollisionComponent(stage.BlockWidth, stage.BlockHeight, components.LayerAll))
+	comps.AddComponent(components.NewColliderComponent(LayerCollectable, LayerNone))
 	comps.AddComponent(components.NewCollectableComponent(components.CollectableDiamond, 1))
 
 	world.AddEntity(entity, comps)
@@ -72,9 +72,9 @@ func NewEnemy(world *ecs.World, stage *Stage, blockPosition common.BlockPosition
 	comps := ecs.NewComponents()
 	comps.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy))
 	comps.AddComponent(components.NewPositionComponent(blockPosition, position))
-	comps.AddComponent(components.NewVelocityComponentZero())
+	comps.AddComponent(components.NewBlockStep(position))
 	comps.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.enemyTextures, stage.BlockWidth, stage.BlockHeight, 0, 0, 4, 0)))
-	comps.AddComponent(components.NewCollisionComponent(stage.BlockWidth, stage.BlockHeight, components.LayerAll))
+	comps.AddComponent(components.NewColliderComponent(LayerEnemy, LayerAll))
 	comps.AddComponent(components.NewWallWalkerComponent(common.NewBlockVector(1, 0)))
 
 	world.AddEntity(entity, comps)

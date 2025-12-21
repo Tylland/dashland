@@ -20,8 +20,6 @@ type Stage struct {
 	SoundPlayer
 	*BlockMap
 	*EntityMap
-	//	player *Player
-	//	actors []actor
 }
 
 func New() *Stage {
@@ -34,21 +32,6 @@ func (s *Stage) GetPosition(position common.BlockPosition) rl.Vector2 {
 	return rl.NewVector2(float32(position.X)*s.BlockMap.BlockWidth, float32(position.Y)*s.BlockMap.BlockHeight)
 }
 
-// func (w *Stage) update(deltaTime float32) {
-// 	for _, block := range w.blocks {
-// 		block.update(deltaTime)
-// 	}
-
-// 	// for _, obj := range w.objects {
-// 	// 	if obj != nil {
-// 	// 		obj.update(deltaTime)
-// 	// 	}
-// 	// }
-// 	for _, act := range w.actors {
-// 		act.update(deltaTime)
-// 	}
-// }
-
 func (w *Stage) Render(deltaTime float32) {
 	for _, block := range w.blocks {
 		block.Render()
@@ -56,57 +39,53 @@ func (w *Stage) Render(deltaTime float32) {
 
 }
 
-// func (w *Stage) addActor(actor actor) {
-// 	w.actors = append(w.actors, actor)
+// func (s *Stage) IsObstacleForPlayer(world *ecs.World, position common.BlockPosition) bool {
+// 	block, success := s.GetBlock(position.X, position.Y)
+
+// 	if !success {
+// 		return true
+// 	}
+
+// 	if block.HasCharacteristic(characteristics.PlayerObstacle) {
+// 		return true
+// 	}
+
+// 	entity := s.GetEntity(position)
+
+// 	if entity == nil {
+// 		return false
+// 	}
+
+// 	comps := world.GetComponents(entity)
+// 	collectable := ecs.GetComponent[components.CollectableComponent](comps)
+
+// 	if collectable != nil {
+// 		return false
+// 	}
+
+// 	characteristic := ecs.GetComponent[components.CharacteristicComponent](comps)
+
+// 	if characteristic != nil {
+// 		return false
+// 	}
+
+// 	// if characteristic.Has(characteristics.Pushable) {
+// 	// 	// Calculate push direction based on player's position
+// 	// 	pushPos := position
+// 	// 	if player.Position.PreviousBlockPosition.X > position.X {
+// 	// 		pushPos = pushPos.Offset(-1, 0)
+// 	// 	} else if player.Position.PreviousBlockPosition.X < position.X {
+// 	// 		pushPos = pushPos.Offset(1, 0)
+// 	// 	}
+
+// 	// 	// Check if push position is free
+// 	// 	if s.CheckBlockAtPosition(Void, pushPos) && s.GetEntity(pushPos) == nil {
+// 	// 		return false
+// 	// 	}
+// 	// }
+
+// 	return true
 // }
-
-func (s *Stage) IsObstacleForPlayer(world *ecs.World, position common.BlockPosition) bool {
-	block, success := s.GetBlock(position.X, position.Y)
-
-	if !success {
-		return true
-	}
-
-	if block.HasCharacteristic(characteristics.PlayerObstacle) {
-		return true
-	}
-
-	entity := s.GetEntity(position)
-
-	if entity == nil {
-		return false
-	}
-
-	comps := world.GetComponents(entity)
-	collectable := ecs.GetComponent[components.CollectableComponent](comps)
-
-	if collectable != nil {
-		return false
-	}
-
-	characteristic := ecs.GetComponent[components.CharacteristicComponent](comps)
-
-	if characteristic != nil {
-		return false
-	}
-
-	// if characteristic.Has(characteristics.Pushable) {
-	// 	// Calculate push direction based on player's position
-	// 	pushPos := position
-	// 	if player.Position.PreviousBlockPosition.X > position.X {
-	// 		pushPos = pushPos.Offset(-1, 0)
-	// 	} else if player.Position.PreviousBlockPosition.X < position.X {
-	// 		pushPos = pushPos.Offset(1, 0)
-	// 	}
-
-	// 	// Check if push position is free
-	// 	if s.CheckBlockAtPosition(Void, pushPos) && s.GetEntity(pushPos) == nil {
-	// 		return false
-	// 	}
-	// }
-
-	return true
-}
 
 func (s *Stage) VisitBlock(position common.BlockPosition) {
 	fmt.Printf("Block at position %d,%d changed type from %d", position.X, position.Y, s.blocks[position.Y*s.Width+position.X].BlockType)
@@ -219,7 +198,7 @@ func (s *Stage) OnBoulderEnemyCollision(world *ecs.World, boulder *ecs.Entity, e
 	boulderComps := world.GetComponents(boulder)
 	boulderVelocity := ecs.GetComponent[components.VelocityComponent](boulderComps)
 
-	if boulderVelocity.BlockVector.IsZero() {
+	if !boulderVelocity.IsMoving() {
 		return
 	}
 

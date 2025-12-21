@@ -18,7 +18,6 @@ type DashlandGame struct {
 	game.Screen
 	Sounds
 	camera game.Camera
-	player *game.Player
 	world  *ecs.World
 	stage  *game.Stage
 }
@@ -122,14 +121,15 @@ func (g *DashlandGame) init() {
 
 	g.world.AddSystems(
 		systems.NewInputSystem(),
-		systems.NewBlockMovementSystem(stage, stage),
+		systems.NewInputActionSystem(stage),
 		systems.NewGravitySystem(stage),
 		systems.NewWallWalkerSystem(stage),
 		systems.NewBlockCollisionSystem(stage),
 		systems.NewPushSystem(stage),
+		systems.NewBlockMovementSystem(stage, stage),
 	)
 
-	g.world.AddSystem(systems.NewRenderSystem(stage, g.player, g.camera))
+	g.world.AddSystem(systems.NewRenderSystem(stage, g.camera))
 
 	g.stage = stage
 }

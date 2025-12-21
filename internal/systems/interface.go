@@ -11,10 +11,6 @@ type EntityLister interface {
 	Entities() []*ecs.Entity
 }
 
-type PlayerResolver interface {
-	Player() *game.Player
-}
-
 type PositionResolver interface {
 	GetPosition(common.BlockPosition) rl.Vector2
 }

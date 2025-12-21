@@ -9,12 +9,11 @@ import (
 
 type RenderSystem struct {
 	stage  *game.Stage
-	player *game.Player
 	camera game.Camera
 }
 
-func NewRenderSystem(stage *game.Stage, player *game.Player, camera game.Camera) *RenderSystem {
-	return &RenderSystem{stage: stage, player: player, camera: camera}
+func NewRenderSystem(stage *game.Stage, camera game.Camera) *RenderSystem {
+	return &RenderSystem{stage: stage, camera: camera}
 }
 
 func (s *RenderSystem) Update(world *ecs.World, deltaTime float32) {

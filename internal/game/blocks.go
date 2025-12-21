@@ -4,6 +4,7 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/common"
+	"github.com/tylland/dashland/internal/components"
 )
 
 type BlockType uint16
@@ -17,42 +18,33 @@ const (
 	All = BlockType(0xFFFF)
 )
 
-//type BlockBehavior uint16
-
-// const (
-// 	NoBehavior               = BlockBehavior(0)
-// 	BlockVoid  BlockBehavior = 1 << iota
-// 	BlockPlayerObstacle
-// 	BlockEnemyObstacle
-// 	BlockRollOff
-// )
-
 type Block struct {
 	bm *BlockMap
 	gm *EntityMap
 
-	BlockType       BlockType
-	Position        common.BlockPosition
-	Characteristics characteristics.Characteristics
-	Corners         [4]uint8
+	BlockType BlockType
+	Position  common.BlockPosition
+	Character characteristics.Characteristics
+	Collider  *components.ColliderComponent
+	Corners   [4]uint8
 }
 
-func NewBlockWithCharacteristics(bm *BlockMap, gm *EntityMap, blockType BlockType, position common.BlockPosition, characteristics characteristics.Characteristics) *Block {
-	return &Block{bm: bm, gm: gm, BlockType: blockType, Position: position, Characteristics: characteristics}
+func NewBlockWithCharacteristics(bm *BlockMap, gm *EntityMap, blockType BlockType, position common.BlockPosition, character characteristics.Characteristics, layer common.CollisionLayer, mask common.CollisionLayer) *Block {
+	return &Block{bm: bm, gm: gm, BlockType: blockType, Position: position, Collider: components.NewColliderComponent(layer, mask)}
 }
 
 func NewBlock(bm *BlockMap, gm *EntityMap, blockType BlockType, position common.BlockPosition) *Block {
 	switch blockType {
 	case Void:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.Void)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.Void, LayerGround, LayerNone)
 	case Soil:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.RollOff|characteristics.EnemyObstacle)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.RollOff|characteristics.EnemyObstacle, LayerGround, LayerEnemy)
 	case Wall:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.PlayerObstacle|characteristics.EnemyObstacle)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.EnemyObstacle|characteristics.PlayerObstacle, LayerWall, LayerAll)
 	case Bedrock:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.PlayerObstacle|characteristics.EnemyObstacle)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.EnemyObstacle|characteristics.PlayerObstacle, LayerWall, LayerAll)
 	default:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.None)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.None, LayerGround, LayerNone)
 	}
 }
 
@@ -87,7 +79,7 @@ const (
 )
 
 func (b *Block) HasCharacteristic(characteristics characteristics.Characteristics) bool {
-	return b.Characteristics&characteristics == characteristics
+	return b.Character&characteristics == characteristics
 }
 
 func (b *Block) cornerIndex(neighbors [9]bool, corner CornerPosition, strict bool) uint8 {
@@ -155,28 +147,6 @@ func (b *Block) Render() {
 	}
 }
 
-// func (b *Block) IsObstacleForPlayer(player *Player) bool {
-// 	return b.blockType == Bedrock || b.blockType == Boulder
-// }
-
 func (b *Block) Rectangle() rl.Rectangle {
 	return rl.Rectangle{X: float32(b.Position.X) * b.bm.BlockWidth, Y: float32(b.Position.Y) * b.bm.BlockHeight, Width: b.bm.BlockWidth, Height: b.bm.BlockHeight}
 }
-
-// type IBlock interface {
-// 	IsObstacleForPlayer(player *Player) bool
-// }
-
-// type UnknownBlock struct {
-// }
-
-// func (ub UnknownBlock) IsObstacleForPlayer(player *Player) bool {
-// 	return false
-// }
-
-// type BoulderBlock struct {
-// }
-
-// func (b BoulderBlock) IsObstacleForPlayer(player *Player) bool {
-// 	return !player.pickaxe
-// }

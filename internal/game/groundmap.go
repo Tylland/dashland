@@ -47,12 +47,14 @@ func (m *EntityMap) GetEntity(position common.BlockPosition) *ecs.Entity {
 
 	return m.entities[position.Y*m.Width+position.X]
 }
-func (m *EntityMap) GetEntityAtPosition(position common.BlockPosition) *ecs.Entity {
+func (m *EntityMap) GetEntityAtPosition(position common.BlockPosition) (*ecs.Entity, bool) {
 	if position.X < 0 || position.X >= m.Width || position.Y < 0 || position.Y >= m.Height {
-		return nil
+		return nil, false
 	}
 
-	return m.entities[position.Y*m.Width+position.X]
+	entity := m.entities[position.Y*m.Width+position.X]
+
+	return entity, entity != nil
 }
 
 func (m *EntityMap) CheckEntityAtPosition(entityType ecs.EntityType, position common.BlockPosition) bool {
