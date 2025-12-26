@@ -2,18 +2,18 @@ package common
 
 type CollisionLayer uint16
 
-type Collider struct {
-	Layer CollisionLayer
-	Mask  CollisionLayer
-}
+// type Collider struct {
+// 	Layer CollisionLayer
+// 	Mask  CollisionLayer
+// }
 
-func NewCollider(layer, mask CollisionLayer) *Collider {
-	return &Collider{Layer: layer, Mask: mask}
-}
+// func NewCollider(layer, mask CollisionLayer) *Collider {
+// 	return &Collider{Layer: layer, Mask: mask}
+// }
 
-func (c *Collider) CollidesWith(other *Collider) bool {
-	return c.Mask&other.Layer != 0
-}
+// func (c *Collider) CollidesWith(other *Collider) bool {
+// 	return c.Mask&other.Layer != 0
+// }
 
 // type Position struct {
 // 	position rl.Vector2

@@ -5,6 +5,7 @@ import (
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/common"
+	"github.com/tylland/dashland/internal/components"
 )
 
 type BlockMap struct {
@@ -120,6 +121,19 @@ func (bm *BlockMap) Update(deltaTime float32) {
 	for i := len(bm.blocks) - 1; i >= 0; i-- {
 		bm.blocks[i].Update(deltaTime)
 	}
+}
+
+func (bm *BlockMap) IsBlocked(pos common.BlockPosition, collider components.ColliderComponent) bool {
+	if pos.X < 0 || pos.Y < 0 || pos.X >= bm.Width || pos.Y >= bm.Height {
+		return true
+	}
+
+	if block, ok := bm.GetBlockAtPosition(pos); ok {
+		blocked, _ := block.Collider.Result(&collider)
+		return blocked
+	}
+
+	return true
 }
 
 // func (bm *BlockMap) Render() {

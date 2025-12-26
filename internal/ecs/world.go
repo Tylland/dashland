@@ -1,30 +1,33 @@
 package ecs
 
+import "slices"
+
 type World struct {
-	entities    []*Entity
-	entityNames map[string]*Entity
-	components  map[EntityID]*Components
-	singeltons  map[string]Component
-	systems     []System
+	entities     []*Entity
+	entityNames  map[string]*Entity
+	removalQueue []*Entity
+	events       []*Event
+	singeltons   map[string]Component
+	systems      []System
 }
 
 func NewWorld() *World {
 	return &World{
-		entities:    make([]*Entity, 0),
-		entityNames: make(map[string]*Entity),
-		components:  make(map[EntityID]*Components),
-		singeltons:  make(map[string]Component),
-		systems:     make([]System, 0),
+		entities:     make([]*Entity, 0),
+		entityNames:  make(map[string]*Entity),
+		removalQueue: make([]*Entity, 0),
+		events:       make([]*Event, 100),
+		singeltons:   make(map[string]Component),
+		systems:      make([]System, 0),
 	}
 }
 
-func (w *World) AddEntity(entity *Entity, components *Components) {
+func (w *World) AddEntity(entity *Entity) {
 	w.entities = append(w.entities, entity)
-	w.components[entity.ID] = components
 }
 
-func (w *World) AddEntityNamed(name string, entity *Entity, components *Components) {
-	w.AddEntity(entity, components)
+func (w *World) AddEntityNamed(name string, entity *Entity) {
+	w.AddEntity(entity)
 	w.entityNames[name] = entity
 }
 
@@ -36,8 +39,30 @@ func (w *World) GetEntity(name string) *Entity {
 	return w.entityNames[name]
 }
 
-func (w *World) AddComponent(entity *Entity, component Component) {
-	w.components[entity.ID].AddComponent(component)
+func (w *World) EnqueueRemoval(entity *Entity) {
+	w.removalQueue = append(w.removalQueue, entity)
+}
+
+func (w *World) RemovalQueue() []*Entity {
+	return w.removalQueue
+}
+
+func (w *World) ResetRemovalQueue() {
+	w.removalQueue = make([]*Entity, 0)
+}
+
+func (w *World) RemoveEntity(entity *Entity) {
+	i := slices.Index(w.entities, entity)
+
+	if i > -1 {
+		w.entities = append(w.entities[:i], w.entities[i+1:]...)
+	}
+
+	for k, v := range w.entityNames {
+		if v == entity {
+			delete(w.entityNames, k)
+		}
+	}
 }
 
 func (w *World) AddSingleton(component Component) {
@@ -50,12 +75,16 @@ func (w *World) Singleton(name string) (Component, bool) {
 	return component, ok
 }
 
-func (w *World) GetComponent(entity *Entity, componentName string) (Component, bool) {
-	return w.components[entity.ID].GetComponent(componentName)
+func (w *World) AddEvent(name string, data any) {
+	w.events = append(w.events, &Event{Name: name, Data: data})
 }
 
-func (w *World) GetComponents(entity *Entity) *Components {
-	return w.components[entity.ID]
+func (w *World) Events() []*Event {
+	return w.events
+}
+
+func (w *World) ClearEvents() {
+	w.events = make([]*Event, 100)
 }
 
 func (w *World) AddSystem(system System) {

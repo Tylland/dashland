@@ -5,6 +5,7 @@ import (
 	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
+	"github.com/tylland/dashland/internal/ecs"
 )
 
 type BlockType uint16
@@ -18,10 +19,26 @@ const (
 	All = BlockType(0xFFFF)
 )
 
+func (bt BlockType) String() string {
+	switch bt {
+	case Bedrock:
+		return "bedrock"
+	case Void:
+		return "void"
+	case Soil:
+		return "soil"
+	case Wall:
+		return "wall"
+	default:
+		return "unknown"
+	}
+}
+
 type Block struct {
 	bm *BlockMap
 	gm *EntityMap
 
+	ID        ecs.EntityID
 	BlockType BlockType
 	Position  common.BlockPosition
 	Character characteristics.Characteristics
@@ -29,22 +46,23 @@ type Block struct {
 	Corners   [4]uint8
 }
 
-func NewBlockWithCharacteristics(bm *BlockMap, gm *EntityMap, blockType BlockType, position common.BlockPosition, character characteristics.Characteristics, layer common.CollisionLayer, mask common.CollisionLayer) *Block {
-	return &Block{bm: bm, gm: gm, BlockType: blockType, Position: position, Collider: components.NewColliderComponent(layer, mask)}
+func NewBlockWithCharacteristics(bm *BlockMap, gm *EntityMap, blockType BlockType, position common.BlockPosition, character characteristics.Characteristics, layer common.CollisionLayer, block common.CollisionLayer, overlap common.CollisionLayer) *Block {
+	id := NewEntityId(blockType.String())
+	return &Block{bm: bm, gm: gm, ID: id, BlockType: blockType, Position: position, Character: character, Collider: components.NewColliderComponent(layer, block, overlap)}
 }
 
 func NewBlock(bm *BlockMap, gm *EntityMap, blockType BlockType, position common.BlockPosition) *Block {
 	switch blockType {
 	case Void:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.Void, LayerGround, LayerNone)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.None, LayerNone, LayerNone, LayerNone)
 	case Soil:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.RollOff|characteristics.EnemyObstacle, LayerGround, LayerEnemy)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.CanHoldGravity|characteristics.Obstacle, LayerGround, LayerEnemy, LayerAll)
 	case Wall:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.EnemyObstacle|characteristics.PlayerObstacle, LayerWall, LayerAll)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.Obstacle|characteristics.CanHoldGravity, LayerWall, LayerAll, LayerNone)
 	case Bedrock:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.EnemyObstacle|characteristics.PlayerObstacle, LayerWall, LayerAll)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.Obstacle|characteristics.CanHoldGravity, LayerBedrock, LayerAll, LayerNone)
 	default:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.None, LayerGround, LayerNone)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.None, LayerGround, LayerNone, LayerNone)
 	}
 }
 

@@ -7,12 +7,13 @@ const (
 	LayerWall common.CollisionLayer = 1 << iota
 	LayerPlayer
 	LayerEnemy
+	LayerBedrock
 	LayerGround
 	LayerProjectile
 	LayerItem
 	LayerCollectable
-	LayerWater
-	LayerTrap
-	LayerTrigger
+	// LayerWater
+	// LayerTrap
+	//	LayerTrigger
 	LayerAll common.CollisionLayer = 0xFFFF
 )

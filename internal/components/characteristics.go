@@ -14,6 +14,10 @@ func (c *CharacteristicComponent) Has(characteristic characteristics.Characteris
 	return c.characteristics&characteristic == characteristic
 }
 
+func (c *CharacteristicComponent) HasNot(characteristic characteristics.Characteristics) bool {
+	return c.characteristics&^characteristic == 0
+}
+
 func (c *CharacteristicComponent) Add(characteristic characteristics.Characteristics) {
 	c.characteristics = c.characteristics | characteristic
 }

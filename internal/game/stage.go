@@ -88,32 +88,50 @@ func (w *Stage) Render(deltaTime float32) {
 // }
 
 func (s *Stage) VisitBlock(position common.BlockPosition) {
-	fmt.Printf("Block at position %d,%d changed type from %d", position.X, position.Y, s.blocks[position.Y*s.Width+position.X].BlockType)
+	fmt.Printf("Block at position %d,%d changed from %s", position.X, position.Y, s.blocks[position.Y*s.Width+position.X].BlockType.String())
 	s.SetBlock(NewBlock(s.BlockMap, s.EntityMap, Void, position), position)
-	fmt.Printf(" to %d \n", s.blocks[position.Y*s.Width+position.X].BlockType)
+	fmt.Printf(" to %s \n", s.blocks[position.Y*s.Width+position.X].BlockType.String())
 }
 
 func (s *Stage) CheckCharacteristics(world *ecs.World, position common.BlockPosition, character characteristics.Characteristics) bool {
 
-	block, ok := s.GetBlock(position.X, position.Y)
-
-	if !ok {
-		return false
+	if block, ok := s.GetBlock(position.X, position.Y); ok {
+		if block.HasCharacteristic(character) {
+			return true
+		}
 	}
 
-	if block.HasCharacteristic(character) {
-		return true
+	if entity, ok := s.GetEntityAtPosition(position); ok {
+		characteristics := ecs.GetComponent[components.CharacteristicComponent](entity.Components)
+
+		return characteristics != nil && characteristics.Has(character)
 	}
 
-	entity := s.GetEntity(position)
+	return false
+}
 
-	if entity == nil {
-		return false
+func (s *Stage) CheckBlocked(world *ecs.World, position common.BlockPosition, collider *components.ColliderComponent) bool {
+
+	if block, ok := s.GetBlock(position.X, position.Y); ok {
+		blocked, _ := collider.Result(block.Collider)
+		if blocked {
+			return true
+		}
 	}
 
-	characteristics := ecs.GetComponent[components.CharacteristicComponent](world.GetComponents(entity))
+	if entity, ok := s.GetEntityAtPosition(position); ok {
+		entCharacter := ecs.GetComponent[components.CharacteristicComponent](entity.Components)
+		entCollider := ecs.GetComponent[components.ColliderComponent](entity.Components)
 
-	return characteristics != nil && characteristics.Has(character)
+		if entCharacter != nil && entCollider != nil {
+			blocked, _ := collider.Result(entCollider)
+			if blocked {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func (s *Stage) CheckPositionOccupied(position common.BlockPosition) bool {
@@ -132,17 +150,19 @@ func (s *Stage) CheckPositionOccupied(position common.BlockPosition) bool {
 // 	return s.player.Position.CurrentBlockPosition.IsSame(position)
 // }
 
-func (s *Stage) OnEvent(event GameEvent) {
+func (s *Stage) OnEvent(event any) {
+
+	var world *ecs.World
 
 	switch e := event.(type) {
 	case *EntityCollisionEvent:
 		fmt.Println("Entity collision detected!!")
 
 		if e.Entity1.Type == EntityBoulder && e.Entity2.Type == EntityEnemy {
-			s.OnBoulderEnemyCollision(event.World(), e.Entity1, e.Entity2)
+			s.OnBoulderEnemyCollision(world, e.Entity1, e.Entity2)
 		}
 		if e.Entity2.Type == EntityBoulder && e.Entity1.Type == EntityEnemy {
-			s.OnBoulderEnemyCollision(event.World(), e.Entity2, e.Entity1)
+			s.OnBoulderEnemyCollision(world, e.Entity2, e.Entity1)
 		}
 
 	case *BlockCollisionEvent:
@@ -163,8 +183,7 @@ func (s *Stage) OnEvent(event GameEvent) {
 			//			s.player.Hurt(e.Entity)
 		}
 
-		comps := e.World().GetComponents(e.Entity)
-		character := ecs.GetComponent[components.CharacteristicComponent](comps)
+		character := ecs.GetComponent[components.CharacteristicComponent](e.Entity.Components)
 
 		if character != nil && character.Has(characteristics.IsEnemy) {
 			fmt.Println("Player hit by enemy!!")
@@ -181,7 +200,7 @@ func (s *Stage) OnEvent(event GameEvent) {
 			} else {
 				fmt.Println("Player collected diamond!!")
 				s.SoundPlayer.PlayFx("diamond_collected")
-				position := ecs.GetComponent[components.PositionComponent](comps)
+				position := ecs.GetComponent[components.PositionComponent](e.Entity.Components)
 				if position != nil {
 					s.RemoveEntity(e.Entity, position.CurrentBlockPosition)
 				}
@@ -195,18 +214,17 @@ func (s *Stage) OnEvent(event GameEvent) {
 func (s *Stage) OnBoulderEnemyCollision(world *ecs.World, boulder *ecs.Entity, enemy *ecs.Entity) {
 	fmt.Println("Boulder and enemy collision detected!!")
 
-	boulderComps := world.GetComponents(boulder)
-	boulderVelocity := ecs.GetComponent[components.VelocityComponent](boulderComps)
+	boulderVelocity := ecs.GetComponent[components.VelocityComponent](boulder.Components)
 
 	if !boulderVelocity.IsMoving() {
 		return
 	}
 
-	enemyPosition := ecs.GetComponent[components.PositionComponent](world.GetComponents(enemy))
+	enemyPosition := ecs.GetComponent[components.PositionComponent](enemy.Components)
 
 	s.RemoveEntity(enemy, enemyPosition.CurrentBlockPosition)
 
-	boulderPosition := ecs.GetComponent[components.PositionComponent](boulderComps)
+	boulderPosition := ecs.GetComponent[components.PositionComponent](boulder.Components)
 
 	s.RemoveEntity(boulder, boulderPosition.CurrentBlockPosition)
 

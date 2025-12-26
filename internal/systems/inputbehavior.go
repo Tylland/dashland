@@ -11,23 +11,21 @@ import (
 
 const walkSpeed = 128 // pixels per second
 
-type InputActionSystem struct {
+type InputBehavior struct {
 	stage *game.Stage
 }
 
-func NewInputActionSystem(stage *game.Stage) *InputActionSystem {
-	return &InputActionSystem{
+func NewInputBehavior(stage *game.Stage) *InputBehavior {
+	return &InputBehavior{
 		stage: stage,
 	}
 }
 
-func (s *InputActionSystem) Update(world *ecs.World, deltaTime float32) {
+func (s *InputBehavior) Update(world *ecs.World, deltaTime float32) {
 	for _, entity := range world.Entities() {
-		comps := world.GetComponents(entity)
-
-		input := ecs.GetComponent[components.InputComponent](comps)
-		position := ecs.GetComponent[components.PositionComponent](comps)
-		step := ecs.GetComponent[components.BlockStep](comps)
+		input := ecs.GetComponent[components.InputComponent](entity.Components)
+		position := ecs.GetComponent[components.PositionComponent](entity.Components)
+		step := ecs.GetComponent[components.BlockStep](entity.Components)
 
 		if input != nil && position != nil && step != nil {
 			s.nextStep(input, position, step)
@@ -35,7 +33,7 @@ func (s *InputActionSystem) Update(world *ecs.World, deltaTime float32) {
 	}
 }
 
-func (s *InputActionSystem) nextStep(input *components.InputComponent, position *components.PositionComponent, step *components.BlockStep) {
+func (s *InputBehavior) nextStep(input *components.InputComponent, position *components.PositionComponent, step *components.BlockStep) {
 
 	if position.Vector2 == step.Target {
 		var direction common.BlockVector = common.BlockVector{}
@@ -55,9 +53,7 @@ func (s *InputActionSystem) nextStep(input *components.InputComponent, position 
 		}
 
 		if !direction.IsZero() {
-			targetBlockPos := position.CurrentBlockPosition.Add(direction)
-
-			step.Move(direction, s.stage.GetPosition(targetBlockPos), walkSpeed)
+			step.Move(direction, walkSpeed)
 		}
 	}
 }

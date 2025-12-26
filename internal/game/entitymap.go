@@ -4,6 +4,7 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/lafriks/go-tiled"
 	"github.com/tylland/dashland/internal/common"
+	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
 )
 
@@ -32,7 +33,6 @@ func (m *EntityMap) InitPlayerPosition(tiles []*tiled.LayerTile) {
 }
 
 func (m *EntityMap) SetEntity(entity *ecs.Entity, pos common.BlockPosition) {
-
 	if pos.X < 0 || pos.X >= m.Width || pos.Y < 0 || pos.Y >= m.Height {
 		return
 	}
@@ -61,14 +61,30 @@ func (m *EntityMap) CheckEntityAtPosition(entityType ecs.EntityType, position co
 	return m.entities[position.Y*m.Width+position.X].Type == entityType
 }
 
-func (m *EntityMap) MoveEntity(source *ecs.Entity, sourcePos common.BlockPosition, targetPos common.BlockPosition) {
-	m.entities[targetPos.Y*m.Width+targetPos.X] = source
-	m.entities[sourcePos.Y*m.Width+sourcePos.X] = nil
+func (m *EntityMap) TryMoveEntity(source *ecs.Entity, sourcePos common.BlockPosition, targetPos common.BlockPosition) bool {
+	if m.entities[targetPos.Y*m.Width+targetPos.X] == nil {
+		m.entities[targetPos.Y*m.Width+targetPos.X] = source
+		m.entities[sourcePos.Y*m.Width+sourcePos.X] = nil
+		return true
+	}
+
+	return false
 }
 
 func (m *EntityMap) RemoveEntity(doomed *ecs.Entity, position common.BlockPosition) {
+	if m.entities[position.Y*m.Width+position.X] == doomed {
+		m.entities[position.Y*m.Width+position.X] = nil
+	}
+}
 
-	//	sourcePosition := position.CurrentBlockPosition
+func (m *EntityMap) TryRemoveEntity(doomed *ecs.Entity) bool {
+	position := ecs.GetComponent[components.PositionComponent](doomed.Components)
+	pos := position.CurrentBlockPosition
 
-	m.entities[position.Y*m.Width+position.X] = nil
+	if m.entities[pos.Y*m.Width+pos.X] == doomed {
+		m.entities[pos.Y*m.Width+pos.X] = nil
+		return true
+	}
+
+	return false
 }

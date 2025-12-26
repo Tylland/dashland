@@ -6,29 +6,34 @@ import (
 )
 
 type BlockStep struct {
-	Increment common.BlockVector
-	Target    rl.Vector2
-	Speed     float32
+	Increment         common.BlockVector
+	Direction         common.BlockVector
+	previousDirection common.BlockVector
+	Target            rl.Vector2
+	Speed             float32
 }
 
 func NewBlockStep(target rl.Vector2) *BlockStep {
 	return &BlockStep{Increment: common.NewBlockVector(0, 0), Target: target}
 }
 
-func (s *BlockStep) Move(increment common.BlockVector, target rl.Vector2, speed float32) {
+func (s *BlockStep) Move(increment common.BlockVector, speed float32) {
 	s.Increment = increment
-	s.Target = target
+	s.SetDirection(increment)
 	s.Speed = speed
 }
 
-// func (s *BlockStep) Halt() {
-// 	s.Increment.Clear()
-// }
+func (s *BlockStep) SetDirection(dir common.BlockVector) {
+	s.previousDirection = s.Direction
+	s.Direction = dir
+}
 
-// func (s *BlockStep) HasIncrement() bool {
-// 	return s.Increment.X != 0 || s.Increment.Y != 0
-// }
+func (s *BlockStep) Cancel() {
+	s.Increment.Clear()
+	//s.Direction = s.previousDirection
+}
 
-// func (s *BlockStep) AtTarget() bool {
-// 	return s.Increment.X != 0 || s.Increment.Y != 0
-// }
+func (s *BlockStep) Commit(target rl.Vector2) {
+	s.Increment.Clear()
+	s.Target = target
+}

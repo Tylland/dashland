@@ -5,62 +5,70 @@ import (
 	"github.com/tylland/dashland/internal/ecs"
 )
 
-type GameEvent interface {
-	World() *ecs.World
-	IsEvent()
-}
+// type GameEvent interface {
+// 	World() *ecs.World
+// 	IsEvent()
+// }
 
-type GameEventListner interface {
-	OnEvent(event GameEvent)
-}
+// type GameEventListner interface {
+// 	OnEvent(event GameEvent)
+// }
 
-type GameEventDispatcher struct {
-	listeners []GameEventListner
-}
+// type GameEventDispatcher struct {
+// 	listeners []GameEventListner
+// }
 
-func (d *GameEventDispatcher) AddListener(listener GameEventListner) {
-	d.listeners = append(d.listeners, listener)
-}
+// func (d *GameEventDispatcher) AddListener(listener GameEventListner) {
+// 	d.listeners = append(d.listeners, listener)
+// }
 
 type EntityCollisionEvent struct {
-	world   *ecs.World
 	Entity1 *ecs.Entity
 	Entity2 *ecs.Entity
 }
 
-func NewEntityCollisionEvent(world *ecs.World, e1 *ecs.Entity, e2 *ecs.Entity) *EntityCollisionEvent {
+func NewEntityCollisionEvent(e1 *ecs.Entity, e2 *ecs.Entity) *EntityCollisionEvent {
 	return &EntityCollisionEvent{
-		world:   world,
 		Entity1: e1,
 		Entity2: e2,
 	}
 }
 
-func (ce EntityCollisionEvent) World() *ecs.World {
-	return ce.world
+type EntityEvent struct {
+	Actor  *ecs.Entity
+	Target *ecs.Entity
 }
 
-func (ce EntityCollisionEvent) IsEvent() {}
+func NewEntityEvent(actor *ecs.Entity, target *ecs.Entity) *EntityEvent {
+	return &EntityEvent{
+		Actor:  actor,
+		Target: target,
+	}
+}
 
-type BlockCollisionEvent struct {
-	world  *ecs.World
+type BlockEvent struct {
 	Block  *Block
 	Entity *ecs.Entity
 }
 
-func NewBlockCollisionEvent(world *ecs.World, block *Block, entity *ecs.Entity) *BlockCollisionEvent {
-	return &BlockCollisionEvent{
-		world:  world,
+func NewBlockEvent(block *Block, entity *ecs.Entity) *BlockEvent {
+	return &BlockEvent{
 		Block:  block,
 		Entity: entity,
 	}
 }
 
-func (ce BlockCollisionEvent) World() *ecs.World {
-	return ce.world
+type BlockCollisionEvent struct {
+	Block  *Block
+	Entity *ecs.Entity
 }
 
-func (ce BlockCollisionEvent) IsEvent() {}
+func NewBlockCollisionEvent(block *Block, entity *ecs.Entity) *BlockCollisionEvent {
+	return &BlockCollisionEvent{
+		Block:  block,
+		Entity: entity,
+	}
+}
 
 type PlayerCollisionEvent struct {
 	world          *ecs.World
@@ -80,8 +88,30 @@ func NewPlayerCollisionEvent(world *ecs.World, player *ecs.Entity, entity *ecs.E
 	}
 }
 
-func (ce PlayerCollisionEvent) World() *ecs.World {
-	return ce.world
+type CollectEvent struct {
+	Collector   *ecs.Entity
+	Collectable *ecs.Entity
 }
 
-func (ce PlayerCollisionEvent) IsEvent() {}
+func NewCollectEvent(collector *ecs.Entity, collectable *ecs.Entity) *CollectEvent {
+	return &CollectEvent{
+		Collector:   collector,
+		Collectable: collectable,
+	}
+}
+
+type DamageEvent struct {
+	Source *ecs.Entity
+	Target *ecs.Entity
+	Damage *components.Damage
+	Health *components.Health
+}
+
+func NewDamageEvent(source *ecs.Entity, target *ecs.Entity, damage *components.Damage, health *components.Health) *DamageEvent {
+	return &DamageEvent{
+		Source: source,
+		Target: target,
+		Damage: damage,
+		Health: health,
+	}
+}

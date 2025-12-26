@@ -7,16 +7,16 @@ import (
 	"github.com/tylland/dashland/internal/game"
 )
 
-type RenderSystem struct {
+type Renderer struct {
 	stage  *game.Stage
 	camera game.Camera
 }
 
-func NewRenderSystem(stage *game.Stage, camera game.Camera) *RenderSystem {
-	return &RenderSystem{stage: stage, camera: camera}
+func NewRenderSystem(stage *game.Stage, camera game.Camera) *Renderer {
+	return &Renderer{stage: stage, camera: camera}
 }
 
-func (s *RenderSystem) Update(world *ecs.World, deltaTime float32) {
+func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.Black)
 	rl.BeginMode2D(s.camera.GetCamera())
@@ -25,10 +25,8 @@ func (s *RenderSystem) Update(world *ecs.World, deltaTime float32) {
 	s.stage.Render(deltaTime)
 
 	for _, entity := range world.Entities() {
-
-		comps := world.GetComponents(entity)
-		position := ecs.GetComponent[components.PositionComponent](comps)
-		sprite := ecs.GetComponent[components.SpriteComponent](comps)
+		position := ecs.GetComponent[components.PositionComponent](entity.Components)
+		sprite := ecs.GetComponent[components.SpriteComponent](entity.Components)
 
 		if position != nil && sprite != nil {
 			// if entity.Collision != nil {

@@ -3,10 +3,9 @@ package components
 import "github.com/tylland/dashland/internal/common"
 
 type WallWalkerComponent struct {
-	HasWall          bool
-	DefaultDirection common.BlockVector
+	HasWall bool
 }
 
 func NewWallWalkerComponent(defaultDirection common.BlockVector) *WallWalkerComponent {
-	return &WallWalkerComponent{DefaultDirection: defaultDirection}
+	return &WallWalkerComponent{}
 }

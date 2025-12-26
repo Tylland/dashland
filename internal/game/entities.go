@@ -37,15 +37,15 @@ func NewGameEntity(world *ecs.World, stage *Stage, entityType ecs.EntityType, bl
 func NewBoulder(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityId("boulder"), EntityBoulder)
 
-	comps := ecs.NewComponents()
-	comps.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall))
-	comps.AddComponent(components.NewPositionComponent(blockPosition, position))
-	comps.AddComponent(components.NewBlockStep(position))
-	comps.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityBoulder)*stage.BlockWidth, 0, 1, 0)))
-	comps.AddComponent(components.NewColliderComponent(LayerItem, LayerAll))
-	comps.AddComponent(components.NewPushableComponent(1))
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff))
+	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
+	entity.AddComponent(components.NewBlockStep(position))
+	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityBoulder)*stage.BlockWidth, 0, 1, 0)))
+	entity.AddComponent(components.NewColliderComponent(LayerItem, LayerAll, LayerPlayer|LayerEnemy))
+	entity.AddComponent(components.NewPushableComponent(1))
+	entity.AddComponent(components.NewDamage(1))
 
-	world.AddEntity(entity, comps)
+	world.AddEntity(entity)
 
 	return entity
 }
@@ -53,15 +53,15 @@ func NewBoulder(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 func NewDiamond(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityId("diamond"), EntityDiamond)
 
-	comps := ecs.NewComponents()
-	comps.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.Collectable | characteristics.EnemyObstacle))
-	comps.AddComponent(components.NewPositionComponent(blockPosition, position))
-	comps.AddComponent(components.NewBlockStep(position))
-	comps.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDiamond)*stage.BlockWidth, 0, 1, 0)))
-	comps.AddComponent(components.NewColliderComponent(LayerCollectable, LayerNone))
-	comps.AddComponent(components.NewCollectableComponent(components.CollectableDiamond, 1))
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff | characteristics.Obstacle))
+	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
+	entity.AddComponent(components.NewBlockStep(position))
+	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDiamond)*stage.BlockWidth, 0, 1, 0)))
+	entity.AddComponent(components.NewColliderComponent(LayerCollectable, LayerAll&(^LayerPlayer|LayerEnemy), LayerPlayer|LayerGround|LayerEnemy))
+	entity.AddComponent(components.NewCollectableComponent(components.CollectableDiamond, 1))
+	entity.AddComponent(components.NewDamage(1))
 
-	world.AddEntity(entity, comps)
+	world.AddEntity(entity)
 
 	return entity
 }
@@ -69,15 +69,16 @@ func NewDiamond(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 func NewEnemy(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityId("enemy"), EntityEnemy)
 
-	comps := ecs.NewComponents()
-	comps.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy))
-	comps.AddComponent(components.NewPositionComponent(blockPosition, position))
-	comps.AddComponent(components.NewBlockStep(position))
-	comps.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.enemyTextures, stage.BlockWidth, stage.BlockHeight, 0, 0, 4, 0)))
-	comps.AddComponent(components.NewColliderComponent(LayerEnemy, LayerAll))
-	comps.AddComponent(components.NewWallWalkerComponent(common.NewBlockVector(1, 0)))
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy))
+	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
+	entity.AddComponent(components.NewBlockStep(position))
+	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.enemyTextures, stage.BlockWidth, stage.BlockHeight, 0, 0, 4, 0)))
+	entity.AddComponent(components.NewColliderComponent(LayerEnemy, LayerEnemy, LayerPlayer))
+	entity.AddComponent(components.NewDamage(1))
+	entity.AddComponent(components.NewHealth(1))
+	entity.AddComponent(components.NewWallWalkerComponent(common.NewBlockVector(1, 0)))
 
-	world.AddEntity(entity, comps)
+	world.AddEntity(entity)
 
 	return entity
 }

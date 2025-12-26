@@ -15,12 +15,13 @@ type Sounds struct {
 func (s *Sounds) LoadSounds(dir string) {
 	s.sounds = make(map[string]rl.Sound, 2)
 
-	sound := rl.LoadSound("sounds/effects/diamond_collected.mp3")
+	s.sounds["diamond_collision"] = rl.LoadSound("sounds/effects/diamond_collision.mp3")
+	s.sounds["diamond_collected"] = rl.LoadSound("sounds/effects/diamond_collected.mp3")
 
-	s.sounds["diamond_collected"] = sound
+	s.sounds["player_hurt"] = rl.LoadSound("sounds/effects/player_hurt.mp3")
 
-	sound = rl.LoadSound("sounds/effects/player_hurt.mp3")
-	s.sounds["player_hurt"] = sound
+	s.sounds["boulder_collision"] = rl.LoadSound("sounds/effects/boulder_collision.mp3")
+
 	//rl.PlaySound(s.sounds[0])
 }
 

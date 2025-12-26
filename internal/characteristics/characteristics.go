@@ -5,17 +5,14 @@ import "strings"
 type Characteristics uint16
 
 const (
-	None                 = Characteristics(0)
-	Void Characteristics = 1 << iota
-	RollOff
-	CanFall
-	Collectable
+	None                    = Characteristics(0)
+	CanFall Characteristics = 1 << iota
+	Falling
 	Pushable
 	IsEnemy
-	EnemyObstacle
-	IsPlayer
-	PlayerObstacle
+	Obstacle
 	CanHoldGravity
+	GravityRollOff
 )
 
 func (c Characteristics) String() string {
@@ -24,20 +21,11 @@ func (c Characteristics) String() string {
 	if c&None == None {
 		str = append(str, "None")
 	}
-	if c&None == None {
-		str = append(str, "None")
-	}
-	if c&Void == Void {
-		str = append(str, "Void")
-	}
-	if c&RollOff == RollOff {
-		str = append(str, "RollOff")
-	}
 	if c&CanFall == CanFall {
 		str = append(str, "CanFall")
 	}
-	if c&Collectable == Collectable {
-		str = append(str, "Collectable")
+	if c&Falling == Falling {
+		str = append(str, "Falling")
 	}
 	if c&Pushable == Pushable {
 		str = append(str, "Pushable")
@@ -45,11 +33,14 @@ func (c Characteristics) String() string {
 	if c&IsEnemy == IsEnemy {
 		str = append(str, "IsEnemy")
 	}
-	if c&PlayerObstacle == PlayerObstacle {
-		str = append(str, "PlayerObstacle")
+	if c&Obstacle == Obstacle {
+		str = append(str, "Obstacle")
 	}
-	if c&EnemyObstacle == EnemyObstacle {
-		str = append(str, "EnemyObstacle")
+	if c&CanHoldGravity == CanHoldGravity {
+		str = append(str, "CanHoldGravity")
+	}
+	if c&GravityRollOff == GravityRollOff {
+		str = append(str, "GravityRollOff")
 	}
 
 	return strings.Join(str, "|")

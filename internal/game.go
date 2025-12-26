@@ -98,8 +98,7 @@ func (g *DashlandGame) LoadStageFromFile(filepath string) (*game.Stage, error) {
 	stage.InitPlayerPosition(tiledMap.Layers[1].Tiles)
 
 	stage.InitEntities(g.world, game.EntityCategoryObject, tiledMap.Layers[1].Tiles)
-	//	stage.InitEntities(g.world, game.EntityCategoryEnemy, tiledMap.Layers[2].Tiles)
-	//	stage.AddEntities(stage, entity.EntityCategoryEnemy, tiledMap.Layers[2].Tiles)
+	stage.InitEntities(g.world, game.EntityCategoryEnemy, tiledMap.Layers[2].Tiles)
 
 	return stage, nil
 }
@@ -112,24 +111,27 @@ func (g *DashlandGame) init() {
 		return
 	}
 
-	player, comps := game.NewPlayerEntity(g.world, stage, stage.InitialPlayerPosition)
-	g.world.AddEntityNamed("player", player, comps)
+	player := game.NewPlayerEntity(g.world, stage, stage.InitialPlayerPosition)
+	g.world.AddEntityNamed("player", player)
 
-	playerPosition := ecs.GetComponent[components.PositionComponent](comps)
+	playerPosition := ecs.GetComponent[components.PositionComponent](player.Components)
 
 	g.camera = game.NewSmoothFollowCamera(&g.Screen, playerPosition)
 
 	g.world.AddSystems(
 		systems.NewInputSystem(),
-		systems.NewInputActionSystem(stage),
-		systems.NewGravitySystem(stage),
-		systems.NewWallWalkerSystem(stage),
+		systems.NewInputBehavior(stage),
+		systems.NewGravityBehavior(stage),
+		systems.NewWallWalkerBehavior(stage),
+		systems.NewPushBehavior(stage),
 		systems.NewBlockCollisionSystem(stage),
-		systems.NewPushSystem(stage),
-		systems.NewBlockMovementSystem(stage, stage),
+		systems.NewCollect(stage, stage.SoundPlayer),
+		systems.NewGameplaySystem(stage, stage.SoundPlayer),
+		systems.NewBlockMovement(stage, stage),
 	)
 
 	g.world.AddSystem(systems.NewRenderSystem(stage, g.camera))
+	g.world.AddSystem(systems.NewCleanup(stage))
 
 	g.stage = stage
 }

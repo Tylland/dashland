@@ -33,6 +33,11 @@ func (c *Components) GetComponent(name string) (Component, bool) {
 	return component, ok
 }
 
+func (c *Components) RemoveComponent(component Component) {
+	name := ComponentName(component)
+	delete(c.components, name)
+}
+
 func GetComponent[T Component](components *Components) *T {
 	name := ComponentName(new(T))
 	commp, ok := components.GetComponent(name)

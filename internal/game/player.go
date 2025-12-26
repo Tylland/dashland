@@ -38,18 +38,19 @@ func (v Vector) Normalized() Vector {
 // 	return &Player{stage: stage, Velocity: components.NewVelocityComponentZero()}
 // }
 
-func NewPlayerEntity(world *ecs.World, stage *Stage, position common.BlockPosition) (*ecs.Entity, *ecs.Components) {
+func NewPlayerEntity(world *ecs.World, stage *Stage, position common.BlockPosition) *ecs.Entity {
 	player := ecs.NewEntity(ecs.EntityID("player"), EntityPlayer)
 
-	comps := ecs.NewComponents()
-	comps.AddComponent(components.NewCharacteristicsComponent(characteristics.IsPlayer | characteristics.CanHoldGravity))
-	comps.AddComponent(components.NewInputComponent())
-	comps.AddComponent(components.NewPositionComponent(position, stage.GetPosition(position)))
-	comps.AddComponent(components.NewBlockStep(stage.GetPosition(position)))
-	comps.AddComponent(components.NewColliderComponent(LayerPlayer, LayerAll))
-	comps.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityPlayer)*stage.BlockWidth, 0, 1, 0)))
+	player.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
+	player.AddComponent(components.NewInputComponent())
+	player.AddComponent(components.NewPositionComponent(position, stage.GetPosition(position)))
+	player.AddComponent(components.NewBlockStep(stage.GetPosition(position)))
+	player.AddComponent(components.NewColliderComponent(LayerPlayer, LayerNone, LayerAll))
+	player.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityPlayer)*stage.BlockWidth, 0, 1, 0)))
+	player.AddComponent(components.NewInventory())
+	player.AddComponent(components.NewHealth(1))
 
-	return player, comps
+	return player
 }
 
 // func (p *Player) InitPosition(blockPosition common.BlockPosition) {

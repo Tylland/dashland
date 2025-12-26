@@ -1,9 +1,8 @@
 package systems
 
 import (
-	"fmt"
-
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
 	"github.com/tylland/dashland/internal/game"
@@ -11,92 +10,57 @@ import (
 
 const moveSpeed = 128 // pixels per second
 
-type BlockMovementSystem struct {
+type BlockMovement struct {
 	stage *game.Stage
-	BlockResolver
-	//	PlayerResolver
 }
 
-func NewBlockMovementSystem(stage *game.Stage, blocks BlockResolver) *BlockMovementSystem {
-	return &BlockMovementSystem{
-		stage:         stage,
-		BlockResolver: blocks,
+func NewBlockMovement(stage *game.Stage, blocks BlockResolver) *BlockMovement {
+	return &BlockMovement{
+		stage: stage,
 	}
 }
 
-func (s *BlockMovementSystem) Update(world *ecs.World, deltaTime float32) {
+func (s *BlockMovement) Update(world *ecs.World, deltaTime float32) {
 	// Handle entities movement
 	for _, entity := range world.Entities() {
-		comps := world.GetComponents(entity)
+		position := ecs.GetComponent[components.PositionComponent](entity.Components)
+		step := ecs.GetComponent[components.BlockStep](entity.Components)
 
-		position := ecs.GetComponent[components.PositionComponent](comps)
-		step := ecs.GetComponent[components.BlockStep](comps)
-		collider := ecs.GetComponent[components.ColliderComponent](comps)
-
-		if position != nil && step != nil && collider != nil {
-			s.moveEntity(world, entity, position, step, collider, deltaTime)
+		if position != nil && step != nil {
+			s.moveEntity(entity, position, step, deltaTime)
 		}
 	}
-
 }
 
-// func (s *BlockMovementSystem) nextStep(world *ecs.World, input *components.InputComponent, position *components.PositionComponent, step *components.BlockStep) {
-
-// 	if position.Vector2 == step.Target {
-// 		//	if !position.HasTarget() {
-
-// 		var direction common.BlockVector = common.BlockVector{}
-
-// 		if input.RightKeyPressed {
-// 			fmt.Print("Move player right!")
-// 			direction = common.DirectionRight
-// 		} else if input.LeftKeyPressed {
-// 			fmt.Print("Move player left!")
-// 			direction = common.DirectionLeft
-// 		} else if input.DownKeyPressed {
-// 			fmt.Print("Move player down!")
-// 			direction = common.DirectionDown
-// 		} else if input.UpKeyPressed {
-// 			fmt.Print("Move player up!")
-// 			direction = common.DirectionUp
-// 		}
-
-// 		targetBlockPos := position.CurrentBlockPosition.Add(direction)
-
-// 		step.Move(direction, s.stage.GetPosition(targetBlockPos), moveSpeed)
-
-// 		// if !s.stage.IsObstacleForPlayer(world, targetBlockPos) {
-// 		// 	step.Move(direction, s.stage.GetPosition(targetBlockPos), moveSpeed)
-// 		// }
-// 	}
-// }
-
-func (s *BlockMovementSystem) moveEntity(world *ecs.World, entity *ecs.Entity, position *components.PositionComponent, step *components.BlockStep, collider *components.ColliderComponent, deltaTime float32) {
-	if entity.ID == "player" {
-		fmt.Print("Player is here!!")
-	}
+func (s *BlockMovement) moveEntity(entity *ecs.Entity, position *components.PositionComponent, step *components.BlockStep, deltaTime float32) {
 
 	if !step.Increment.IsZero() {
+		// if entity.ID == "player" {
+		// 	fmt.Print("Player is here!!")
+		// }
 
 		target := position.CurrentBlockPosition.Add(step.Increment)
 
-		if block, ok := s.stage.GetBlock(target.X, target.Y); ok {
-			if collider.CollidesWith(block.Collider) {
+		if s.stage.TryMoveEntity(entity, position.CurrentBlockPosition, target) {
+			position.Update(target)
+			//			s.stage.VisitBlock(position.CurrentBlockPosition)
+			step.Commit(s.stage.GetPosition(target))
+		} else {
+			character := ecs.GetComponent[components.CharacteristicComponent](entity.Components)
 
+			if character != nil {
+				character.Remove(characteristics.Falling)
 			}
+
+			step.Cancel()
 		}
 
-		position.Update(target)
-		s.stage.MoveEntity(entity, position.PreviousBlockPosition, position.CurrentBlockPosition)
-		s.stage.VisitBlock(position.CurrentBlockPosition)
-		step.Increment.Clear()
 	}
 
 	s.moveToTarget(position, step, deltaTime)
 }
 
-// Handle grid-based movement
-func (s *BlockMovementSystem) moveToTarget(position *components.PositionComponent, step *components.BlockStep, deltaTime float32) {
+func (s *BlockMovement) moveToTarget(position *components.PositionComponent, step *components.BlockStep, deltaTime float32) {
 	targetPos := step.Target
 	currentPos := position.Vector2
 
@@ -115,8 +79,4 @@ func (s *BlockMovementSystem) moveToTarget(position *components.PositionComponen
 			}
 		}
 	}
-	// else if step.IsMoving() {
-	// 	step.Halt()
-	// }
-
 }
