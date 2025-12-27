@@ -14,7 +14,7 @@ type BlockMovement struct {
 	stage *game.Stage
 }
 
-func NewBlockMovement(stage *game.Stage, blocks BlockResolver) *BlockMovement {
+func NewBlockMovement(stage *game.Stage) *BlockMovement {
 	return &BlockMovement{
 		stage: stage,
 	}

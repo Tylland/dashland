@@ -127,7 +127,7 @@ func (g *DashlandGame) init() {
 		systems.NewBlockCollisionSystem(stage),
 		systems.NewCollect(stage, stage.SoundPlayer),
 		systems.NewGameplaySystem(stage, stage.SoundPlayer),
-		systems.NewBlockMovement(stage, stage),
+		systems.NewBlockMovement(stage),
 	)
 
 	g.world.AddSystem(systems.NewRenderSystem(stage, g.camera))

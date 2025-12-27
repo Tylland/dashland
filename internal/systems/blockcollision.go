@@ -11,13 +11,11 @@ import (
 
 type BlockCollisionSystem struct {
 	stage *game.Stage
-	BlockResolver
 }
 
 func NewBlockCollisionSystem(stage *game.Stage) *BlockCollisionSystem {
 	return &BlockCollisionSystem{
-		BlockResolver: stage,
-		stage:         stage,
+		stage: stage,
 	}
 }
 
@@ -41,7 +39,7 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 
 	targetPosition := position.CurrentBlockPosition.Add(step.Increment)
 
-	if block, ok := s.GetBlockAtPosition(targetPosition); ok {
+	if block, ok := s.stage.GetBlockAtPosition(targetPosition); ok {
 		blocks, collides := collider.Result(block.Collider)
 
 		if blocks {

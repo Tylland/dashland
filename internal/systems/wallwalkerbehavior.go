@@ -8,16 +8,8 @@ import (
 	"github.com/tylland/dashland/internal/game"
 )
 
-// type wallWalkerWorld interface {
-// 	CheckCharacteristics(common.BlockPosition, characteristics.Characteristics) bool
-// 	GetPosition(common.BlockPosition) rl.Vector2
-// 	Entities() []*entity.Entity
-// }
-
 type WallWalkerBehavior struct {
 	stage *game.Stage
-	PositionResolver
-	BlockResolver
 }
 
 func NewWallWalkerBehavior(stage *game.Stage) *WallWalkerBehavior {
