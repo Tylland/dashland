@@ -29,20 +29,6 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 		sprite := ecs.GetComponent[components.SpriteComponent](entity)
 
 		if position != nil && sprite != nil {
-			// if entity.Collision != nil {
-			// 	rl.DrawRectangle(int32(position.Vector2.X), int32(position.Vector2.Y), int32(entity.Collision.Width), int32(entity.Collision.Height), rl.Red)
-			// }
-
-			if sprite.FrameCount > 1 {
-				sprite.FrameTimer += deltaTime
-				if sprite.FrameTimer >= 1.0/sprite.FrameSpeed {
-					sprite.UpdateFrame((sprite.Frame + 1) % sprite.FrameCount)
-
-					sprite.FrameTimer = 0
-
-				}
-			}
-
 			rl.DrawTextureRec(*sprite.Texture, sprite.Source, position.Vector2, rl.White)
 		}
 	}

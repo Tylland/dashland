@@ -111,7 +111,9 @@ func (g *DashlandGame) init() {
 		return
 	}
 
-	player := game.NewPlayerEntity(g.world, stage, stage.InitialPlayerPosition)
+	playerTexture := g.LoadTextureFromFile("../images/player.png")
+
+	player := game.NewPlayerEntity(g.world, stage, stage.InitialPlayerPosition, playerTexture)
 	g.world.AddEntityNamed("player", player)
 
 	playerPosition := ecs.GetComponent[components.PositionComponent](player)
@@ -128,6 +130,7 @@ func (g *DashlandGame) init() {
 		systems.NewCollect(stage, stage.SoundPlayer),
 		systems.NewGameplaySystem(stage, stage.SoundPlayer),
 		systems.NewBlockMovement(stage),
+		systems.NewAnimationSystem(),
 	)
 
 	g.world.AddSystem(systems.NewRenderSystem(stage, g.camera))

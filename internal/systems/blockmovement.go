@@ -43,8 +43,8 @@ func (s *BlockMovement) moveEntity(entity *ecs.Entity, position *components.Posi
 
 		if s.stage.TryMoveEntity(entity, position.CurrentBlockPosition, target) {
 			position.Update(target)
-			//			s.stage.VisitBlock(position.CurrentBlockPosition)
 			step.Commit(s.stage.GetPosition(target))
+
 		} else {
 			character := ecs.GetComponent[components.CharacteristicComponent](entity)
 
@@ -53,6 +53,16 @@ func (s *BlockMovement) moveEntity(entity *ecs.Entity, position *components.Posi
 			}
 
 			step.Cancel()
+
+			// movement cancelled -> switch to idle animation
+			anim := ecs.GetComponent[components.AnimationComponent](entity)
+			sprite := ecs.GetComponent[components.SpriteComponent](entity)
+			if anim != nil {
+				anim.Current = "idle"
+				if sprite != nil {
+					anim.ApplyAnimation(sprite.Sprite)
+				}
+			}
 		}
 
 	}

@@ -40,7 +40,7 @@ func NewBoulder(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewBlockStep(position))
-	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityBoulder)*stage.BlockWidth, 0, 1, 0)))
+	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityBoulder)*stage.BlockWidth, 0, 0)))
 	entity.AddComponent(components.NewColliderComponent(LayerItem, LayerAll, LayerPlayer|LayerEnemy))
 	entity.AddComponent(components.NewPushableComponent(1))
 	entity.AddComponent(components.NewDamage(1))
@@ -56,7 +56,7 @@ func NewDiamond(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff | characteristics.Obstacle))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewBlockStep(position))
-	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDiamond)*stage.BlockWidth, 0, 1, 0)))
+	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDiamond)*stage.BlockWidth, 0, 0)))
 	entity.AddComponent(components.NewColliderComponent(LayerCollectable, LayerAll&(^LayerPlayer|LayerEnemy), LayerPlayer|LayerGround|LayerEnemy))
 	entity.AddComponent(components.NewCollectableComponent(components.CollectableDiamond, 1))
 	entity.AddComponent(components.NewDamage(1))
@@ -72,11 +72,17 @@ func NewEnemy(world *ecs.World, stage *Stage, blockPosition common.BlockPosition
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewBlockStep(position))
-	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.enemyTextures, stage.BlockWidth, stage.BlockHeight, 0, 0, 4, 0)))
+	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.enemyTextures, stage.BlockWidth, stage.BlockHeight, 0, 0, 0)))
 	entity.AddComponent(components.NewColliderComponent(LayerEnemy, LayerEnemy, LayerPlayer))
 	entity.AddComponent(components.NewDamage(1))
 	entity.AddComponent(components.NewHealth(1))
 	entity.AddComponent(components.NewWallWalkerComponent(common.NewBlockVector(1, 0)))
+
+	animations := map[string]components.Animation{
+		"default": {BaseX: 0, BaseY: 0 * stage.BlockHeight, FrameCount: 4, FrameDuration: 0.100, Loop: true},
+	}
+
+	entity.AddComponent(components.NewAnimationComponent(animations, "default"))
 
 	world.AddEntity(entity)
 

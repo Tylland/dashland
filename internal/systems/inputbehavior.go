@@ -28,12 +28,12 @@ func (s *InputBehavior) Update(world *ecs.World, deltaTime float32) {
 		step := ecs.GetComponent[components.BlockStep](entity)
 
 		if input != nil && position != nil && step != nil {
-			s.nextStep(input, position, step)
+			s.nextStep(entity, input, position, step)
 		}
 	}
 }
 
-func (s *InputBehavior) nextStep(input *components.InputComponent, position *components.PositionComponent, step *components.BlockStep) {
+func (s *InputBehavior) nextStep(entity *ecs.Entity, input *components.InputComponent, position *components.PositionComponent, step *components.BlockStep) {
 
 	if position.Vector2 == step.Target {
 		var direction common.BlockVector = common.BlockVector{}
@@ -52,8 +52,46 @@ func (s *InputBehavior) nextStep(input *components.InputComponent, position *com
 			direction = common.DirectionUp
 		}
 
+		var animation string = "idle"
+
 		if !direction.IsZero() {
 			step.Move(direction, walkSpeed)
+
+			switch direction {
+			case common.DirectionRight:
+				animation = "walk_right"
+			case common.DirectionLeft:
+				animation = "walk_left"
+			case common.DirectionUp:
+				animation = "walk_up"
+			case common.DirectionDown:
+				animation = "walk_down"
+			default:
+				animation = "idle"
+			}
+		} else {
+			switch step.Direction {
+			case common.DirectionRight:
+				animation = "stand_right"
+			case common.DirectionLeft:
+				animation = "stand_left"
+			case common.DirectionUp:
+				animation = "stand_up"
+			case common.DirectionDown:
+				animation = "stand_down"
+			default:
+				animation = "idle"
+			}
 		}
+
+		// set walk animation based on direction
+		anim := ecs.GetComponent[components.AnimationComponent](entity)
+		sprite := ecs.GetComponent[components.SpriteComponent](entity)
+
+		if anim != nil && sprite != nil {
+			anim.Current = animation
+			anim.ApplyAnimation(sprite.Sprite)
+		}
+
 	}
 }

@@ -8,27 +8,21 @@ type Sprite struct {
 	SourceBase rl.Vector2
 	Width      float32
 	Height     float32
-	// Animation properties
-	Frame      uint    // Current animation frame
-	FrameCount uint    // Total frames in animation
-	FrameSpeed float32 // Animation speed (frames per second)
-	FrameTimer float32 // Time accumulator for animation
+	// Sprite is a render resource; animation timing moved to AnimationComponent
 
 }
 
 //NewSprite creates a new sprite
-func NewSprite(texture *rl.Texture2D, width float32, height float32, sourceX float32, sourceY float32, frameCount uint, frame uint) *Sprite {
-	sprite := &Sprite{Texture: texture, Width: width, Height: height, SourceBase: rl.Vector2{X: sourceX, Y: sourceY}, FrameCount: frameCount, FrameSpeed: 10}
+func NewSprite(texture *rl.Texture2D, width float32, height float32, sourceX float32, sourceY float32, frame uint) *Sprite {
+	sprite := &Sprite{Texture: texture, Width: width, Height: height, SourceBase: rl.Vector2{X: sourceX, Y: sourceY}}
 	sprite.UpdateFrame(frame)
 	return sprite
 
 }
 
 func (s *Sprite) UpdateFrame(frame uint) {
-	s.Frame = frame
-
 	s.Source = rl.Rectangle{
-		X:      s.SourceBase.X + float32(s.Frame)*s.Width,
+		X:      s.SourceBase.X + float32(frame)*s.Width,
 		Y:      s.SourceBase.Y,
 		Width:  s.Width,
 		Height: s.Height,
