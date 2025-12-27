@@ -102,7 +102,7 @@ func (s *Stage) CheckCharacteristics(world *ecs.World, position common.BlockPosi
 	}
 
 	if entity, ok := s.GetEntityAtPosition(position); ok {
-		characteristics := ecs.GetComponent[components.CharacteristicComponent](entity.Components)
+		characteristics := ecs.GetComponent[components.CharacteristicComponent](entity)
 
 		return characteristics != nil && characteristics.Has(character)
 	}
@@ -120,8 +120,8 @@ func (s *Stage) CheckBlocked(world *ecs.World, position common.BlockPosition, co
 	}
 
 	if entity, ok := s.GetEntityAtPosition(position); ok {
-		entCharacter := ecs.GetComponent[components.CharacteristicComponent](entity.Components)
-		entCollider := ecs.GetComponent[components.ColliderComponent](entity.Components)
+		entCharacter := ecs.GetComponent[components.CharacteristicComponent](entity)
+		entCollider := ecs.GetComponent[components.ColliderComponent](entity)
 
 		if entCharacter != nil && entCollider != nil {
 			blocked, _ := collider.Result(entCollider)
@@ -183,7 +183,7 @@ func (s *Stage) OnEvent(event any) {
 			//			s.player.Hurt(e.Entity)
 		}
 
-		character := ecs.GetComponent[components.CharacteristicComponent](e.Entity.Components)
+		character := ecs.GetComponent[components.CharacteristicComponent](e.Entity)
 
 		if character != nil && character.Has(characteristics.IsEnemy) {
 			fmt.Println("Player hit by enemy!!")
@@ -200,7 +200,7 @@ func (s *Stage) OnEvent(event any) {
 			} else {
 				fmt.Println("Player collected diamond!!")
 				s.SoundPlayer.PlayFx("diamond_collected")
-				position := ecs.GetComponent[components.PositionComponent](e.Entity.Components)
+				position := ecs.GetComponent[components.PositionComponent](e.Entity)
 				if position != nil {
 					s.RemoveEntity(e.Entity, position.CurrentBlockPosition)
 				}
@@ -214,17 +214,17 @@ func (s *Stage) OnEvent(event any) {
 func (s *Stage) OnBoulderEnemyCollision(world *ecs.World, boulder *ecs.Entity, enemy *ecs.Entity) {
 	fmt.Println("Boulder and enemy collision detected!!")
 
-	boulderVelocity := ecs.GetComponent[components.VelocityComponent](boulder.Components)
+	boulderVelocity := ecs.GetComponent[components.VelocityComponent](boulder)
 
 	if !boulderVelocity.IsMoving() {
 		return
 	}
 
-	enemyPosition := ecs.GetComponent[components.PositionComponent](enemy.Components)
+	enemyPosition := ecs.GetComponent[components.PositionComponent](enemy)
 
 	s.RemoveEntity(enemy, enemyPosition.CurrentBlockPosition)
 
-	boulderPosition := ecs.GetComponent[components.PositionComponent](boulder.Components)
+	boulderPosition := ecs.GetComponent[components.PositionComponent](boulder)
 
 	s.RemoveEntity(boulder, boulderPosition.CurrentBlockPosition)
 

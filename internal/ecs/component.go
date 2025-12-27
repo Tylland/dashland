@@ -38,9 +38,9 @@ func (c *Components) RemoveComponent(component Component) {
 	delete(c.components, name)
 }
 
-func GetComponent[T Component](components *Components) *T {
+func GetComponent[T Component](entity *Entity) *T {
 	name := ComponentName(new(T))
-	commp, ok := components.GetComponent(name)
+	commp, ok := entity.Components.GetComponent(name)
 
 	if ok {
 		return commp.(*T)

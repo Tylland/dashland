@@ -26,12 +26,11 @@ func NewWallWalkerBehavior(stage *game.Stage) *WallWalkerBehavior {
 
 func (s *WallWalkerBehavior) Update(world *ecs.World, deltaTime float32) {
 	for _, entity := range world.Entities() {
-		comps := entity.Components
-		position := ecs.GetComponent[components.PositionComponent](comps)
-		step := ecs.GetComponent[components.BlockStep](comps)
-		collider := ecs.GetComponent[components.ColliderComponent](comps)
-		characteristic := ecs.GetComponent[components.CharacteristicComponent](comps)
-		wallwalker := ecs.GetComponent[components.WallWalkerComponent](comps)
+		position := ecs.GetComponent[components.PositionComponent](entity)
+		step := ecs.GetComponent[components.BlockStep](entity)
+		collider := ecs.GetComponent[components.ColliderComponent](entity)
+		characteristic := ecs.GetComponent[components.CharacteristicComponent](entity)
+		wallwalker := ecs.GetComponent[components.WallWalkerComponent](entity)
 
 		if position != nil && step != nil && collider != nil && characteristic != nil && wallwalker != nil {
 			s.UpdateTarget(world, position, step, collider, characteristic, wallwalker)

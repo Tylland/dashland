@@ -114,7 +114,7 @@ func (g *DashlandGame) init() {
 	player := game.NewPlayerEntity(g.world, stage, stage.InitialPlayerPosition)
 	g.world.AddEntityNamed("player", player)
 
-	playerPosition := ecs.GetComponent[components.PositionComponent](player.Components)
+	playerPosition := ecs.GetComponent[components.PositionComponent](player)
 
 	g.camera = game.NewSmoothFollowCamera(&g.Screen, playerPosition)
 

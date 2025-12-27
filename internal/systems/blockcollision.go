@@ -23,10 +23,10 @@ func NewBlockCollisionSystem(stage *game.Stage) *BlockCollisionSystem {
 
 func (s *BlockCollisionSystem) Update(world *ecs.World, deltaTime float32) {
 	for _, entity := range world.Entities() {
-		position := ecs.GetComponent[components.PositionComponent](entity.Components)
-		step := ecs.GetComponent[components.BlockStep](entity.Components)
-		collider := ecs.GetComponent[components.ColliderComponent](entity.Components)
-		character := ecs.GetComponent[components.CharacteristicComponent](entity.Components)
+		position := ecs.GetComponent[components.PositionComponent](entity)
+		step := ecs.GetComponent[components.BlockStep](entity)
+		collider := ecs.GetComponent[components.ColliderComponent](entity)
+		character := ecs.GetComponent[components.CharacteristicComponent](entity)
 
 		if position != nil && step != nil && collider != nil && character != nil {
 			s.checkEntityCollisions(world, entity, position, step, collider, character)
@@ -63,7 +63,7 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 	}
 
 	if target, ok := s.stage.GetEntityAtPosition(targetPosition); ok {
-		targetCollider := ecs.GetComponent[components.ColliderComponent](target.Components)
+		targetCollider := ecs.GetComponent[components.ColliderComponent](target)
 
 		if targetCollider != nil {
 			blocked, collides := collider.Result(targetCollider)
@@ -86,19 +86,19 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 					fmt.Printf("%s is falling\n", actor.ID)
 				}
 
-				// targetCharacter := ecs.GetComponent[components.CharacteristicComponent](target.Components)
+				// targetCharacter := ecs.GetComponent[components.CharacteristicComponent](target)
 
 				// if
 
-				actorDamage := ecs.GetComponent[components.Damage](actor.Components)
-				existingHealth := ecs.GetComponent[components.Health](target.Components)
+				actorDamage := ecs.GetComponent[components.Damage](actor)
+				existingHealth := ecs.GetComponent[components.Health](target)
 
 				if actorDamage != nil && existingHealth != nil {
 					world.AddEvent("damage", game.NewDamageEvent(actor, target, actorDamage, existingHealth))
 					return
 				}
 
-				collectable := ecs.GetComponent[components.CollectableComponent](target.Components)
+				collectable := ecs.GetComponent[components.CollectableComponent](target)
 
 				if collectable != nil {
 					world.AddEvent("collect", game.NewCollectEvent(actor, target))

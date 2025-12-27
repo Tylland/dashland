@@ -23,8 +23,8 @@ func NewBlockMovement(stage *game.Stage, blocks BlockResolver) *BlockMovement {
 func (s *BlockMovement) Update(world *ecs.World, deltaTime float32) {
 	// Handle entities movement
 	for _, entity := range world.Entities() {
-		position := ecs.GetComponent[components.PositionComponent](entity.Components)
-		step := ecs.GetComponent[components.BlockStep](entity.Components)
+		position := ecs.GetComponent[components.PositionComponent](entity)
+		step := ecs.GetComponent[components.BlockStep](entity)
 
 		if position != nil && step != nil {
 			s.moveEntity(entity, position, step, deltaTime)
@@ -46,7 +46,7 @@ func (s *BlockMovement) moveEntity(entity *ecs.Entity, position *components.Posi
 			//			s.stage.VisitBlock(position.CurrentBlockPosition)
 			step.Commit(s.stage.GetPosition(target))
 		} else {
-			character := ecs.GetComponent[components.CharacteristicComponent](entity.Components)
+			character := ecs.GetComponent[components.CharacteristicComponent](entity)
 
 			if character != nil {
 				character.Remove(characteristics.Falling)

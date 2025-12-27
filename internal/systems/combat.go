@@ -36,8 +36,8 @@ func (s *GameplaySystem) Update(world *ecs.World, deltaTime float32) {
 
 func (s *GameplaySystem) handleBlockCollision(world *ecs.World, collision *game.BlockCollisionEvent) {
 	if collision.Block.BlockType == game.Soil && collision.Entity.Type == game.EntityPlayer {
-		poistion := ecs.GetComponent[components.PositionComponent](collision.Entity.Components)
-		step := ecs.GetComponent[components.BlockStep](collision.Entity.Components)
+		poistion := ecs.GetComponent[components.PositionComponent](collision.Entity)
+		step := ecs.GetComponent[components.BlockStep](collision.Entity)
 
 		s.stage.VisitBlock(poistion.CurrentBlockPosition.Add(step.Increment))
 	}
@@ -79,13 +79,13 @@ func (s *GameplaySystem) handleDamage(world *ecs.World, damage *game.DamageEvent
 func (s *GameplaySystem) OnDamageOnEnemy(world *ecs.World, boulder *ecs.Entity, enemy *ecs.Entity) {
 	fmt.Println("Boulder and enemy collision detected!!")
 
-	boulderStep := ecs.GetComponent[components.BlockStep](boulder.Components)
+	boulderStep := ecs.GetComponent[components.BlockStep](boulder)
 
 	if boulderStep.Direction.IsZero() {
 		return
 	}
 
-	enemyPosition := ecs.GetComponent[components.PositionComponent](enemy.Components)
+	enemyPosition := ecs.GetComponent[components.PositionComponent](enemy)
 
 	s.stage.TryRemoveEntity(enemy)
 	world.EnqueueRemoval(enemy)
@@ -101,13 +101,13 @@ func (s *GameplaySystem) OnDamageOnEnemy(world *ecs.World, boulder *ecs.Entity, 
 func (s *GameplaySystem) OnBoulderPlayerCollision(world *ecs.World, boulder *ecs.Entity, enemy *ecs.Entity) {
 	fmt.Println("Boulder and enemy collision detected!!")
 
-	boulderStep := ecs.GetComponent[components.BlockStep](boulder.Components)
+	boulderStep := ecs.GetComponent[components.BlockStep](boulder)
 
 	if boulderStep.Direction.IsZero() {
 		return
 	}
 
-	enemyPosition := ecs.GetComponent[components.PositionComponent](enemy.Components)
+	enemyPosition := ecs.GetComponent[components.PositionComponent](enemy)
 
 	s.stage.TryRemoveEntity(enemy)
 	world.EnqueueRemoval(enemy)
@@ -125,7 +125,7 @@ func (s *GameplaySystem) DamageOnPlayer(world *ecs.World, enemy *ecs.Entity, pla
 
 	s.sound.PlayFx("player_hurt")
 
-	playerPosition := ecs.GetComponent[components.PositionComponent](player.Components)
+	playerPosition := ecs.GetComponent[components.PositionComponent](player)
 	position := playerPosition.CurrentBlockPosition
 
 	world.EnqueueRemoval(player)

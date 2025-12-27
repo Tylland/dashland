@@ -17,8 +17,8 @@ func NewPushBehavior(stage *game.Stage) *PushBehavior {
 func (p *PushBehavior) Update(world *ecs.World, deltaTime float32) {
 	player := world.GetEntity("player")
 	if player != nil {
-		position := ecs.GetComponent[components.PositionComponent](player.Components)
-		step := ecs.GetComponent[components.BlockStep](player.Components)
+		position := ecs.GetComponent[components.PositionComponent](player)
+		step := ecs.GetComponent[components.BlockStep](player)
 
 		if position != nil && step != nil {
 			p.handlePlayerPush(world, position, step)
@@ -31,9 +31,9 @@ func (s *PushBehavior) handlePlayerPush(world *ecs.World, playerPosition *compon
 	targetBlockPos := playerPosition.CurrentBlockPosition.Add(playerStep.Increment)
 
 	if target := s.stage.GetEntity(targetBlockPos); target != nil {
-		targetPosition := ecs.GetComponent[components.PositionComponent](target.Components)
-		targetPushable := ecs.GetComponent[components.PushableComponent](target.Components)
-		targetStep := ecs.GetComponent[components.BlockStep](target.Components)
+		targetPosition := ecs.GetComponent[components.PositionComponent](target)
+		targetPushable := ecs.GetComponent[components.PushableComponent](target)
+		targetStep := ecs.GetComponent[components.BlockStep](target)
 
 		if targetPosition == nil || targetPushable == nil {
 			return

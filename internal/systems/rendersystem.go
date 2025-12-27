@@ -25,8 +25,8 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 	s.stage.Render(deltaTime)
 
 	for _, entity := range world.Entities() {
-		position := ecs.GetComponent[components.PositionComponent](entity.Components)
-		sprite := ecs.GetComponent[components.SpriteComponent](entity.Components)
+		position := ecs.GetComponent[components.PositionComponent](entity)
+		sprite := ecs.GetComponent[components.SpriteComponent](entity)
 
 		if position != nil && sprite != nil {
 			// if entity.Collision != nil {

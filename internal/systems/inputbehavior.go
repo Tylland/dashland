@@ -23,9 +23,9 @@ func NewInputBehavior(stage *game.Stage) *InputBehavior {
 
 func (s *InputBehavior) Update(world *ecs.World, deltaTime float32) {
 	for _, entity := range world.Entities() {
-		input := ecs.GetComponent[components.InputComponent](entity.Components)
-		position := ecs.GetComponent[components.PositionComponent](entity.Components)
-		step := ecs.GetComponent[components.BlockStep](entity.Components)
+		input := ecs.GetComponent[components.InputComponent](entity)
+		position := ecs.GetComponent[components.PositionComponent](entity)
+		step := ecs.GetComponent[components.BlockStep](entity)
 
 		if input != nil && position != nil && step != nil {
 			s.nextStep(input, position, step)
