@@ -1,9 +1,14 @@
 package main
 
 import (
+	"embed"
+
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal"
 )
+
+//go:embed assets/*
+var assets embed.FS
 
 const (
 	screenWidth  = 1600
@@ -16,6 +21,7 @@ func main() {
 	rl.InitAudioDevice()
 
 	game := internal.NewGame(screenWidth, screenHeight)
+	game.LoadStage("start")
 	defer game.Unload()
 
 	rl.SetTargetFPS(60)

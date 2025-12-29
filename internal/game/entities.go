@@ -72,17 +72,17 @@ func NewEnemy(world *ecs.World, stage *Stage, blockPosition common.BlockPosition
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewBlockStep(position))
-	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.enemyTextures, stage.BlockWidth, stage.BlockHeight, 0, 0, 0)))
 	entity.AddComponent(components.NewColliderComponent(LayerEnemy, LayerEnemy, LayerPlayer))
 	entity.AddComponent(components.NewDamage(1))
 	entity.AddComponent(components.NewHealth(1))
 	entity.AddComponent(components.NewWallWalkerComponent(common.NewBlockVector(1, 0)))
 
 	animations := map[string]components.Animation{
-		"default": {BaseX: 0, BaseY: 0 * stage.BlockHeight, FrameCount: 4, FrameDuration: 0.100, Loop: true},
+		"default": {BaseX: 0, BaseY: 0 * stage.BlockHeight, FrameCount: 4, FrameDuration: 0.200, Loop: true},
 	}
 
 	entity.AddComponent(components.NewAnimationComponent(animations, "default"))
+	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.enemyTextures, stage.BlockWidth, stage.BlockHeight, 0, 0, 0)))
 
 	world.AddEntity(entity)
 

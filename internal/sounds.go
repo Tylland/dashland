@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"path/filepath"
+
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -12,17 +14,15 @@ type Sounds struct {
 	sounds map[string]rl.Sound
 }
 
-func (s *Sounds) LoadSounds(dir string) {
+func (s *Sounds) LoadSounds(soundDir string) {
 	s.sounds = make(map[string]rl.Sound, 2)
 
-	s.sounds["diamond_collision"] = rl.LoadSound("sounds/effects/diamond_collision.mp3")
-	s.sounds["diamond_collected"] = rl.LoadSound("sounds/effects/diamond_collected.mp3")
+	s.sounds["diamond_collision"] = rl.LoadSound(filepath.Join(soundDir, "effects", "diamond_collision.mp3"))
+	s.sounds["diamond_collected"] = rl.LoadSound(filepath.Join(soundDir, "effects", "diamond_collected.mp3"))
 
-	s.sounds["player_hurt"] = rl.LoadSound("sounds/effects/player_hurt.mp3")
+	s.sounds["player_hurt"] = rl.LoadSound(filepath.Join(soundDir, "effects", "player_hurt.mp3"))
 
-	s.sounds["boulder_collision"] = rl.LoadSound("sounds/effects/boulder_collision.mp3")
-
-	//rl.PlaySound(s.sounds[0])
+	s.sounds["boulder_collision"] = rl.LoadSound(filepath.Join(soundDir, "effects", "boulder_collision.mp3"))
 }
 
 func (s *Sounds) PlayFx(name string) {

@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	"path"
+	"path/filepath"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/lafriks/go-tiled"
@@ -12,7 +13,7 @@ import (
 	"github.com/tylland/dashland/internal/systems"
 )
 
-const mapPath = "maps/start.tmx" // Path to your Tiled Map.
+const assetsBase = "assets"
 
 type DashlandGame struct {
 	game.Screen
@@ -24,14 +25,21 @@ type DashlandGame struct {
 
 func NewGame(screenWidth int, screenHeight int) *DashlandGame {
 	game := DashlandGame{Screen: game.Screen{Width: screenWidth, Height: screenHeight}, world: ecs.NewWorld()}
-	game.LoadSounds("sounds/effects")
-	game.init()
+	game.LoadSounds(filepath.Join(assetsBase, "sounds"))
 
 	return &game
 }
 
 func (g *DashlandGame) Unload() {
 	g.UnloadSounds()
+}
+
+func (g *DashlandGame) mapPath() string {
+	return filepath.Join(assetsBase, "maps")
+}
+
+func (g *DashlandGame) mapFile(name string) string {
+	return filepath.Join(g.mapPath(), name+".tmx")
 }
 
 // func (g *DashlandGame) CteateTextureFromFile(source string) *rl.Texture2D {
@@ -57,35 +65,42 @@ func (g *DashlandGame) Unload() {
 // 	return rl.LoadTexture(fileName)
 // }
 
-func (g *DashlandGame) LoadTextureFromFile(source string) *rl.Texture2D {
-	fileName := path.Join(path.Dir(mapPath), source)
+func (g *DashlandGame) LoadTextureFromAssets(source string) *rl.Texture2D {
+	fileName := path.Join(assetsBase, "images", source)
 
 	texture := rl.LoadTexture(fileName)
 	return &texture
 }
 
-func (g *DashlandGame) LoadTexture(tiledMap *tiled.Map, name string) *rl.Texture2D {
+func (g *DashlandGame) LoadMapTexture(source string) *rl.Texture2D {
+	fileName := filepath.Join(g.mapPath(), source)
+
+	texture := rl.LoadTexture(fileName)
+	return &texture
+}
+
+func (g *DashlandGame) LoadTilesetTexture(tiledMap *tiled.Map, name string) *rl.Texture2D {
 	for _, tileset := range tiledMap.Tilesets {
 		if tileset.Name == name {
-			return g.LoadTextureFromFile(tileset.Image.Source)
+			return g.LoadMapTexture(tileset.Image.Source)
 		}
 	}
 
 	return nil
 }
 
-func (g *DashlandGame) LoadStageFromFile(filepath string) (*game.Stage, error) {
-
-	tiledMap, err := tiled.LoadFile(filepath)
+func (g *DashlandGame) loadStageFromFile(name string) (*game.Stage, error) {
+	tiledMap, err := tiled.LoadFile(g.mapFile(name))
 
 	if err != nil {
 		return nil, err
 	}
 
-	blockTexture := g.LoadTexture(tiledMap, "Blocks")
-	entityTextures := g.LoadTexture(tiledMap, "Entities")
-	groundCorners := g.LoadTexture(tiledMap, "GroundCorners")
-	enemyTexture := g.LoadTextureFromFile("../images/animations.png")
+	blockTexture := g.LoadTilesetTexture(tiledMap, "Blocks")
+	entityTextures := g.LoadTilesetTexture(tiledMap, "Entities")
+	groundCorners := g.LoadTilesetTexture(tiledMap, "GroundCorners")
+
+	enemyTexture := g.LoadTextureFromAssets("animations.png")
 
 	mapSize := game.MapSize{Width: tiledMap.Width, Height: tiledMap.Height, BlockWidth: float32(tiledMap.TileWidth), BlockHeight: float32(tiledMap.TileHeight)}
 	stage := &game.Stage{MapSize: mapSize, SoundPlayer: &g.Sounds, BlockMap: game.NewBlockMap(mapSize, blockTexture), EntityMap: game.NewGroundMap(mapSize, entityTextures, enemyTexture, groundCorners)}
@@ -103,15 +118,14 @@ func (g *DashlandGame) LoadStageFromFile(filepath string) (*game.Stage, error) {
 	return stage, nil
 }
 
-func (g *DashlandGame) init() {
-
-	stage, err := g.LoadStageFromFile(mapPath)
+func (g *DashlandGame) LoadStage(name string) error {
+	stage, err := g.loadStageFromFile(name)
 
 	if err != nil {
-		return
+		return err
 	}
 
-	playerTexture := g.LoadTextureFromFile("../images/player.png")
+	playerTexture := g.LoadTextureFromAssets("player.png")
 
 	player := game.NewPlayerEntity(g.world, stage, stage.InitialPlayerPosition, playerTexture)
 	g.world.AddEntityNamed("player", player)
@@ -137,6 +151,8 @@ func (g *DashlandGame) init() {
 	g.world.AddSystem(systems.NewCleanup(stage))
 
 	g.stage = stage
+
+	return nil
 }
 
 func (g *DashlandGame) Update(deltaTime float32) {

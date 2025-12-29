@@ -16,4 +16,4 @@ Thumbs.db
 # Go modules
 go.sum
 
-images/workshop
+temp/

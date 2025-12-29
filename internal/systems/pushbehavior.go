@@ -39,15 +39,8 @@ func (s *PushBehavior) handlePlayerPush(world *ecs.World, playerPosition *compon
 			return
 		}
 
-		// Calculate push direction based on player's movement
-		if !playerStep.Increment.IsZero() {
+		if !playerStep.Increment.IsZero() && playerStep.Increment.IsHorizontal() {
 			pushPos := targetPosition.CurrentBlockPosition.Add(playerStep.Increment)
-
-			// if playerPosition.CurrentBlockPosition.X > targetPosition.CurrentBlockPosition.X {
-			// 	pushPos = pushPos.Offset(-1, 0)
-			// } else if playerPosition.CurrentBlockPosition.X < targetPosition.CurrentBlockPosition.X {
-			// 	pushPos = pushPos.Offset(1, 0)
-			// }
 
 			if s.stage.CheckBlockAtPosition(game.Void, pushPos) && s.stage.GetEntity(pushPos) == nil {
 				targetStep.Move(playerStep.Increment, moveSpeed)

@@ -1,6 +1,8 @@
 package components
 
-import "github.com/tylland/dashland/internal/common"
+import (
+	"github.com/tylland/dashland/internal/common"
+)
 
 // Animation describes a named animation sequence inside a sprite sheet.
 type Animation struct {
@@ -64,8 +66,21 @@ func (ac *AnimationComponent) Advance(deltaTime float32, s *common.Sprite) {
 
 	ac.FrameTimer += deltaTime
 	if ac.FrameTimer >= anim.FrameDuration {
-		ac.FrameTimer = 0
-		ac.Frame = (ac.Frame + 1) % anim.FrameCount
+		ac.FrameTimer -= anim.FrameDuration
+
+		if anim.Loop {
+			ac.Frame = (ac.Frame + 1) % anim.FrameCount
+		} else {
+			ac.Frame = clamp(ac.Frame+1, anim.FrameCount-1)
+		}
+
 		s.UpdateFrame(ac.Frame)
 	}
+}
+
+func clamp(val, max uint) uint {
+	if val < max {
+		return val
+	}
+	return max
 }

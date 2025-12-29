@@ -13,6 +13,10 @@ func (v *BlockVector) IsZero() bool {
 	return v.X == 0 && v.Y == 0
 }
 
+func (v *BlockVector) IsHorizontal() bool {
+	return v.Y == 0
+}
+
 func (v *BlockVector) Clear() {
 	v.X = 0
 	v.Y = 0
