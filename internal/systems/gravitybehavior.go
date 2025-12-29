@@ -2,6 +2,7 @@ package systems
 
 import (
 	"fmt"
+	"math/rand"
 
 	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/common"
@@ -81,22 +82,32 @@ func (g *GravityBehavior) ApplyGravityOnEntity(world *ecs.World, entity *ecs.Ent
 		return
 	}
 
-	// Try falling diagonally
-	right := current.Add(common.DirectionRight)
-	rightUnder := current.Add(common.DirectionRightDown)
+	var firstSide common.BlockPosition
+	var firstSideUnder common.BlockPosition
+	var secondSide common.BlockPosition
+	var secondSideUnder common.BlockPosition
 
-	if !g.stage.CheckCharacteristics(world, right, characteristics.CanHoldGravity) && !g.stage.CheckCharacteristics(world, rightUnder, characteristics.CanHoldGravity) {
+	if rand.Float64() > 0.5 {
+		firstSide = current.Add(common.DirectionRight)
+		firstSideUnder = current.Add(common.DirectionRightDown)
+
+		secondSide = current.Add(common.DirectionLeft)
+		secondSideUnder = current.Add(common.DirectionLeftDown)
+	} else {
+		firstSide = current.Add(common.DirectionLeft)
+		firstSideUnder = current.Add(common.DirectionLeftDown)
+
+		secondSide = current.Add(common.DirectionRight)
+		secondSideUnder = current.Add(common.DirectionRightDown)
+	}
+
+	if !g.stage.CheckCharacteristics(world, firstSide, characteristics.CanHoldGravity) && !g.stage.CheckCharacteristics(world, firstSideUnder, characteristics.CanHoldGravity) {
 		step.Move(common.DirectionRightDown, moveSpeed)
-		//g.StartFalling(entity, characteristic)
 		return
 	}
 
-	left := current.Offset(-1, 0)
-	leftUnder := current.Offset(-1, 1)
-
-	if !g.stage.CheckCharacteristics(world, left, characteristics.CanHoldGravity) && !g.stage.CheckCharacteristics(world, leftUnder, characteristics.CanHoldGravity) {
+	if !g.stage.CheckCharacteristics(world, secondSide, characteristics.CanHoldGravity) && !g.stage.CheckCharacteristics(world, secondSideUnder, characteristics.CanHoldGravity) {
 		step.Move(common.DirectionLeftDown, moveSpeed)
-		//g.StartFalling(entity, characteristic)
 		return
 	}
 }
