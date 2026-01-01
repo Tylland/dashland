@@ -26,6 +26,8 @@ func NewGameEntity(world *ecs.World, stage *Stage, entityType ecs.EntityType, bl
 		return NewDiamond(world, stage, blockPosition, position), nil
 	case EntityBoulder:
 		return NewBoulder(world, stage, blockPosition, position), nil
+	case EntityDoor:
+		return NewDoor(world, stage, blockPosition, position), nil
 	case EntityEnemy:
 		return NewEnemy(world, stage, blockPosition, position), nil
 	default:
@@ -37,7 +39,7 @@ func NewGameEntity(world *ecs.World, stage *Stage, entityType ecs.EntityType, bl
 func NewBoulder(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityId("boulder"), EntityBoulder)
 
-	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff))
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff | characteristics.Destructable))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewBlockStep(position))
 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityBoulder)*stage.BlockWidth, 0, 0)))
@@ -53,7 +55,7 @@ func NewBoulder(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 func NewDiamond(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityId("diamond"), EntityDiamond)
 
-	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff | characteristics.Obstacle))
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff | characteristics.Obstacle | characteristics.Destructable))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewBlockStep(position))
 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDiamond)*stage.BlockWidth, 0, 0)))
@@ -69,7 +71,7 @@ func NewDiamond(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 func NewEnemy(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityId("enemy"), EntityEnemy)
 
-	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy))
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy | characteristics.Destructable))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewBlockStep(position))
 	entity.AddComponent(components.NewColliderComponent(LayerEnemy, LayerEnemy, LayerPlayer))
@@ -83,6 +85,33 @@ func NewEnemy(world *ecs.World, stage *Stage, blockPosition common.BlockPosition
 
 	entity.AddComponent(components.NewAnimationComponent(animations, "default"))
 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.enemyTextures, stage.BlockWidth, stage.BlockHeight, 0, 0, 0)))
+
+	world.AddEntity(entity)
+
+	return entity
+}
+
+func NewDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
+	entity := ecs.NewEntity(NewEntityId("door"), EntityDoor)
+
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
+	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
+	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDoor)*stage.BlockWidth, 0, 0)))
+	entity.AddComponent(components.NewColliderComponent(LayerTrigger, LayerAll&(^LayerPlayer|LayerEnemy), LayerPlayer))
+
+	world.AddEntity(entity)
+
+	return entity
+}
+
+func NewDoorWithDestination(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2, targetStage string, targetPosition common.BlockPosition) *ecs.Entity {
+	entity := ecs.NewEntity(NewEntityId("door"), EntityDoor)
+
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
+	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
+	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDoor)*stage.BlockWidth, 0, 0)))
+	entity.AddComponent(components.NewColliderComponent(LayerTrigger, LayerNone, LayerPlayer))
+	entity.AddComponent(components.NewDoorComponent(targetStage, targetPosition))
 
 	world.AddEntity(entity)
 

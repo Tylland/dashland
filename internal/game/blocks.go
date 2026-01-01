@@ -54,11 +54,11 @@ func NewBlockWithCharacteristics(bm *BlockMap, gm *EntityMap, blockType BlockTyp
 func NewBlock(bm *BlockMap, gm *EntityMap, blockType BlockType, position common.BlockPosition) *Block {
 	switch blockType {
 	case Void:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.None, LayerNone, LayerNone, LayerNone)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.Destructable, LayerNone, LayerNone, LayerNone)
 	case Soil:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.CanHoldGravity|characteristics.Obstacle, LayerGround, LayerEnemy, LayerAll)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.CanHoldGravity|characteristics.Obstacle|characteristics.Destructable, LayerGround, LayerEnemy, LayerAll)
 	case Wall:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.Obstacle|characteristics.CanHoldGravity, LayerWall, LayerAll, LayerNone)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.Obstacle|characteristics.CanHoldGravity|characteristics.Destructable, LayerWall, LayerAll, LayerNone)
 	case Bedrock:
 		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.Obstacle|characteristics.CanHoldGravity, LayerBedrock, LayerAll, LayerNone)
 	default:

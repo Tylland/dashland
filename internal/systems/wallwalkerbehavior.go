@@ -83,7 +83,7 @@ func (s *WallWalkerBehavior) makeMove(step *components.BlockStep, move common.Bl
 
 func (s *WallWalkerBehavior) findDirection(world *ecs.World, position common.BlockPosition, direction common.BlockVector) (common.BlockVector, bool) {
 	for i := 0; i < 4; i++ {
-		if !s.stage.CheckCharacteristics(world, position.Add(direction), characteristics.Obstacle) {
+		if !s.stage.CheckCharacteristics(position.Add(direction), characteristics.Obstacle) {
 			return direction, true
 		}
 

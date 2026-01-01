@@ -19,6 +19,7 @@ const (
 	EntityPlayer  ecs.EntityType = iota
 	EntityDiamond                = 4
 	EntityBoulder                = 5
+	EntityDoor                   = 11
 	EntityEnemy                  = 101
 )
 

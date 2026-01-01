@@ -1,0 +1,87 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "firstbd.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "file.lastUsedOpenFilter": "Alla filer (*)",
+    "fileStates": {
+        "": {
+            "scaleInDock": 1
+        },
+        "Blocks.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "Enemies.tsx": {
+            "scaleInDock": 1
+        },
+        "Entities.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "GroundCorners.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "Teleporters.tsx": {
+            "scaleInEditor": 1
+        },
+        "firstbd.tmx": {
+            "expandedObjectLayers": [
+                6
+            ],
+            "scale": 3,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 111.66666666666666,
+                "y": 48.33333333333334
+            }
+        },
+        "start.tmx": {
+            "expandedObjectLayers": [
+                5
+            ],
+            "scale": 3,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 79.66666666666666,
+                "y": 79
+            }
+        },
+        "start.tmx#Blocks": {
+            "scaleInDock": 1
+        },
+        "start.tmx#Enemies": {
+            "scaleInDock": 1
+        },
+        "start.tmx#Entities": {
+            "scaleInDock": 1
+        },
+        "start.tmx#GroundCorners": {
+            "scaleInDock": 1
+        },
+        "start.tmx#Start": {
+            "scaleInDock": 1
+        }
+    },
+    "last.externalTilesetPath": "C:/src/dashland/assets/maps",
+    "last.imagePath": "C:/src/dashland/assets/images",
+    "openFiles": [
+        "start.tmx",
+        "firstbd.tmx"
+    ],
+    "project": "dashland.tiled-project",
+    "recentFiles": [
+        "Teleporters.tsx",
+        "Blocks.tsx",
+        "GroundCorners.tsx",
+        "Entities.tsx",
+        "start.tmx",
+        "firstbd.tmx"
+    ],
+    "tileset.lastUsedFormat": "tsx"
+}

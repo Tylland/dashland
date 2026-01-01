@@ -13,6 +13,7 @@ const (
 	Obstacle
 	CanHoldGravity
 	GravityRollOff
+	Destructable
 )
 
 func (c Characteristics) String() string {
@@ -41,6 +42,9 @@ func (c Characteristics) String() string {
 	}
 	if c&GravityRollOff == GravityRollOff {
 		str = append(str, "GravityRollOff")
+	}
+	if c&Destructable == Destructable {
+		str = append(str, "Destructable")
 	}
 
 	return strings.Join(str, "|")

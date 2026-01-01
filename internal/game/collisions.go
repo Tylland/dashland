@@ -14,6 +14,6 @@ const (
 	LayerCollectable
 	// LayerWater
 	// LayerTrap
-	//	LayerTrigger
+	LayerTrigger
 	LayerAll common.CollisionLayer = 0xFFFF
 )

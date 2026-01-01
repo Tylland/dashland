@@ -79,14 +79,19 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 			}
 
 			if collides {
+				// If player collides with a door trigger -> stage change
+				if actor.Type == game.EntityPlayer && target.Type == game.EntityDoor {
+					door := ecs.GetComponent[components.DoorComponent](target)
+
+					if door != nil {
+						world.AddEvent("stagechange", game.NewStageChangeEvent(door.Stage, door.Position))
+						return
+					}
+				}
 
 				if character.Has(characteristics.Falling) {
 					fmt.Printf("%s is falling\n", actor.ID)
 				}
-
-				// targetCharacter := ecs.GetComponent[components.CharacteristicComponent](target)
-
-				// if
 
 				actorDamage := ecs.GetComponent[components.Damage](actor)
 				existingHealth := ecs.GetComponent[components.Health](target)

@@ -1,26 +1,10 @@
 package game
 
 import (
+	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
 )
-
-// type GameEvent interface {
-// 	World() *ecs.World
-// 	IsEvent()
-// }
-
-// type GameEventListner interface {
-// 	OnEvent(event GameEvent)
-// }
-
-// type GameEventDispatcher struct {
-// 	listeners []GameEventListner
-// }
-
-// func (d *GameEventDispatcher) AddListener(listener GameEventListner) {
-// 	d.listeners = append(d.listeners, listener)
-// }
 
 type EntityCollisionEvent struct {
 	Entity1 *ecs.Entity
@@ -114,4 +98,13 @@ func NewDamageEvent(source *ecs.Entity, target *ecs.Entity, damage *components.D
 		Damage: damage,
 		Health: health,
 	}
+}
+
+type StageChangeEvent struct {
+	Stage    string
+	Position common.BlockPosition
+}
+
+func NewStageChangeEvent(stage string, position common.BlockPosition) *StageChangeEvent {
+	return &StageChangeEvent{Stage: stage, Position: position}
 }

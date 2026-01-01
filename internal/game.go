@@ -7,6 +7,7 @@ import (
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/lafriks/go-tiled"
+	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
 	"github.com/tylland/dashland/internal/game"
@@ -21,6 +22,7 @@ type DashlandGame struct {
 	camera game.Camera
 	world  *ecs.World
 	stage  *game.Stage
+	player *ecs.Entity
 }
 
 func NewGame(screenWidth int, screenHeight int) *DashlandGame {
@@ -41,29 +43,6 @@ func (g *DashlandGame) mapPath() string {
 func (g *DashlandGame) mapFile(name string) string {
 	return filepath.Join(g.mapPath(), name+".tmx")
 }
-
-// func (g *DashlandGame) CteateTextureFromFile(source string) *rl.Texture2D {
-// 	fileName := path.Join(path.Dir(mapPath), source)
-
-// 	file, err := os.Open(fileName)
-// 	defer file.Close()
-
-// 	if err != nil {
-// 		return nil
-// 	}
-
-// 	buf := new(bytes.Buffer)
-
-// 	var new_image image.Image
-
-// 	png.Encode(buf, new_image)
-
-// 	rl.NewImage(buf.Bytes())
-
-// 	rl.LoadImage(fileName)
-
-// 	return rl.LoadTexture(fileName)
-// }
 
 func (g *DashlandGame) LoadTextureFromAssets(source string) *rl.Texture2D {
 	fileName := path.Join(assetsBase, "images", source)
@@ -98,8 +77,8 @@ func (g *DashlandGame) loadStageFromFile(name string) (*game.Stage, error) {
 
 	blockTexture := g.LoadTilesetTexture(tiledMap, "Blocks")
 	entityTextures := g.LoadTilesetTexture(tiledMap, "Entities")
-	groundCorners := g.LoadTilesetTexture(tiledMap, "GroundCorners")
 
+	groundCorners := g.LoadTextureFromAssets("ground_corners.png")
 	enemyTexture := g.LoadTextureFromAssets("animations.png")
 
 	mapSize := game.MapSize{Width: tiledMap.Width, Height: tiledMap.Height, BlockWidth: float32(tiledMap.TileWidth), BlockHeight: float32(tiledMap.TileHeight)}
@@ -115,19 +94,29 @@ func (g *DashlandGame) loadStageFromFile(name string) (*game.Stage, error) {
 	stage.InitEntities(g.world, game.EntityCategoryObject, tiledMap.Layers[1].Tiles)
 	stage.InitEntities(g.world, game.EntityCategoryEnemy, tiledMap.Layers[2].Tiles)
 
+	if len(tiledMap.ObjectGroups) > 0 {
+		stage.InitObjectsEntities(g.world, game.EntityCategoryObject, tiledMap.ObjectGroups[0])
+	}
+
 	return stage, nil
 }
 
-func (g *DashlandGame) LoadStage(name string) error {
+func (g *DashlandGame) LoadStage(name string, position common.BlockPosition) error {
+	g.world.Clear()
+
 	stage, err := g.loadStageFromFile(name)
 
 	if err != nil {
 		return err
 	}
 
+	if position.IsZero() {
+		position = stage.InitialPlayerPosition
+	}
+
 	playerTexture := g.LoadTextureFromAssets("player.png")
 
-	player := game.NewPlayerEntity(g.world, stage, stage.InitialPlayerPosition, playerTexture)
+	player := game.NewPlayerEntity(g.world, stage, position, playerTexture)
 	g.world.AddEntityNamed("player", player)
 
 	playerPosition := ecs.GetComponent[components.PositionComponent](player)
@@ -148,7 +137,7 @@ func (g *DashlandGame) LoadStage(name string) error {
 	)
 
 	g.world.AddSystem(systems.NewRenderSystem(stage, g.camera))
-	g.world.AddSystem(systems.NewCleanup(stage))
+	g.world.AddSystem(systems.NewCleanup(stage, g))
 
 	g.stage = stage
 
@@ -156,13 +145,6 @@ func (g *DashlandGame) LoadStage(name string) error {
 }
 
 func (g *DashlandGame) Update(deltaTime float32) {
-	//fmt.Println(deltaTime)
 	g.world.Update(deltaTime)
-
-	//	g.player.Update(g.world, deltaTime)
-
-	// g.BlockMap.Update(deltaTime)
-	// g.Player.update(deltaTime)
-
 	g.camera.Update(deltaTime)
 }

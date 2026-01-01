@@ -3,6 +3,7 @@ package systems
 import (
 	"fmt"
 
+	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
@@ -137,7 +138,7 @@ func (s *GameplaySystem) CreateDiamonds(world *ecs.World, position common.BlockP
 	for y := -height; y <= height; y++ {
 		for x := -width; x <= width; x++ {
 			diamondPosition := position.Offset(x, y)
-			if !s.stage.CheckBlockAtPosition(game.Bedrock, diamondPosition) {
+			if s.stage.CheckCharacteristics(diamondPosition, characteristics.Destructable) {
 				s.stage.SetBlock(game.NewBlock(s.stage.BlockMap, s.stage.EntityMap, game.Void, diamondPosition), diamondPosition)
 
 				doomed := s.stage.GetEntity(diamondPosition)

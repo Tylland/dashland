@@ -1,7 +1,7 @@
 # TODO
 
-- [ ] Player can dig soil with shovel
-- [ ] Add a new entity type: "Player"
-- [ ] Boulder can not stay on one wall block 
-- [ ] Boulder can not stay on other boulder
+- [ ] Player can dig/dash soil with shovel
+- [x] Add a new entity type: "Player"
+- [x] Boulder can not stay on one wall block 
+- [x] Boulder can not stay on other boulder
 - [ ] Add door entity

@@ -16,7 +16,7 @@ func NewWorld() *World {
 		entities:     make([]*Entity, 0),
 		entityNames:  make(map[string]*Entity),
 		removalQueue: make([]*Entity, 0),
-		events:       make([]*Event, 100),
+		events:       make([]*Event, 10),
 		singeltons:   make(map[string]Component),
 		systems:      make([]System, 0),
 	}
@@ -84,7 +84,7 @@ func (w *World) Events() []*Event {
 }
 
 func (w *World) ClearEvents() {
-	w.events = make([]*Event, 100)
+	w.events = make([]*Event, 10)
 }
 
 func (w *World) AddSystem(system System) {
@@ -101,7 +101,11 @@ func (w *World) Update(deltaTime float32) {
 	}
 }
 
-// func GetComponent[T Component](world World, entity Entity) T {
-// 	name := fmt.Sprintf("%T", *new(T))
-// 	return world.GetComponent(entity, name).(T)
-// }
+func (w *World) Clear() {
+	w.entities = make([]*Entity, 0)
+	w.entityNames = make(map[string]*Entity)
+	w.removalQueue = make([]*Entity, 0)
+	w.events = make([]*Event, 10)
+	w.singeltons = make(map[string]Component)
+	w.systems = make([]System, 0)
+}

@@ -72,13 +72,13 @@ func (g *GravityBehavior) ApplyGravityOnEntity(world *ecs.World, entity *ecs.Ent
 	under := current.Add(common.DirectionDown)
 
 	// Start falling if no support below
-	if !g.stage.CheckCharacteristics(world, under, characteristics.CanHoldGravity) {
+	if !g.stage.CheckCharacteristics(under, characteristics.CanHoldGravity) {
 		step.Move(common.DirectionDown, moveSpeed)
 		g.StartFalling(entity, characteristic)
 		return
 	}
 
-	if !g.stage.CheckCharacteristics(world, under, characteristics.GravityRollOff) {
+	if !g.stage.CheckCharacteristics(under, characteristics.GravityRollOff) {
 		return
 	}
 
@@ -101,12 +101,12 @@ func (g *GravityBehavior) ApplyGravityOnEntity(world *ecs.World, entity *ecs.Ent
 		secondSideUnder = current.Add(common.DirectionRightDown)
 	}
 
-	if !g.stage.CheckCharacteristics(world, firstSide, characteristics.CanHoldGravity) && !g.stage.CheckCharacteristics(world, firstSideUnder, characteristics.CanHoldGravity) {
+	if !g.stage.CheckCharacteristics(firstSide, characteristics.CanHoldGravity) && !g.stage.CheckCharacteristics(firstSideUnder, characteristics.CanHoldGravity) {
 		step.Move(common.DirectionRightDown, moveSpeed)
 		return
 	}
 
-	if !g.stage.CheckCharacteristics(world, secondSide, characteristics.CanHoldGravity) && !g.stage.CheckCharacteristics(world, secondSideUnder, characteristics.CanHoldGravity) {
+	if !g.stage.CheckCharacteristics(secondSide, characteristics.CanHoldGravity) && !g.stage.CheckCharacteristics(secondSideUnder, characteristics.CanHoldGravity) {
 		step.Move(common.DirectionLeftDown, moveSpeed)
 		return
 	}
