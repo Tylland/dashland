@@ -22,7 +22,7 @@ type Stage struct {
 	*EntityMap
 }
 
-func New() *Stage {
+func New(enemyTextures *rl.Texture2D) *Stage {
 	w := &Stage{EntityMap: &EntityMap{entities: []*ecs.Entity{}}}
 
 	return w
@@ -45,54 +45,6 @@ func (w *Stage) Render(deltaTime float32) {
 	}
 
 }
-
-// func (s *Stage) IsObstacleForPlayer(world *ecs.World, position common.BlockPosition) bool {
-// 	block, success := s.GetBlock(position.X, position.Y)
-
-// 	if !success {
-// 		return true
-// 	}
-
-// 	if block.HasCharacteristic(characteristics.PlayerObstacle) {
-// 		return true
-// 	}
-
-// 	entity := s.GetEntity(position)
-
-// 	if entity == nil {
-// 		return false
-// 	}
-
-// 	comps := world.GetComponents(entity)
-// 	collectable := ecs.GetComponent[components.CollectableComponent](comps)
-
-// 	if collectable != nil {
-// 		return false
-// 	}
-
-// 	characteristic := ecs.GetComponent[components.CharacteristicComponent](comps)
-
-// 	if characteristic != nil {
-// 		return false
-// 	}
-
-// 	// if characteristic.Has(characteristics.Pushable) {
-// 	// 	// Calculate push direction based on player's position
-// 	// 	pushPos := position
-// 	// 	if player.Position.PreviousBlockPosition.X > position.X {
-// 	// 		pushPos = pushPos.Offset(-1, 0)
-// 	// 	} else if player.Position.PreviousBlockPosition.X < position.X {
-// 	// 		pushPos = pushPos.Offset(1, 0)
-// 	// 	}
-
-// 	// 	// Check if push position is free
-// 	// 	if s.CheckBlockAtPosition(Void, pushPos) && s.GetEntity(pushPos) == nil {
-// 	// 		return false
-// 	// 	}
-// 	// }
-
-// 	return true
-// }
 
 func (s *Stage) VisitBlock(position common.BlockPosition) {
 	fmt.Printf("Block at position %d,%d changed from %s", position.X, position.Y, s.blocks[position.Y*s.Width+position.X].BlockType.String())
@@ -149,109 +101,101 @@ func (s *Stage) CheckPositionOccupied(position common.BlockPosition) bool {
 	return s.GetEntity(position) != nil
 }
 
-// func (s *Stage) CheckPlayerAtPosition(position common.BlockPosition) bool {
-// 	if s.player.IsDead {
-// 		return false
-// 	}
+// func (s *Stage) OnEvent(event any) {
 
-// 	return s.player.Position.CurrentBlockPosition.IsSame(position)
+// 	var world *ecs.World
+
+// 	switch e := event.(type) {
+// 	case *EntityCollisionEvent:
+// 		fmt.Println("Entity collision detected!!")
+
+// 		if e.Entity1.Type == EntityBoulder && e.Entity2.Type == EntityEnemy {
+// 			s.OnBoulderEnemyCollision(world, e.Entity1, e.Entity2)
+// 		}
+// 		if e.Entity2.Type == EntityBoulder && e.Entity1.Type == EntityEnemy {
+// 			s.OnBoulderEnemyCollision(world, e.Entity2, e.Entity1)
+// 		}
+
+// 	case *BlockCollisionEvent:
+// 		fmt.Println("Block collision detected!!")
+
+// 		if e.Entity.Type == EntityBoulder && e.Block.BlockType == Soil {
+// 			// Boulder is falling on player
+// 			s.SoundPlayer.PlayFx("player_hurt")
+// 		}
+
+// 	case *PlayerCollisionEvent:
+// 		fmt.Println("Player collision detected!!")
+
+// 		if e.Entity.Type == EntityBoulder && e.EntityFalling {
+// 			fmt.Println("Player hit by boulder!!")
+// 			//Boulder is falling on player
+// 			s.SoundPlayer.PlayFx("player_hurt")
+// 			//			s.player.Hurt(e.Entity)
+// 		}
+
+// 		character := ecs.GetComponent[components.CharacteristicComponent](e.Entity)
+
+// 		if character != nil && character.Has(characteristics.IsEnemy) {
+// 			fmt.Println("Player hit by enemy!!")
+
+// 			s.SoundPlayer.PlayFx("player_hurt")
+// 			//			s.player.Hurt(e.Entity)
+// 		}
+
+// 		if e.Entity.Type == EntityDiamond {
+// 			if e.EntityFalling {
+// 				fmt.Println("Player hit by falling diamond!!")
+// 				s.SoundPlayer.PlayFx("player_hurt")
+// 				//				s.player.Hurt(e.Entity)
+// 			} else {
+// 				fmt.Println("Player collected diamond!!")
+// 				s.SoundPlayer.PlayFx("diamond_collected")
+// 				position := ecs.GetComponent[components.PositionComponent](e.Entity)
+// 				if position != nil {
+// 					s.RemoveEntity(e.Entity, position.CurrentBlockPosition)
+// 				}
+// 			}
+// 		}
+// 	default:
+// 		fmt.Printf("Unknown event type %T \n", e)
+// 	}
 // }
 
-func (s *Stage) OnEvent(event any) {
+// func (s *Stage) OnBoulderEnemyCollision(world *ecs.World, boulder *ecs.Entity, enemy *ecs.Entity) {
+// 	fmt.Println("Boulder and enemy collision detected!!")
 
-	var world *ecs.World
+// 	boulderVelocity := ecs.GetComponent[components.VelocityComponent](boulder)
 
-	switch e := event.(type) {
-	case *EntityCollisionEvent:
-		fmt.Println("Entity collision detected!!")
+// 	if !boulderVelocity.IsMoving() {
+// 		return
+// 	}
 
-		if e.Entity1.Type == EntityBoulder && e.Entity2.Type == EntityEnemy {
-			s.OnBoulderEnemyCollision(world, e.Entity1, e.Entity2)
-		}
-		if e.Entity2.Type == EntityBoulder && e.Entity1.Type == EntityEnemy {
-			s.OnBoulderEnemyCollision(world, e.Entity2, e.Entity1)
-		}
+// 	enemyPosition := ecs.GetComponent[components.PositionComponent](enemy)
 
-	case *BlockCollisionEvent:
-		fmt.Println("Block collision detected!!")
+// 	s.RemoveEntity(enemy, enemyPosition.CurrentBlockPosition)
 
-		if e.Entity.Type == EntityBoulder && e.Block.BlockType == Soil {
-			// Boulder is falling on player
-			s.SoundPlayer.PlayFx("player_hurt")
-		}
+// 	boulderPosition := ecs.GetComponent[components.PositionComponent](boulder)
 
-	case *PlayerCollisionEvent:
-		fmt.Println("Player collision detected!!")
+// 	s.RemoveEntity(boulder, boulderPosition.CurrentBlockPosition)
 
-		if e.Entity.Type == EntityBoulder && e.EntityFalling {
-			fmt.Println("Player hit by boulder!!")
-			//Boulder is falling on player
-			s.SoundPlayer.PlayFx("player_hurt")
-			//			s.player.Hurt(e.Entity)
-		}
+// 	position := enemyPosition.CurrentBlockPosition
 
-		character := ecs.GetComponent[components.CharacteristicComponent](e.Entity)
+// 	s.CreateDiamonds(world, position, 2, 2)
+// }
 
-		if character != nil && character.Has(characteristics.IsEnemy) {
-			fmt.Println("Player hit by enemy!!")
-
-			s.SoundPlayer.PlayFx("player_hurt")
-			//			s.player.Hurt(e.Entity)
-		}
-
-		if e.Entity.Type == EntityDiamond {
-			if e.EntityFalling {
-				fmt.Println("Player hit by falling diamond!!")
-				s.SoundPlayer.PlayFx("player_hurt")
-				//				s.player.Hurt(e.Entity)
-			} else {
-				fmt.Println("Player collected diamond!!")
-				s.SoundPlayer.PlayFx("diamond_collected")
-				position := ecs.GetComponent[components.PositionComponent](e.Entity)
-				if position != nil {
-					s.RemoveEntity(e.Entity, position.CurrentBlockPosition)
-				}
-			}
-		}
-	default:
-		fmt.Printf("Unknown event type %T \n", e)
-	}
-}
-
-func (s *Stage) OnBoulderEnemyCollision(world *ecs.World, boulder *ecs.Entity, enemy *ecs.Entity) {
-	fmt.Println("Boulder and enemy collision detected!!")
-
-	boulderVelocity := ecs.GetComponent[components.VelocityComponent](boulder)
-
-	if !boulderVelocity.IsMoving() {
-		return
-	}
-
-	enemyPosition := ecs.GetComponent[components.PositionComponent](enemy)
-
-	s.RemoveEntity(enemy, enemyPosition.CurrentBlockPosition)
-
-	boulderPosition := ecs.GetComponent[components.PositionComponent](boulder)
-
-	s.RemoveEntity(boulder, boulderPosition.CurrentBlockPosition)
-
-	position := enemyPosition.CurrentBlockPosition
-
-	s.CreateDiamonds(world, position, 2, 2)
-}
-
-func (s *Stage) CreateDiamonds(world *ecs.World, position common.BlockPosition, width int, height int) {
-	for y := -height; y <= height; y++ {
-		for x := -width; x <= width; x++ {
-			diamondPosition := position.Offset(x, y)
-			if !s.CheckBlockAtPosition(Bedrock, diamondPosition) {
-				s.SetBlock(NewBlock(s.BlockMap, s.EntityMap, Void, diamondPosition), diamondPosition)
-				entity := NewDiamond(world, s, diamondPosition, s.GetPosition(diamondPosition))
-				s.SetEntity(entity, diamondPosition)
-			}
-		}
-	}
-}
+// func (s *Stage) CreateDiamonds(world *ecs.World, position common.BlockPosition, width int, height int) {
+// 	for y := -height; y <= height; y++ {
+// 		for x := -width; x <= width; x++ {
+// 			diamondPosition := position.Offset(x, y)
+// 			if !s.CheckBlockAtPosition(Bedrock, diamondPosition) {
+// 				s.SetBlock(NewBlock(s.BlockMap, s.EntityMap, Void, diamondPosition), diamondPosition)
+// 				entity := NewDiamond(world, s, diamondPosition, s.GetPosition(diamondPosition))
+// 				s.SetEntity(entity, diamondPosition)
+// 			}
+// 		}
+// 	}
+// }
 
 func (s *Stage) InitEntities(world *ecs.World, category ecs.EntityCategory, tiles []*tiled.LayerTile) {
 	for index, tile := range tiles {

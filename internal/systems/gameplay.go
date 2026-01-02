@@ -96,7 +96,7 @@ func (s *GameplaySystem) OnDamageOnEnemy(world *ecs.World, boulder *ecs.Entity, 
 
 	position := enemyPosition.CurrentBlockPosition
 
-	s.CreateDiamonds(world, position, 2, 2)
+	s.CreateSquare(world, game.EntityExplosion, position, 1, 1)
 }
 
 func (s *GameplaySystem) OnBoulderPlayerCollision(world *ecs.World, boulder *ecs.Entity, enemy *ecs.Entity) {
@@ -150,6 +150,28 @@ func (s *GameplaySystem) CreateDiamonds(world *ecs.World, position common.BlockP
 
 				if err == nil {
 					s.stage.SetEntity(diamond, diamondPosition)
+				}
+			}
+		}
+	}
+}
+
+func (s *GameplaySystem) CreateSquare(world *ecs.World, entityType ecs.EntityType, center common.BlockPosition, width int, height int) {
+	for y := -height; y <= height; y++ {
+		for x := -width; x <= width; x++ {
+			pos := center.Offset(x, y)
+			if s.stage.CheckCharacteristics(pos, characteristics.Destructable) {
+				s.stage.SetBlock(game.NewBlock(s.stage.BlockMap, s.stage.EntityMap, game.Void, pos), pos)
+
+				doomed := s.stage.GetEntity(pos)
+				if doomed != nil {
+					world.EnqueueRemoval(doomed)
+				}
+
+				entity, err := game.NewGameEntity(world, s.stage, entityType, pos)
+
+				if err == nil {
+					s.stage.SetEntity(entity, pos)
 				}
 			}
 		}

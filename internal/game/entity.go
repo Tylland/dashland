@@ -16,11 +16,12 @@ const (
 // type EntityType uint16
 
 const (
-	EntityPlayer  ecs.EntityType = iota
-	EntityDiamond                = 4
-	EntityBoulder                = 5
-	EntityDoor                   = 11
-	EntityEnemy                  = 101
+	EntityPlayer    ecs.EntityType = iota
+	EntityDiamond                  = 4
+	EntityBoulder                  = 5
+	EntityExplosion                = 6
+	EntityDoor                     = 11
+	EntityEnemy                    = 101
 )
 
 // type Entity struct {

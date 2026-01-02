@@ -11,14 +11,13 @@ import (
 type EntityMap struct {
 	MapSize
 	entityTextures        *rl.Texture2D
-	enemyTextures         *rl.Texture2D
 	groundCorners         *rl.Texture2D
 	entities              []*ecs.Entity
 	InitialPlayerPosition common.BlockPosition
 }
 
-func NewGroundMap(mapSize MapSize, entityTextures *rl.Texture2D, enemyTextures *rl.Texture2D, groundCorners *rl.Texture2D) *EntityMap {
-	return &EntityMap{MapSize: mapSize, entityTextures: entityTextures, enemyTextures: enemyTextures, groundCorners: groundCorners, entities: []*ecs.Entity{}}
+func NewEntityMap(mapSize MapSize, entityTextures *rl.Texture2D, groundCorners *rl.Texture2D) *EntityMap {
+	return &EntityMap{MapSize: mapSize, entityTextures: entityTextures, groundCorners: groundCorners, entities: []*ecs.Entity{}}
 }
 
 func (m *EntityMap) InitPlayerPosition(tiles []*tiled.LayerTile) {

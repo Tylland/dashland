@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"github.com/tylland/dashland/internal/assets"
 	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
@@ -26,6 +27,8 @@ func NewGameEntity(world *ecs.World, stage *Stage, entityType ecs.EntityType, bl
 		return NewDiamond(world, stage, blockPosition, position), nil
 	case EntityBoulder:
 		return NewBoulder(world, stage, blockPosition, position), nil
+	case EntityExplosion:
+		return NewExplosion(world, stage, blockPosition, position), nil
 	case EntityDoor:
 		return NewDoor(world, stage, blockPosition, position), nil
 	case EntityEnemy:
@@ -84,7 +87,7 @@ func NewEnemy(world *ecs.World, stage *Stage, blockPosition common.BlockPosition
 	}
 
 	entity.AddComponent(components.NewAnimationComponent(animations, "default"))
-	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.enemyTextures, stage.BlockWidth, stage.BlockHeight, 0, 0, 0)))
+	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(assets.LoadTexture("animations"), stage.BlockWidth, stage.BlockHeight, 0, 0, 0)))
 
 	world.AddEntity(entity)
 
@@ -113,6 +116,26 @@ func NewDoorWithDestination(world *ecs.World, stage *Stage, blockPosition common
 	entity.AddComponent(components.NewColliderComponent(LayerTrigger, LayerNone, LayerPlayer))
 	entity.AddComponent(components.NewDoorComponent(targetStage, targetPosition))
 
+	world.AddEntity(entity)
+
+	return entity
+}
+
+func NewExplosion(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
+	entity := ecs.NewEntity(NewEntityId("enemy"), EntityEnemy)
+
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy))
+	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
+	entity.AddComponent(components.NewColliderComponent(LayerEnemy, LayerEnemy, LayerPlayer))
+	entity.AddComponent(components.NewDamage(1))
+
+	animations := map[string]components.Animation{
+		"default": {BaseX: 0, BaseY: 0 * stage.BlockHeight, FrameCount: 6, FrameDuration: 0.100, Loop: false},
+	}
+
+	entity.AddComponent(components.NewAnimationComponent(animations, "default"))
+	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(assets.LoadTexture("explosion"), stage.BlockWidth, stage.BlockHeight, 0, 0, 0)))
+	entity.AddComponent(components.NewLifetime(0.6))
 	world.AddEntity(entity)
 
 	return entity
