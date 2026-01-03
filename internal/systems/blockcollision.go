@@ -118,6 +118,5 @@ func (s *BlockCollisionSystem) StopFalling(entity *ecs.Entity, step *components.
 	fmt.Printf("Entity %s stop falling!!\n", entity.ID)
 
 	step.Cancel()
-	characteristic.Add(characteristics.Obstacle)
 	characteristic.Remove(characteristics.Falling)
 }

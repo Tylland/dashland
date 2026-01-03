@@ -72,7 +72,7 @@ func (s *GameplaySystem) handleDamage(world *ecs.World, damage *game.DamageEvent
 		s.DamageOnPlayer(world, damage.Source, damage.Target)
 	}
 
-	if damage.Target.Type == game.EntityEnemy {
+	if damage.Target.Type == game.EntityFirefly {
 		s.OnDamageOnEnemy(world, damage.Source, damage.Target)
 	}
 }

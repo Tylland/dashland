@@ -1,11 +1,10 @@
 package components
 
-import "github.com/tylland/dashland/internal/common"
-
 type WallWalkerComponent struct {
-	HasWall bool
+	HasWall   bool
+	Clockwise bool
 }
 
-func NewWallWalkerComponent(defaultDirection common.BlockVector) *WallWalkerComponent {
-	return &WallWalkerComponent{}
+func NewWallWalkerComponent(clockwise bool) *WallWalkerComponent {
+	return &WallWalkerComponent{Clockwise: clockwise}
 }

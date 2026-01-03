@@ -31,8 +31,8 @@ func NewGameEntity(world *ecs.World, stage *Stage, entityType ecs.EntityType, bl
 		return NewExplosion(world, stage, blockPosition, position), nil
 	case EntityDoor:
 		return NewDoor(world, stage, blockPosition, position), nil
-	case EntityEnemy:
-		return NewEnemy(world, stage, blockPosition, position), nil
+	case EntityFirefly:
+		return NewFirefly(world, stage, blockPosition, position), nil
 	default:
 		return nil, fmt.Errorf("%v (%d) is unknown EntityType", entityType, int(entityType))
 
@@ -58,7 +58,7 @@ func NewBoulder(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 func NewDiamond(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityId("diamond"), EntityDiamond)
 
-	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff | characteristics.Obstacle | characteristics.Destructable))
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff | characteristics.Destructable))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewBlockStep(position))
 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDiamond)*stage.BlockWidth, 0, 0)))
@@ -71,8 +71,8 @@ func NewDiamond(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 	return entity
 }
 
-func NewEnemy(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
-	entity := ecs.NewEntity(NewEntityId("enemy"), EntityEnemy)
+func NewFirefly(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
+	entity := ecs.NewEntity(NewEntityId("firefly"), EntityFirefly)
 
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy | characteristics.Destructable))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
@@ -80,7 +80,7 @@ func NewEnemy(world *ecs.World, stage *Stage, blockPosition common.BlockPosition
 	entity.AddComponent(components.NewColliderComponent(LayerEnemy, LayerEnemy, LayerPlayer))
 	entity.AddComponent(components.NewDamage(1))
 	entity.AddComponent(components.NewHealth(1))
-	entity.AddComponent(components.NewWallWalkerComponent(common.NewBlockVector(1, 0)))
+	entity.AddComponent(components.NewWallWalkerComponent(true))
 
 	animations := map[string]components.Animation{
 		"default": {BaseX: 0, BaseY: 0 * stage.BlockHeight, FrameCount: 4, FrameDuration: 0.200, Loop: true},
@@ -122,7 +122,7 @@ func NewDoorWithDestination(world *ecs.World, stage *Stage, blockPosition common
 }
 
 func NewExplosion(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
-	entity := ecs.NewEntity(NewEntityId("enemy"), EntityEnemy)
+	entity := ecs.NewEntity(NewEntityId("enemy"), EntityFirefly)
 
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))

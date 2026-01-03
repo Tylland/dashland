@@ -42,30 +42,40 @@ func (s *WallWalkerBehavior) UpdateTarget(world *ecs.World, position *components
 	}
 
 	if step.Direction.IsZero() {
-		direction, _ := s.findDirection(world, current, common.DirectionDown)
+		direction, _ := s.findDirection(world, current, common.DirectionDown, collider)
 
 		s.makeMove(step, direction)
 
 		return
 	} else if step.Increment.IsZero() {
-		// Check surrounding positions relative to current direction
-		rightTurn := step.Direction.TurnRight()
 
-		rightPos := current.Add(rightTurn)      // Right side check
-		aheadPos := current.Add(step.Direction) // Forward check
+		var sideTurn common.BlockVector
+
+		if wallwalker.Clockwise {
+			sideTurn = step.Direction.TurnLeft()
+		} else {
+			sideTurn = step.Direction.TurnRight()
+		}
+
+		sidePos := current.Add(sideTurn)
+		aheadPos := current.Add(step.Direction)
 
 		// Check for obstacles (non-void blocks or entities)
-		hasRightObstacle := s.stage.CheckBlocked(world, rightPos, collider)
+		hasSideObstacle := s.stage.CheckBlocked(world, sidePos, collider)
 		hasAheadObstacle := s.stage.CheckBlocked(world, aheadPos, collider)
 
-		if !hasRightObstacle && wallwalker.HasWall {
-			// Was following a wall but lost contact, turn right
-			s.makeMove(step, rightTurn)
+		if !hasSideObstacle && wallwalker.HasWall {
+			// Was following a wall but lost contact, turn
+			s.makeMove(step, sideTurn)
 		} else if hasAheadObstacle {
-			// Wall ahead, turn left
-			leftTurn := step.Direction.TurnLeft()
+			// Wall ahead, turn
+			if wallwalker.Clockwise {
+				sideTurn = step.Direction.TurnRight()
+			} else {
+				sideTurn = step.Direction.TurnLeft()
+			}
 
-			s.makeMove(step, leftTurn)
+			s.makeMove(step, sideTurn)
 		}
 
 		if step.Increment.IsZero() {
@@ -73,7 +83,7 @@ func (s *WallWalkerBehavior) UpdateTarget(world *ecs.World, position *components
 		}
 
 		// Update wall following state
-		wallwalker.HasWall = hasRightObstacle
+		wallwalker.HasWall = hasSideObstacle
 	}
 }
 
@@ -81,9 +91,9 @@ func (s *WallWalkerBehavior) makeMove(step *components.BlockStep, move common.Bl
 	step.Move(move, moveSpeed)
 }
 
-func (s *WallWalkerBehavior) findDirection(world *ecs.World, position common.BlockPosition, direction common.BlockVector) (common.BlockVector, bool) {
+func (s *WallWalkerBehavior) findDirection(world *ecs.World, position common.BlockPosition, direction common.BlockVector, collider *components.ColliderComponent) (common.BlockVector, bool) {
 	for i := 0; i < 4; i++ {
-		if !s.stage.CheckCharacteristics(position.Add(direction), characteristics.Obstacle) {
+		if !s.stage.IsBlocked(position.Add(direction), collider) {
 			return direction, true
 		}
 

@@ -10,7 +10,6 @@ const (
 	Falling
 	Pushable
 	IsEnemy
-	Obstacle
 	CanHoldGravity
 	GravityRollOff
 	Destructable
@@ -33,9 +32,6 @@ func (c Characteristics) String() string {
 	}
 	if c&IsEnemy == IsEnemy {
 		str = append(str, "IsEnemy")
-	}
-	if c&Obstacle == Obstacle {
-		str = append(str, "Obstacle")
 	}
 	if c&CanHoldGravity == CanHoldGravity {
 		str = append(str, "CanHoldGravity")

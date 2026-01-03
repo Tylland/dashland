@@ -123,13 +123,13 @@ func (bm *BlockMap) Update(deltaTime float32) {
 	}
 }
 
-func (bm *BlockMap) IsBlocked(pos common.BlockPosition, collider components.ColliderComponent) bool {
+func (bm *BlockMap) IsBlocked(pos common.BlockPosition, collider *components.ColliderComponent) bool {
 	if pos.X < 0 || pos.Y < 0 || pos.X >= bm.Width || pos.Y >= bm.Height {
 		return true
 	}
 
 	if block, ok := bm.GetBlockAtPosition(pos); ok {
-		blocked, _ := block.Collider.Result(&collider)
+		blocked, _ := block.Collider.Result(collider)
 		return blocked
 	}
 

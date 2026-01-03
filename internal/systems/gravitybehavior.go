@@ -37,7 +37,6 @@ func (g *GravityBehavior) Update(world *ecs.World, deltaTime float32) {
 func (g *GravityBehavior) StartFalling(entity *ecs.Entity, characteristic *components.CharacteristicComponent) {
 	fmt.Printf("Entity %s start falling!!\n", entity.ID)
 
-	characteristic.Remove(characteristics.Obstacle)
 	characteristic.Add(characteristics.Falling)
 }
 
@@ -45,7 +44,6 @@ func (g *GravityBehavior) StopFalling(entity *ecs.Entity, step *components.Block
 	fmt.Printf("Entity %s stop falling!!\n", entity.ID)
 
 	step.Increment.Clear()
-	characteristic.Add(characteristics.Obstacle)
 	characteristic.Remove(characteristics.Falling)
 }
 

@@ -90,8 +90,8 @@
   </object>
   <object id="4" name="Wodden" type="EntityDoor" x="96.4205" y="33.0455" width="30.7273" height="30.5455">
    <properties>
-    <property name="Position" value="2,3"/>
-    <property name="Stage" value="start"/>
+    <property name="Position" value="18,19"/>
+    <property name="Stage" value="boulderdash-1b"/>
    </properties>
   </object>
  </objectgroup>
