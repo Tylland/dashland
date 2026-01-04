@@ -8,11 +8,11 @@ const (
 )
 
 type CollectableComponent struct {
-	Type      CollectableType
+	Name      string
 	Amount    int
 	Collected bool
 }
 
-func NewCollectableComponent(t CollectableType, amount int) *CollectableComponent {
-	return &CollectableComponent{Type: t, Amount: amount, Collected: false}
+func NewCollectableComponent(name string, amount int) *CollectableComponent {
+	return &CollectableComponent{Name: name, Amount: amount, Collected: false}
 }

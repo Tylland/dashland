@@ -20,9 +20,11 @@ type Stage struct {
 	SoundPlayer
 	*BlockMap
 	*EntityMap
+	DiamondsRequired int
+	ExitCondition    bool
 }
 
-func New(enemyTextures *rl.Texture2D) *Stage {
+func New() *Stage {
 	w := &Stage{EntityMap: &EntityMap{entities: []*ecs.Entity{}}}
 
 	return w

@@ -42,7 +42,11 @@ func (s *WallWalkerBehavior) UpdateTarget(world *ecs.World, position *components
 	}
 
 	if step.Direction.IsZero() {
-		direction, _ := s.findDirection(world, current, common.DirectionDown, collider)
+		direction := common.DirectionDown
+
+		if wallwalker.Clockwise {
+			direction = common.DirectionLeft
+		}
 
 		s.makeMove(step, direction)
 
@@ -89,16 +93,4 @@ func (s *WallWalkerBehavior) UpdateTarget(world *ecs.World, position *components
 
 func (s *WallWalkerBehavior) makeMove(step *components.BlockStep, move common.BlockVector) {
 	step.Move(move, moveSpeed)
-}
-
-func (s *WallWalkerBehavior) findDirection(world *ecs.World, position common.BlockPosition, direction common.BlockVector, collider *components.ColliderComponent) (common.BlockVector, bool) {
-	for i := 0; i < 4; i++ {
-		if !s.stage.IsBlocked(position.Add(direction), collider) {
-			return direction, true
-		}
-
-		direction = direction.TurnRight()
-	}
-
-	return direction, false
 }

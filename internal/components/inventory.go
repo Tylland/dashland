@@ -1,7 +1,8 @@
 package components
 
 type Inventory struct {
-	Items map[string]int
+	Diamonds int
+	Items    map[string]int
 }
 
 func NewInventory() *Inventory {

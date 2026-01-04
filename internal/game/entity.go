@@ -12,6 +12,8 @@ const (
 	EntityDiamond                  = 4
 	EntityBoulder                  = 5
 	EntityExplosion                = 6
+	EntityFlash                    = 7
 	EntityDoor                     = 11
 	EntityFirefly                  = 101
+	EntityButterfly                = 102
 )

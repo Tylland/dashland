@@ -33,6 +33,8 @@ func NewGameEntity(world *ecs.World, stage *Stage, entityType ecs.EntityType, bl
 		return NewDoor(world, stage, blockPosition, position), nil
 	case EntityFirefly:
 		return NewFirefly(world, stage, blockPosition, position), nil
+	case EntityButterfly:
+		return NewButterfly(world, stage, blockPosition, position), nil
 	default:
 		return nil, fmt.Errorf("%v (%d) is unknown EntityType", entityType, int(entityType))
 
@@ -63,7 +65,7 @@ func NewDiamond(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 	entity.AddComponent(components.NewBlockStep(position))
 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDiamond)*stage.BlockWidth, 0, 0)))
 	entity.AddComponent(components.NewColliderComponent(LayerCollectable, LayerAll&(^LayerPlayer|LayerEnemy), LayerPlayer|LayerGround|LayerEnemy))
-	entity.AddComponent(components.NewCollectableComponent(components.CollectableDiamond, 1))
+	entity.AddComponent(components.NewCollectableComponent("diamond", 1))
 	entity.AddComponent(components.NewDamage(1))
 
 	world.AddEntity(entity)
@@ -87,7 +89,30 @@ func NewFirefly(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 	}
 
 	entity.AddComponent(components.NewAnimationComponent(animations, "default"))
-	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(assets.LoadTexture("animations"), stage.BlockWidth, stage.BlockHeight, 0, 0, 0)))
+	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(assets.LoadTexture("firefly"), stage.BlockWidth, stage.BlockHeight, 0, 0, 0)))
+
+	world.AddEntity(entity)
+
+	return entity
+}
+
+func NewButterfly(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
+	entity := ecs.NewEntity(NewEntityId("butterfly"), EntityButterfly)
+
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy | characteristics.Destructable))
+	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
+	entity.AddComponent(components.NewBlockStep(position))
+	entity.AddComponent(components.NewColliderComponent(LayerEnemy, LayerEnemy, LayerPlayer))
+	entity.AddComponent(components.NewDamage(1))
+	entity.AddComponent(components.NewHealth(1))
+	entity.AddComponent(components.NewWallWalkerComponent(false))
+
+	animations := map[string]components.Animation{
+		"default": {BaseX: 0, BaseY: 0 * stage.BlockHeight, FrameCount: 8, FrameDuration: 0.100, Loop: true},
+	}
+
+	entity.AddComponent(components.NewAnimationComponent(animations, "default"))
+	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(assets.LoadTexture("butterfly"), stage.BlockWidth, stage.BlockHeight, 0, 0, 0)))
 
 	world.AddEntity(entity)
 
@@ -122,7 +147,7 @@ func NewDoorWithDestination(world *ecs.World, stage *Stage, blockPosition common
 }
 
 func NewExplosion(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
-	entity := ecs.NewEntity(NewEntityId("enemy"), EntityFirefly)
+	entity := ecs.NewEntity(NewEntityId("explosion"), EntityExplosion)
 
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
@@ -136,6 +161,17 @@ func NewExplosion(world *ecs.World, stage *Stage, blockPosition common.BlockPosi
 	entity.AddComponent(components.NewAnimationComponent(animations, "default"))
 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(assets.LoadTexture("explosion"), stage.BlockWidth, stage.BlockHeight, 0, 0, 0)))
 	entity.AddComponent(components.NewLifetime(0.6))
+	world.AddEntity(entity)
+
+	return entity
+}
+
+func NewFlash(world *ecs.World) *ecs.Entity {
+	entity := ecs.NewEntity(NewEntityId("flash"), EntityFlash)
+
+	entity.AddComponent(components.NewFlashComponent())
+	entity.AddComponent(components.NewLifetime(0.1))
+
 	world.AddEntity(entity)
 
 	return entity

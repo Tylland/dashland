@@ -31,6 +31,21 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 		if position != nil && sprite != nil {
 			rl.DrawTextureRec(*sprite.Texture, sprite.Source, position.Vector2, rl.White)
 		}
+
+	}
+
+	for _, entity := range world.Entities() {
+		flash := ecs.GetComponent[components.FlashComponent](entity)
+
+		if flash != nil {
+			rl.DrawRectangle(
+				0,
+				0,
+				int32(rl.GetScreenWidth()),
+				int32(rl.GetScreenHeight()),
+				rl.White,
+			)
+		}
 	}
 
 	rl.EndMode2D()

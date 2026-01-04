@@ -75,6 +75,10 @@ func (g *DashlandGame) loadStageFromFile(name string) (*game.Stage, error) {
 	mapSize := game.MapSize{Width: tiledMap.Width, Height: tiledMap.Height, BlockWidth: float32(tiledMap.TileWidth), BlockHeight: float32(tiledMap.TileHeight)}
 	stage := &game.Stage{MapSize: mapSize, SoundPlayer: &g.Sounds, BlockMap: game.NewBlockMap(mapSize, blockTexture), EntityMap: game.NewEntityMap(mapSize, entityTextures, groundCorners)}
 
+	if tiledMap.Properties != nil {
+		stage.DiamondsRequired = tiledMap.Properties.GetInt("DiamondsRequired")
+	}
+
 	fmt.Printf("Reading blocks from layer %s \n", tiledMap.Layers[0].Name)
 	stage.InitBlocks(stage, tiledMap.Layers[0].Tiles)
 
@@ -121,7 +125,7 @@ func (g *DashlandGame) LoadStage(name string, position common.BlockPosition) err
 		systems.NewWallWalkerBehavior(stage),
 		systems.NewPushBehavior(stage),
 		systems.NewBlockCollisionSystem(stage),
-		systems.NewCollect(stage, stage.SoundPlayer),
+		systems.NewCollector(stage, stage.SoundPlayer),
 		systems.NewGameplaySystem(stage, stage.SoundPlayer),
 		systems.NewBlockMovement(stage),
 		systems.NewAnimationSystem(),
