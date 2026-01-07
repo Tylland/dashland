@@ -29,8 +29,8 @@ func NewGameEntity(world *ecs.World, stage *Stage, entityType ecs.EntityType, bl
 		return NewBoulder(world, stage, blockPosition, position), nil
 	case EntityExplosion:
 		return NewExplosion(world, stage, blockPosition, position), nil
-	case EntityDoor:
-		return NewDoor(world, stage, blockPosition, position), nil
+	// case EntityDoor:
+	// 	return NewDoor(world, stage, blockPosition, position), nil
 	case EntityFirefly:
 		return NewFirefly(world, stage, blockPosition, position), nil
 	case EntityButterfly:
@@ -119,27 +119,28 @@ func NewButterfly(world *ecs.World, stage *Stage, blockPosition common.BlockPosi
 	return entity
 }
 
-func NewDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
+func NewDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2, targetStage string, targetPosition common.BlockPosition) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityId("door"), EntityDoor)
 
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDoor)*stage.BlockWidth, 0, 0)))
 	entity.AddComponent(components.NewColliderComponent(LayerTrigger, LayerAll&(^LayerPlayer|LayerEnemy), LayerPlayer))
+	entity.AddComponent(components.NewDoorComponent(targetStage, targetPosition, components.DoorClosed))
 
 	world.AddEntity(entity)
 
 	return entity
 }
 
-func NewDoorWithDestination(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2, targetStage string, targetPosition common.BlockPosition) *ecs.Entity {
-	entity := ecs.NewEntity(NewEntityId("door"), EntityDoor)
+func NewExitDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2, targetStage string, targetPosition common.BlockPosition) *ecs.Entity {
+	entity := ecs.NewEntity(NewEntityId("exitdoor"), EntityDoor)
 
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
-	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDoor)*stage.BlockWidth, 0, 0)))
-	entity.AddComponent(components.NewColliderComponent(LayerTrigger, LayerNone, LayerPlayer))
-	entity.AddComponent(components.NewDoorComponent(targetStage, targetPosition))
+	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.blockTextures, stage.BlockWidth, stage.BlockHeight, float32(Bedrock)*stage.BlockWidth, 0, 0)))
+	entity.AddComponent(components.NewColliderComponent(LayerBedrock, LayerAll, LayerNone))
+	entity.AddComponent(components.NewDoorComponent(targetStage, targetPosition, components.DoorHidden))
 
 	world.AddEntity(entity)
 

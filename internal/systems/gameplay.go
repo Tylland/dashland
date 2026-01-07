@@ -3,6 +3,7 @@ package systems
 import (
 	"fmt"
 
+	"github.com/tylland/dashland/internal/assets"
 	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
@@ -21,6 +22,10 @@ func NewGameplaySystem(stage *game.Stage, sound game.SoundPlayer) *GameplaySyste
 
 func (s *GameplaySystem) Update(world *ecs.World, deltaTime float32) {
 	for _, event := range world.Events() {
+		if event != nil && event.Name == "exitopen" {
+			s.handleExitOpen(world)
+		}
+
 		if event != nil && event.Name == "damage" {
 			s.handleDamage(world, event.Data.(*game.DamageEvent))
 		}
@@ -66,13 +71,30 @@ func (s *GameplaySystem) handleCollision(world *ecs.World, collision *game.Entit
 	// }
 }
 
+func (s *GameplaySystem) handleExitOpen(world *ecs.World) {
+
+	if exit, ok := s.stage.GetEntityAtPosition(s.stage.ExitPosition); ok {
+		ecs.RemoveComponent[components.ColliderComponent](exit)
+		ecs.RemoveComponent[components.SpriteComponent](exit)
+
+		exit.AddComponent(components.NewSpriteComponent(common.NewSprite(assets.LoadTexture("entities"), s.stage.BlockWidth, s.stage.BlockHeight, float32(game.EntityExitDoor)*s.stage.BlockWidth, 0, 0)))
+		exit.AddComponent(components.NewColliderComponent(game.LayerTrigger, game.LayerNone, game.LayerPlayer))
+
+		door := ecs.GetComponent[components.DoorComponent](exit)
+		door.State = components.DoorOpen
+	}
+
+	game.NewFlash(world)
+	s.sound.PlayFx("stage_exit_opened")
+}
+
 func (s *GameplaySystem) handleDamage(world *ecs.World, damage *game.DamageEvent) {
 
 	if damage.Target.Type == game.EntityPlayer {
 		s.DamageOnPlayer(world, damage.Source, damage.Target)
 	}
 
-	if damage.Target.Type == game.EntityFirefly {
+	if damage.Target.Type == game.EntityFirefly || damage.Target.Type == game.EntityButterfly {
 		s.OnDamageOnEnemy(world, damage.Source, damage.Target)
 	}
 }
@@ -96,7 +118,14 @@ func (s *GameplaySystem) OnDamageOnEnemy(world *ecs.World, boulder *ecs.Entity, 
 
 	position := enemyPosition.CurrentBlockPosition
 
-	s.CreateSquare(world, game.EntityExplosion, position, 1, 1)
+	if enemy.Type == game.EntityFirefly {
+		s.sound.PlayFx("explosion")
+		s.CreateSquare(world, game.EntityExplosion, position, 1, 1)
+	}
+
+	if enemy.Type == game.EntityButterfly {
+		s.CreateSquare(world, game.EntityDiamond, position, 1, 1)
+	}
 }
 
 func (s *GameplaySystem) OnBoulderPlayerCollision(world *ecs.World, boulder *ecs.Entity, enemy *ecs.Entity) {
@@ -130,8 +159,9 @@ func (s *GameplaySystem) DamageOnPlayer(world *ecs.World, enemy *ecs.Entity, pla
 	position := playerPosition.CurrentBlockPosition
 
 	world.EnqueueRemoval(player)
-
 	s.CreateDiamonds(world, position, 2, 2)
+
+	world.AddEvent("stagechange", game.NewStageChangeEvent(s.stage.Name, s.stage.EnterPosition))
 }
 
 func (s *GameplaySystem) CreateDiamonds(world *ecs.World, position common.BlockPosition, width int, height int) {

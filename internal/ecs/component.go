@@ -48,3 +48,7 @@ func GetComponent[T Component](entity *Entity) *T {
 
 	return nil
 }
+
+func RemoveComponent[T Component](entity *Entity) {
+	entity.Components.RemoveComponent(new(T))
+}

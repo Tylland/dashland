@@ -23,6 +23,10 @@ func (s *Sounds) LoadSounds(soundDir string) {
 	s.sounds["player_hurt"] = rl.LoadSound(filepath.Join(soundDir, "effects", "player_hurt.mp3"))
 
 	s.sounds["boulder_collision"] = rl.LoadSound(filepath.Join(soundDir, "effects", "boulder_collision.mp3"))
+	s.sounds["boulder_collision"] = rl.LoadSound(filepath.Join(soundDir, "effects", "boulder_collision.mp3"))
+
+	s.sounds["stage_exit_opened"] = rl.LoadSound(filepath.Join(soundDir, "effects", "bang.mp3"))
+	s.sounds["explosion"] = rl.LoadSound(filepath.Join(soundDir, "effects", "explosion.mp3"))
 }
 
 func (s *Sounds) PlayFx(name string) {

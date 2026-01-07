@@ -108,3 +108,10 @@ type StageChangeEvent struct {
 func NewStageChangeEvent(stage string, position common.BlockPosition) *StageChangeEvent {
 	return &StageChangeEvent{Stage: stage, Position: position}
 }
+
+type ExitOpenEvent struct {
+}
+
+func NewExitOpenEvent() *ExitOpenEvent {
+	return &ExitOpenEvent{}
+}

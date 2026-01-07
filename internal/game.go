@@ -72,8 +72,9 @@ func (g *DashlandGame) loadStageFromFile(name string) (*game.Stage, error) {
 
 	groundCorners := assets.LoadTexture("ground_corners")
 
-	mapSize := game.MapSize{Width: tiledMap.Width, Height: tiledMap.Height, BlockWidth: float32(tiledMap.TileWidth), BlockHeight: float32(tiledMap.TileHeight)}
-	stage := &game.Stage{MapSize: mapSize, SoundPlayer: &g.Sounds, BlockMap: game.NewBlockMap(mapSize, blockTexture), EntityMap: game.NewEntityMap(mapSize, entityTextures, groundCorners)}
+	mapSize := game.NewMapSize(tiledMap.Width, tiledMap.Height, tiledMap.TileWidth, tiledMap.TileHeight)
+	stage := game.NewStage(name, mapSize, blockTexture, entityTextures, groundCorners)
+	//	stage := &game.Stage{MapSize: mapSize, SoundPlayer: &g.Sounds, BlockMap: game.NewBlockMap(mapSize, blockTexture), EntityMap: game.NewEntityMap(mapSize, entityTextures, groundCorners)}
 
 	if tiledMap.Properties != nil {
 		stage.DiamondsRequired = tiledMap.Properties.GetInt("DiamondsRequired")
@@ -84,7 +85,9 @@ func (g *DashlandGame) loadStageFromFile(name string) (*game.Stage, error) {
 
 	fmt.Printf("Reading entities from layer \"%s\" \n", tiledMap.Layers[1].Name)
 
-	stage.InitPlayerPosition(tiledMap.Layers[1].Tiles)
+	if pos, ok := stage.GetEnterPosition(tiledMap.Layers[1].Tiles); ok {
+		stage.EnterPosition = pos
+	}
 
 	stage.InitEntities(g.world, game.EntityCategoryObject, tiledMap.Layers[1].Tiles)
 	stage.InitEntities(g.world, game.EntityCategoryEnemy, tiledMap.Layers[2].Tiles)
@@ -106,7 +109,7 @@ func (g *DashlandGame) LoadStage(name string, position common.BlockPosition) err
 	}
 
 	if position.IsZero() {
-		position = stage.InitialPlayerPosition
+		position = stage.EnterPosition
 	}
 
 	playerTexture := assets.LoadTexture("player")
@@ -125,8 +128,8 @@ func (g *DashlandGame) LoadStage(name string, position common.BlockPosition) err
 		systems.NewWallWalkerBehavior(stage),
 		systems.NewPushBehavior(stage),
 		systems.NewBlockCollisionSystem(stage),
-		systems.NewCollector(stage, stage.SoundPlayer),
-		systems.NewGameplaySystem(stage, stage.SoundPlayer),
+		systems.NewCollectorSystem(stage, &g.Sounds),
+		systems.NewGameplaySystem(stage, &g.Sounds),
 		systems.NewBlockMovement(stage),
 		systems.NewAnimationSystem(),
 		systems.NewLifecycleSystem(),

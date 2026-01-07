@@ -8,12 +8,14 @@ const (
 )
 
 const (
-	EntityPlayer    ecs.EntityType = iota
+	EntityUnknown   ecs.EntityType = iota
+	EntityPlayer                   = 1
 	EntityDiamond                  = 4
 	EntityBoulder                  = 5
 	EntityExplosion                = 6
 	EntityFlash                    = 7
 	EntityDoor                     = 11
+	EntityExitDoor                 = 12
 	EntityFirefly                  = 101
 	EntityButterfly                = 102
 )

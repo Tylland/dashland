@@ -83,7 +83,7 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 				if actor.Type == game.EntityPlayer && target.Type == game.EntityDoor {
 					door := ecs.GetComponent[components.DoorComponent](target)
 
-					if door != nil {
+					if door != nil && door.State == components.DoorOpen {
 						world.AddEvent("stagechange", game.NewStageChangeEvent(door.Stage, door.Position))
 						return
 					}

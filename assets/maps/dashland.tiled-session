@@ -36,22 +36,22 @@
             "expandedObjectLayers": [
                 6
             ],
-            "scale": 0.75,
-            "selectedLayer": 2,
+            "scale": 1,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 388.66666666666663,
-                "y": 351.33333333333337
+                "x": 868.5,
+                "y": 684
             }
         },
         "firstbd.tmx": {
             "expandedObjectLayers": [
                 6
             ],
-            "scale": 0.75,
+            "scale": 1,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": -154,
-                "y": 48.66666666666674
+                "x": 623.5,
+                "y": 528
             }
         },
         "start.tmx": {
@@ -59,10 +59,10 @@
                 5
             ],
             "scale": 2,
-            "selectedLayer": 2,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 683.25,
-                "y": 375.75
+                "x": 401.25,
+                "y": 82
             }
         },
         "start.tmx#Blocks": {

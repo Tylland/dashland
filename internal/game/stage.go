@@ -17,17 +17,17 @@ type SoundPlayer interface {
 
 type Stage struct {
 	MapSize
-	SoundPlayer
 	*BlockMap
 	*EntityMap
+	Name             string
+	EnterPosition    common.BlockPosition
 	DiamondsRequired int
 	ExitCondition    bool
+	ExitPosition     common.BlockPosition
 }
 
-func New() *Stage {
-	w := &Stage{EntityMap: &EntityMap{entities: []*ecs.Entity{}}}
-
-	return w
+func NewStage(name string, size MapSize, blockTexture, entityTextures, groundCorners *rl.Texture2D) *Stage {
+	return &Stage{Name: name, MapSize: size, BlockMap: NewBlockMap(size, blockTexture), EntityMap: NewEntityMap(size, entityTextures, groundCorners)}
 }
 
 func (s *Stage) GetPosition(position common.BlockPosition) rl.Vector2 {
@@ -148,7 +148,7 @@ func getString(obj *tiled.Object, name string) string {
 
 func (s *Stage) InitObjectsEntities(world *ecs.World, category ecs.EntityCategory, objectLayer *tiled.ObjectGroup) {
 	for _, obj := range objectLayer.Objects {
-		if obj.Type == "EntityDoor" {
+		if obj.Type == "EntityExitDoor" {
 
 			blockPos := s.GetBlockPosition(rl.Vector2{X: float32(obj.X), Y: float32(obj.Y)})
 			targetStage := getString(obj, "Stage")
@@ -158,8 +158,15 @@ func (s *Stage) InitObjectsEntities(world *ecs.World, category ecs.EntityCategor
 				panic(err.Error())
 			}
 
-			door := NewDoorWithDestination(world, s, blockPos, s.GetPosition(blockPos), targetStage, targetPosition)
+			door := NewExitDoor(world, s, blockPos, s.GetPosition(blockPos), targetStage, targetPosition)
 			s.EntityMap.SetEntity(door, blockPos)
+			s.ExitPosition = blockPos
 		}
 	}
 }
+
+// func (s *Stage) SpawnExitDoor(world *ecs.World, blockPos common.BlockPosition, targetStage string, targetPos common.BlockPosition) *ecs.Entity {
+// 	door := NewExitDoor(world, s, blockPos, s.GetPosition(blockPos), targetStage, targetPos)
+// 	s.EntityMap.SetEntity(door, blockPos)
+// 	return door
+// }

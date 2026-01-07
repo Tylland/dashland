@@ -10,25 +10,25 @@ import (
 
 type EntityMap struct {
 	MapSize
-	entityTextures        *rl.Texture2D
-	groundCorners         *rl.Texture2D
-	entities              []*ecs.Entity
-	InitialPlayerPosition common.BlockPosition
+	entityTextures *rl.Texture2D
+	groundCorners  *rl.Texture2D
+	entities       []*ecs.Entity
 }
 
 func NewEntityMap(mapSize MapSize, entityTextures *rl.Texture2D, groundCorners *rl.Texture2D) *EntityMap {
 	return &EntityMap{MapSize: mapSize, entityTextures: entityTextures, groundCorners: groundCorners, entities: []*ecs.Entity{}}
 }
 
-func (m *EntityMap) InitPlayerPosition(tiles []*tiled.LayerTile) {
+func (m *EntityMap) GetEnterPosition(tiles []*tiled.LayerTile) (common.BlockPosition, bool) {
 	m.entities = make([]*ecs.Entity, len(tiles))
 
 	for index, tile := range tiles {
-		if tile.ID == 1 {
-			m.InitialPlayerPosition = common.BlockPosition{X: index % m.Width, Y: index / m.Width}
-			return
+		if ecs.EntityType(tile.ID) == EntityPlayer {
+			return common.NewBlockPosition(index%m.Width, index/m.Width), true
 		}
 	}
+
+	return common.NewBlockPosition(0, 0), false
 }
 
 func (m *EntityMap) SetEntity(entity *ecs.Entity, pos common.BlockPosition) {
