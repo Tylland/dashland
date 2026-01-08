@@ -88,8 +88,8 @@
  <objectgroup id="6" name="Triggers">
   <object id="2" name="Wodden" type="EntityExitDoor" x="1218.91" y="515.636" width="26.4849" height="25.8182">
    <properties>
-    <property name="Position" value="2,2"/>
-    <property name="Stage" value="start"/>
+    <property name="Position" value="3,2"/>
+    <property name="Stage" value="boulderdash-1c"/>
    </properties>
   </object>
  </objectgroup>
