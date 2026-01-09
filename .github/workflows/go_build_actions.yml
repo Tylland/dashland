@@ -1,8 +1,14 @@
 on:
   push:
-    # Sequence of patterns matched against refs/tags
     tags:
-      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+      - 'v*'   # triggers on tags like v1.0, v2.3.4
+
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build (must match v*)'
+        required: true
+        default: 'v1.0.0'
 
 name: Latest Release
 
