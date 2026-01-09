@@ -14,7 +14,7 @@
 Thumbs.db
 
 # Go modules
-go.sum
+
 
 bin/
 temp/
