@@ -3,7 +3,7 @@ module github.com/tylland/dashland
 go 1.23.2
 
 require (
-	github.com/gen2brain/raylib-go/raylib v0.0.0-20241228120719-d58ffe1a3a73
+	github.com/gen2brain/raylib-go/raylib v0.55.1
 	github.com/lafriks/go-tiled v0.14.0
 )
 
