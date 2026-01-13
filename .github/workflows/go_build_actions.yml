@@ -79,14 +79,29 @@ jobs:
       - name: Build
         run: |
           go build -o "$BINARY_NAME" -v
+      - name: Resolve RELEASE_TAG
+        run: |
+          # If the workflow was triggered by a tag push, use that tag name.
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "RELEASE_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          else
+            # Otherwise fall back to the workflow_dispatch input `tag` (if any).
+            echo "RELEASE_TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          fi
+
       - name: Release Notes
-        run:
-          git log $(git describe HEAD~ --tags --abbrev=0)..HEAD --pretty='format:* %h %s%n  * %an <%ae>' --no-merges >> ".github/RELEASE-TEMPLATE.md"
+        run: |
+          # Determine a previous reference: previous tag if available, otherwise initial commit.
+          PREV_REF=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || git rev-list --max-parents=0 HEAD)
+          # Generate release notes from PREV_REF..HEAD into file (overwrite any existing).
+          git log "${PREV_REF}"..HEAD --pretty='format:* %h %s%n  * %an <%ae>' --no-merges > ".github/RELEASE-TEMPLATE.md" || true
+
       - name: Release with Notes
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ env.RELEASE_TAG }}
           body_path: ".github/RELEASE-TEMPLATE.md"
           draft: true
-          files: ${{env.BINARY_NAME}}
+          files: ${{ env.BINARY_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
