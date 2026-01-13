@@ -11,7 +11,8 @@ on:
         default: 'v1.0.0'
 
 name: Latest Release
-
+permissions:
+  contents: write  
 defaults:
   run:
     shell: bash
