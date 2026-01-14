@@ -75,7 +75,7 @@ jobs:
         if: env.IMPORT_LIB_TYPE == 'mingw'
         run: |
           cd dist
-          zip -r ../${BINARY_NAME}.zip ./*
+          zip -r ${BINARY_NAME}.zip ./*
           cd ..
           ls -la ${BINARY_NAME}.zip
 
