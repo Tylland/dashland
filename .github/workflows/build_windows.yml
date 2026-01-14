@@ -3,26 +3,28 @@ permissions:
   contents: write
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
   workflow_dispatch:
 
 jobs:
 
-  # ---------------------------------------------------------
-  # JOB 1: Compute semantic version + create tag (manual only)
-  # ---------------------------------------------------------
-  create-tag:
-    if: github.event_name == 'workflow_dispatch'
+  build-and-release:
     runs-on: ubuntu-latest
+    env:
+      GOOS: windows
+      GOARCH: amd64
+      CGO_ENABLED: "1"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0   # required for full commit history
 
-      - name: Compute semantic version and create tag
+      # ---------------------------------------------------------
+      # Compute semantic version + create tag
+      # ---------------------------------------------------------
+      - name: Compute semantic version
+        id: semver
         run: |
           set -euo pipefail
 
@@ -53,104 +55,80 @@ jobs:
           done
 
           VERSION="v${major}.${minor}.${patch}"
-          echo "Computed version: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-          # Create and push tag
           git tag "$VERSION"
           git push origin "$VERSION"
 
-          echo "Tag $VERSION created and pushed"
+          echo "Created and pushed tag $VERSION"
 
-  # ---------------------------------------------------------
-  # JOB 2: Build Windows binary + release (runs on tag push)
-  # ---------------------------------------------------------
-  build-windows:
-    needs: [create-tag]
-    if: startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
-    env:
-      GOOS: windows
-      GOARCH: amd64
-      CGO_ENABLED: "1"
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
+      # ---------------------------------------------------------
+      # Build Windows binary
+      # ---------------------------------------------------------
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y mingw-w64 pkg-config zip
 
       - name: Verify raylib artifacts in raylib/lib
         run: |
-          echo "Listing raylib directory:"
-          ls -la raylib || (echo "raylib directory not found; ensure raylib/include and raylib/lib exist" && exit 1)
-          ls -la raylib/lib || (echo "raylib/lib not found; ensure import lib and raylib.dll are present" && exit 1)
-          echo "Expecting: raylib/include, raylib/lib/libraylibdll.a (or raylib.lib), raylib/lib/raylib.dll"
+          ls -la raylib || (echo "raylib directory missing" && exit 1)
+          ls -la raylib/lib || (echo "raylib/lib missing" && exit 1)
 
       - name: Detect import library type
-        id: detect_import
         run: |
           if [ -f raylib/lib/libraylibdll.a ]; then
             echo "IMPORT_LIB_TYPE=mingw" >> $GITHUB_ENV
-          elif [ -f raylib/lib/raylib.lib ]; then
-            echo "IMPORT_LIB_TYPE=msvc" >> $GITHUB_ENV
           else
-            echo "No import library found. Place libraylibdll.a (MinGW) or raylib.lib (MSVC) in raylib/lib"
+            echo "Missing MinGW import lib (libraylibdll.a)"
             exit 1
           fi
-          echo "IMPORT_LIB_TYPE set to $IMPORT_LIB_TYPE"
-
-      - name: Fail if only MSVC import lib present
-        if: env.IMPORT_LIB_TYPE == 'msvc'
-        run: |
-          echo "Found raylib/lib/raylib.lib (MSVC import lib). This job uses MinGW on ubuntu-latest and requires libraylibdll.a."
-          echo "Either add a MinGW import lib (libraylibdll.a) to raylib/lib or run the build on a Windows runner with MSVC."
-          exit 1
 
       - name: Set binary name
         run: |
           BINARY_NAME="${GITHUB_REPOSITORY##*/}-$GOOS-$GOARCH"
           echo "BINARY_NAME=$BINARY_NAME" >> $GITHUB_ENV
 
-      - name: Build Go exe for Windows (link to existing import lib)
-        if: env.IMPORT_LIB_TYPE == 'mingw'
+      - name: Build Go exe for Windows
         env:
           CC: x86_64-w64-mingw32-gcc
           CGO_CFLAGS: "-I${{ github.workspace }}/raylib/include"
           CGO_LDFLAGS: "-L${{ github.workspace }}/raylib/lib -lraylib"
         run: |
-          set -e
-          echo "Using BINARY_NAME=${BINARY_NAME}"
           mkdir -p dist
           go build -v -o dist/${BINARY_NAME}.exe .
 
-      - name: Copy raylib.dll next to exe
-        if: env.IMPORT_LIB_TYPE == 'mingw'
+      - name: Copy raylib.dll
+        run: cp raylib/lib/raylib.dll dist/
+      
+      - name: Copy asset directory
         run: |
-          cp raylib/lib/raylib.dll dist/ || (echo "raylib.dll not found in raylib/lib" && exit 1)
-          ls -la dist
+          if [ -d assets ]; then
+            cp -r assets dist/
+            echo "Assets copied into dist/"
+          else
+            echo "No assets directory found"
+          fi
 
-      - name: Package ZIP (exe + dll)
-        if: env.IMPORT_LIB_TYPE == 'mingw'
+      - name: Package ZIP
         run: |
           cd dist
           zip -r ${BINARY_NAME}.zip ./*
-          ls -la ${BINARY_NAME}.zip
 
+      # ---------------------------------------------------------
+      # Create GitHub Release
+      # ---------------------------------------------------------
       - name: Create GitHub Release
-        if: env.IMPORT_LIB_TYPE == 'mingw'
-        id: create_release
         uses: actions/create-release@v1
+        id: create_release
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
+          tag_name: ${{ env.VERSION }}
+          release_name: Release ${{ env.VERSION }}
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload release asset (zip)
-        if: env.IMPORT_LIB_TYPE == 'mingw'
+      - name: Upload release asset
         uses: softprops/action-gh-release@v1
         with:
           files: dist/${{ env.BINARY_NAME }}.zip
