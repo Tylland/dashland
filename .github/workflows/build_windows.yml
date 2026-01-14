@@ -1,6 +1,6 @@
 name: Build and Release Windows
 permissions:
-  contents: write  
+  contents: write
 
 on:
   push:
@@ -9,12 +9,70 @@ on:
   workflow_dispatch:
 
 jobs:
+
+  # ---------------------------------------------------------
+  # JOB 1: Compute semantic version + create tag (manual only)
+  # ---------------------------------------------------------
+  create-tag:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # required for full commit history
+
+      - name: Compute semantic version and create tag
+        run: |
+          set -euo pipefail
+
+          declare -i major=0
+          declare -i minor=0
+          declare -i patch=0
+          declare -a commits
+
+          IFS=$'\n' read -r -d '' -a commits < <(git log --pretty="%s" | tac && printf '\0')
+
+          for line in "${commits[@]}"; do
+              if [[ $line == fix:* ]]; then
+                  fixes=$(grep -o "fix:" <<< "$line" | wc -l)
+                  ((patch += fixes))
+              fi
+
+              if [[ $line == feat:* ]]; then
+                  features=$(grep -o "feat:" <<< "$line" | wc -l)
+                  ((minor += features))
+                  patch=0
+              fi
+
+              if [[ $line == *"!:"* ]] || [[ $line == *"BREAKING CHANGE:"* ]]; then
+                  ((major++))
+                  minor=0
+                  patch=0
+              fi
+          done
+
+          VERSION="v${major}.${minor}.${patch}"
+          echo "Computed version: $VERSION"
+
+          # Create and push tag
+          git tag "$VERSION"
+          git push origin "$VERSION"
+
+          echo "Tag $VERSION created and pushed"
+
+  # ---------------------------------------------------------
+  # JOB 2: Build Windows binary + release (runs on tag push)
+  # ---------------------------------------------------------
   build-windows:
+    needs: [create-tag]
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     env:
       GOOS: windows
       GOARCH: amd64
       CGO_ENABLED: "1"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -64,7 +122,6 @@ jobs:
           set -e
           echo "Using BINARY_NAME=${BINARY_NAME}"
           mkdir -p dist
-          # main.go is at repo root; build package from root
           go build -v -o dist/${BINARY_NAME}.exe .
 
       - name: Copy raylib.dll next to exe
