@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 jobs:
-
   build-and-release:
     runs-on: ubuntu-latest
     env:
@@ -15,10 +14,13 @@ jobs:
       CGO_ENABLED: "1"
 
     steps:
+      # ---------------------------------------------------------
+      # Checkout repository
+      # ---------------------------------------------------------
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # required for full commit history
+          fetch-depth: 0
 
       # ---------------------------------------------------------
       # Compute semantic version + create tag
@@ -28,30 +30,26 @@ jobs:
         run: |
           set -euo pipefail
 
-          declare -i major=0
-          declare -i minor=0
-          declare -i patch=0
+          declare -i major=0 minor=0 patch=0
           declare -a commits
 
           IFS=$'\n' read -r -d '' -a commits < <(git log --pretty="%s" | tac && printf '\0')
 
           for line in "${commits[@]}"; do
-              if [[ $line == fix:* ]]; then
-                  fixes=$(grep -o "fix:" <<< "$line" | wc -l)
-                  ((patch += fixes))
-              fi
+            if [[ $line == fix:* ]]; then
+              ((patch++))
+            fi
 
-              if [[ $line == feat:* ]]; then
-                  features=$(grep -o "feat:" <<< "$line" | wc -l)
-                  ((minor += features))
-                  patch=0
-              fi
+            if [[ $line == feat:* ]]; then
+              ((minor++))
+              patch=0
+            fi
 
-              if [[ $line == *"!:"* ]] || [[ $line == *"BREAKING CHANGE:"* ]]; then
-                  ((major++))
-                  minor=0
-                  patch=0
-              fi
+            if [[ $line == *"!:"* ]] || [[ $line == *"BREAKING CHANGE:"* ]]; then
+              ((major++))
+              minor=0
+              patch=0
+            fi
           done
 
           VERSION="v${major}.${minor}.${patch}"
@@ -60,7 +58,6 @@ jobs:
 
           echo "Computed version: $VERSION"
 
-          # Check if tag exists
           if git rev-parse "$VERSION" >/dev/null 2>&1; then
             echo "Tag $VERSION already exists. Skipping tag creation."
           else
@@ -69,33 +66,32 @@ jobs:
             echo "Created and pushed tag $VERSION"
           fi
 
+      # ---------------------------------------------------------
+      # Install dependencies
+      # ---------------------------------------------------------
+      - name: Install MinGW + tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mingw-w64 pkg-config zip
+
+      # ---------------------------------------------------------
+      # Validate raylib artifacts
+      # ---------------------------------------------------------
+      - name: Verify raylib artifacts
+        run: |
+          ls -la raylib || (echo "raylib directory missing" && exit 1)
+          ls -la raylib/lib || (echo "raylib/lib missing" && exit 1)
+          test -f raylib/lib/libraylibdll.a || (echo "Missing MinGW import lib" && exit 1)
 
       # ---------------------------------------------------------
       # Build Windows binary
       # ---------------------------------------------------------
-      - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y mingw-w64 pkg-config zip
-
-      - name: Verify raylib artifacts in raylib/lib
-        run: |
-          ls -la raylib || (echo "raylib directory missing" && exit 1)
-          ls -la raylib/lib || (echo "raylib/lib missing" && exit 1)
-
-      - name: Detect import library type
-        run: |
-          if [ -f raylib/lib/libraylibdll.a ]; then
-            echo "IMPORT_LIB_TYPE=mingw" >> $GITHUB_ENV
-          else
-            echo "Missing MinGW import lib (libraylibdll.a)"
-            exit 1
-          fi
-
       - name: Set binary name
         run: |
           BINARY_NAME="${GITHUB_REPOSITORY##*/}-$GOOS-$GOARCH"
           echo "BINARY_NAME=$BINARY_NAME" >> $GITHUB_ENV
 
-      - name: Build Go exe for Windows
+      - name: Build Go executable
         env:
           CC: x86_64-w64-mingw32-gcc
           CGO_CFLAGS: "-I${{ github.workspace }}/raylib/include"
@@ -106,23 +102,26 @@ jobs:
 
       - name: Copy raylib.dll
         run: cp raylib/lib/raylib.dll dist/
-      
-      - name: Copy asset directory
+
+      - name: Copy assets
         run: |
           if [ -d assets ]; then
             cp -r assets dist/
-            echo "Assets copied into dist/"
+            echo "Assets copied"
           else
             echo "No assets directory found"
           fi
 
+      # ---------------------------------------------------------
+      # Package ZIP
+      # ---------------------------------------------------------
       - name: Package ZIP
         run: |
           cd dist
           zip -r ${BINARY_NAME}.zip ./*
 
       # ---------------------------------------------------------
-      # Create GitHub Release + Upload Assets
+      # Create GitHub Release + Upload Asset
       # ---------------------------------------------------------
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
