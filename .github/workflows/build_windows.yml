@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
+
   build-and-release:
     runs-on: ubuntu-latest
     env:
@@ -17,77 +18,57 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0   # required for full commit history
 
       # ---------------------------------------------------------
-      # Compute semantic version + changelog
+      # Compute semantic version + create tag
       # ---------------------------------------------------------
-      - name: Compute semantic version + changelog
-        id: versioning
+      - name: Compute semantic version
+        id: semver
         run: |
           set -euo pipefail
-          
-          # ---------------------------------------------------------
-          # Find latest semver tag (vX.Y.Z), fallback to v0.0.0
-          # ---------------------------------------------------------
-          LAST_TAG=$(git tag --list "v*" | sort -V | tail -n 1)
-          [[ -z "$LAST_TAG" ]] && LAST_TAG="v0.0.0"
-          
-          echo "Last tag: $LAST_TAG"
-          
-          # ---------------------------------------------------------
-          # Collect commits since last tag
-          # ---------------------------------------------------------
-          COMMITS=$(git log ${LAST_TAG}..HEAD --pretty="%s")
-          
-          major=0
-          minor=0
-          patch=0
-          
-          while IFS= read -r line; do
-            [[ $line == fix:* ]] && ((patch++))
-            [[ $line == feat:* ]] && { ((minor++)); patch=0; }
-            [[ $line == *"!:"* || $line == *"BREAKING CHANGE:"* ]] && { ((major++)); minor=0; patch=0; }
-          done <<< "$COMMITS"
-          
-          # ---------------------------------------------------------
-          # Extract previous version numbers
-          # ---------------------------------------------------------
-          IFS='.' read -r old_major old_minor old_patch <<< "${LAST_TAG#v}"
-          
-          # ---------------------------------------------------------
-          # Apply increments
-          # ---------------------------------------------------------
-          new_major=$((old_major + major))
-          new_minor=$((major > 0 ? 0 : old_minor + minor))
-          new_patch=$((major > 0 || minor > 0 ? 0 : old_patch + patch))
-          
-          # ---------------------------------------------------------
-          # Build number = total commit count
-          # ---------------------------------------------------------
-          BUILD=$(git rev-list --count HEAD)
-          
-          VERSION="v${new_major}.${new_minor}.${new_patch}.${BUILD}"
-          
+
+          declare -i major=0
+          declare -i minor=0
+          declare -i patch=0
+          declare -a commits
+
+          IFS=$'\n' read -r -d '' -a commits < <(git log --pretty="%s" | tac && printf '\0')
+
+          for line in "${commits[@]}"; do
+              if [[ $line == fix:* ]]; then
+                  fixes=$(grep -o "fix:" <<< "$line" | wc -l)
+                  ((patch += fixes))
+              fi
+
+              if [[ $line == feat:* ]]; then
+                  features=$(grep -o "feat:" <<< "$line" | wc -l)
+                  ((minor += features))
+                  patch=0
+              fi
+
+              if [[ $line == *"!:"* ]] || [[ $line == *"BREAKING CHANGE:"* ]]; then
+                  ((major++))
+                  minor=0
+                  patch=0
+              fi
+          done
+
+          VERSION="v${major}.${minor}.${patch}"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          
+
           echo "Computed version: $VERSION"
-          
-          # ---------------------------------------------------------
-          # Skip release if version already exists
-          # ---------------------------------------------------------
+
+          # Check if tag exists
           if git rev-parse "$VERSION" >/dev/null 2>&1; then
-            echo "Version $VERSION already exists. No new commits. Skipping release."
-            echo "skip_release=true" >> $GITHUB_ENV
-            exit 0
+            echo "Tag $VERSION already exists. Skipping tag creation."
+          else
+            git tag "$VERSION"
+            git push origin "$VERSION"
+            echo "Created and pushed tag $VERSION"
           fi
-          
-          # ---------------------------------------------------------
-          # Generate changelog
-          # ---------------------------------------------------------
-          echo "Changelog since $LAST_TAG:" > CHANGELOG.md
-          git log ${LAST_TAG}..HEAD --pretty="- %s" >> CHANGELOG.md
+
 
       # ---------------------------------------------------------
       # Build Windows binary
@@ -95,7 +76,7 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y mingw-w64 pkg-config zip
 
-      - name: Verify raylib artifacts
+      - name: Verify raylib artifacts in raylib/lib
         run: |
           ls -la raylib || (echo "raylib directory missing" && exit 1)
           ls -la raylib/lib || (echo "raylib/lib missing" && exit 1)
@@ -125,11 +106,14 @@ jobs:
 
       - name: Copy raylib.dll
         run: cp raylib/lib/raylib.dll dist/
-
+      
       - name: Copy asset directory
         run: |
           if [ -d assets ]; then
             cp -r assets dist/
+            echo "Assets copied into dist/"
+          else
+            echo "No assets directory found"
           fi
 
       - name: Package ZIP
@@ -138,14 +122,23 @@ jobs:
           zip -r ${BINARY_NAME}.zip ./*
 
       # ---------------------------------------------------------
-      # Create GitHub Release + upload assets
+      # Create GitHub Release
       # ---------------------------------------------------------
-      - name: Publish Release
-        uses: softprops/action-gh-release@v2
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        id: create_release
         with:
           tag_name: ${{ env.VERSION }}
-          name: Release ${{ env.VERSION }}
-          body_path: CHANGELOG.md
-          files: dist/*.zip
+          release_name: Release ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release asset (zip)
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.VERSION }}
+          files: dist/${{ env.BINARY_NAME }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
