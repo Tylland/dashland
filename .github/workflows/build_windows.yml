@@ -1,0 +1,66 @@
+name: Build and Release Windows
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-windows:
+    runs-on: ubuntu-latest
+    env:
+      GOOS: windows
+      GOARCH: amd64
+      CGO_ENABLED: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y mingw-w64 cmake pkg-config
+
+      - name: Build raylib for Windows (static)
+        working-directory: ./raylib
+        run: |
+          mkdir -p build-win && cd build-win
+          CC=x86_64-w64-mingw32-gcc cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_SYSTEM_NAME=Windows ..
+          CC=x86_64-w64-mingw32-gcc make -j$(nproc)
+          mkdir -p $GITHUB_WORKSPACE/raylib-win
+          cp libraylib.a $GITHUB_WORKSPACE/raylib-win/ || true
+          # If raylib produces .lib or other names, copy them here as needed
+
+      - name: Set binary name
+        run: |
+          BINARY_NAME=${{github.repository}}-$GOOS-$GOARCH
+          echo "BINARY_NAME=$BINARY_NAME" >> $GITHUB_ENV
+
+      - name: Build Go exe for Windows
+        env:
+          CC: x86_64-w64-mingw32-gcc
+          CGO_CFLAGS: "-I${{ github.workspace }}/raylib/src"
+          CGO_LDFLAGS: "-L${{ github.workspace }}/raylib-win -lraylib -static"
+        run: |
+          echo "Using BINARY_NAME=$BINARY_NAME"
+          mkdir -p dist
+          go build -v -o dist/${BINARY_NAME}.exe ./cmd/myapp
+
+      - name: Verify artifact
+        run: ls -l dist
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/${{ env.BINARY_NAME }}.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
