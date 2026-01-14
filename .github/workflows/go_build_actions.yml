@@ -89,19 +89,35 @@ jobs:
             # Otherwise fall back to the workflow_dispatch input `tag` (if any).
             echo "RELEASE_TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
           fi
-
-      - name: Release Notes
+      - name: Generate Release Notes
         run: |
-          # Determine a previous reference: previous tag if available, otherwise initial commit.
-          PREV_REF=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || git rev-list --max-parents=0 HEAD)
-          # Generate release notes from PREV_REF..HEAD into file (overwrite any existing).
-          git log "${PREV_REF}"..HEAD --pretty='format:* %h %s%n  * %an <%ae>' --no-merges > ".github/RELEASE-TEMPLATE.md" || true
-
-      - name: Release with Notes
+          # Determine the current tag (from env)
+          CURRENT_TAG="${RELEASE_TAG}"
+      
+          # Find the previous tag (exclude the current one)
+          PREV_TAG=$(git tag --sort=-creatordate | grep -v "^${CURRENT_TAG}$" | head -n 1)
+      
+          # If no previous tag exists, use the first commit
+          if [ -z "$PREV_TAG" ]; then
+            PREV_TAG=$(git rev-list --max-parents=0 HEAD)
+            echo "No previous tag found. Using initial commit: $PREV_TAG"
+          else
+            echo "Previous tag found: $PREV_TAG"
+          fi
+      
+          # Generate release notes between PREV_TAG and CURRENT_TAG
+          git log "${PREV_TAG}".."${CURRENT_TAG}" \
+            --pretty='format:* %h %s%n  * %an <%ae>' \
+            --no-merges > RELEASE-TEMPLATE.md
+      
+          echo "Generated release notes:"
+          cat RELEASE-TEMPLATE.md
+      
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.RELEASE_TAG }}
-          body_path: ".github/RELEASE-TEMPLATE.md"
+          body_path: RELEASE-TEMPLATE.md
           draft: true
           files: ${{ env.BINARY_NAME }}
         env:
