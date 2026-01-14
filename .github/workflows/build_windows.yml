@@ -18,44 +18,69 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y mingw-w64 cmake pkg-config
+        run: sudo apt-get update && sudo apt-get install -y mingw-w64 pkg-config zip
 
-      - name: Build raylib for Windows (static)
-        working-directory: ./raylib
+      - name: Verify raylib artifacts in raylib/lib
         run: |
-          set -e
-          mkdir -p build-win && cd build-win
-          CC=x86_64-w64-mingw32-gcc cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_SYSTEM_NAME=Windows ..
-          CC=x86_64-w64-mingw32-gcc make -j$(nproc)
-          mkdir -p "$GITHUB_WORKSPACE/raylib-win"
-          if [ -f libraylib.a ]; then
-            cp libraylib.a "$GITHUB_WORKSPACE/raylib-win/"
-          elif [ -f raylib.a ]; then
-            cp raylib.a "$GITHUB_WORKSPACE/raylib-win/"
+          echo "Listing raylib directory:"
+          ls -la raylib || (echo "raylib directory not found; ensure raylib/include and raylib/lib exist" && exit 1)
+          ls -la raylib/lib || (echo "raylib/lib not found; ensure import lib and raylib.dll are present" && exit 1)
+          echo "Expecting: raylib/include, raylib/lib/libraylib.dll.a (or raylib.lib), raylib/lib/raylib.dll"
+
+      - name: Detect import library type
+        id: detect_import
+        run: |
+          if [ -f raylib/lib/libraylib.dll.a ]; then
+            echo "IMPORT_LIB_TYPE=mingw" >> $GITHUB_ENV
+          elif [ -f raylib/lib/raylib.lib ]; then
+            echo "IMPORT_LIB_TYPE=msvc" >> $GITHUB_ENV
           else
-            echo "Warning: no static raylib archive found in build directory"
+            echo "No import library found. Place libraylib.dll.a (MinGW) or raylib.lib (MSVC) in raylib/lib"
+            exit 1
           fi
+          echo "IMPORT_LIB_TYPE set to $IMPORT_LIB_TYPE"
+
+      - name: Fail if only MSVC import lib present
+        if: env.IMPORT_LIB_TYPE == 'msvc'
+        run: |
+          echo "Found raylib/lib/raylib.lib (MSVC import lib). This job uses MinGW on ubuntu-latest and requires libraylib.dll.a."
+          echo "Either add a MinGW import lib (libraylib.dll.a) to raylib/lib or run the build on a Windows runner with MSVC."
+          exit 1
 
       - name: Set binary name
         run: |
           BINARY_NAME="${GITHUB_REPOSITORY}-$GOOS-$GOARCH"
           echo "BINARY_NAME=$BINARY_NAME" >> $GITHUB_ENV
 
-      - name: Build Go exe for Windows
+      - name: Build Go exe for Windows (link to existing import lib)
+        if: env.IMPORT_LIB_TYPE == 'mingw'
         env:
           CC: x86_64-w64-mingw32-gcc
-          CGO_CFLAGS: "-I${{ github.workspace }}/raylib/src"
-          CGO_LDFLAGS: "-L${{ github.workspace }}/raylib-win -lraylib -static"
+          CGO_CFLAGS: "-I${{ github.workspace }}/raylib/include"
+          CGO_LDFLAGS: "-L${{ github.workspace }}/raylib/lib -lraylib"
         run: |
           set -e
           echo "Using BINARY_NAME=${BINARY_NAME}"
           mkdir -p dist
-          go build -v -o dist/${BINARY_NAME}.exe ./cmd/myapp
+          # main.go is at repo root; build package from root
+          go build -v -o dist/${BINARY_NAME}.exe .
 
-      - name: Verify artifact
-        run: ls -l dist
+      - name: Copy raylib.dll next to exe
+        if: env.IMPORT_LIB_TYPE == 'mingw'
+        run: |
+          cp raylib/lib/raylib.dll dist/ || (echo "raylib.dll not found in raylib/lib" && exit 1)
+          ls -la dist
+
+      - name: Package ZIP (exe + dll)
+        if: env.IMPORT_LIB_TYPE == 'mingw'
+        run: |
+          cd dist
+          zip -r ../${BINARY_NAME}.zip ./*
+          cd ..
+          ls -la ${BINARY_NAME}.zip
 
       - name: Create GitHub Release
+        if: env.IMPORT_LIB_TYPE == 'mingw'
         id: create_release
         uses: actions/create-release@v1
         with:
@@ -66,9 +91,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload release asset
+      - name: Upload release asset (zip)
+        if: env.IMPORT_LIB_TYPE == 'mingw'
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/${{ env.BINARY_NAME }}.exe
+          files: ${{ env.BINARY_NAME }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
