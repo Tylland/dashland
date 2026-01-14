@@ -58,10 +58,17 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-          git tag "$VERSION"
-          git push origin "$VERSION"
+          echo "Computed version: $VERSION"
 
-          echo "Created and pushed tag $VERSION"
+          # Check if tag exists
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Tag $VERSION already exists. Skipping tag creation."
+          else
+            git tag "$VERSION"
+            git push origin "$VERSION"
+            echo "Created and pushed tag $VERSION"
+          fi
+
 
       # ---------------------------------------------------------
       # Build Windows binary
