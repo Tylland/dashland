@@ -49,7 +49,7 @@ jobs:
 
       - name: Set binary name
         run: |
-          BINARY_NAME="${GITHUB_REPOSITORY}-$GOOS-$GOARCH"
+          BINARY_NAME="${GITHUB_REPOSITORY##*/}-$GOOS-$GOARCH"
           echo "BINARY_NAME=$BINARY_NAME" >> $GITHUB_ENV
 
       - name: Build Go exe for Windows (link to existing import lib)
