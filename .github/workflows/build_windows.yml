@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  workflow_dispatch:
 
 jobs:
   build-windows:
@@ -22,16 +23,22 @@ jobs:
       - name: Build raylib for Windows (static)
         working-directory: ./raylib
         run: |
+          set -e
           mkdir -p build-win && cd build-win
           CC=x86_64-w64-mingw32-gcc cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_SYSTEM_NAME=Windows ..
           CC=x86_64-w64-mingw32-gcc make -j$(nproc)
-          mkdir -p $GITHUB_WORKSPACE/raylib-win
-          cp libraylib.a $GITHUB_WORKSPACE/raylib-win/ || true
-          # If raylib produces .lib or other names, copy them here as needed
+          mkdir -p "$GITHUB_WORKSPACE/raylib-win"
+          if [ -f libraylib.a ]; then
+            cp libraylib.a "$GITHUB_WORKSPACE/raylib-win/"
+          elif [ -f raylib.a ]; then
+            cp raylib.a "$GITHUB_WORKSPACE/raylib-win/"
+          else
+            echo "Warning: no static raylib archive found in build directory"
+          fi
 
       - name: Set binary name
         run: |
-          BINARY_NAME=${{github.repository}}-$GOOS-$GOARCH
+          BINARY_NAME="${GITHUB_REPOSITORY}-$GOOS-$GOARCH"
           echo "BINARY_NAME=$BINARY_NAME" >> $GITHUB_ENV
 
       - name: Build Go exe for Windows
@@ -40,7 +47,8 @@ jobs:
           CGO_CFLAGS: "-I${{ github.workspace }}/raylib/src"
           CGO_LDFLAGS: "-L${{ github.workspace }}/raylib-win -lraylib -static"
         run: |
-          echo "Using BINARY_NAME=$BINARY_NAME"
+          set -e
+          echo "Using BINARY_NAME=${BINARY_NAME}"
           mkdir -p dist
           go build -v -o dist/${BINARY_NAME}.exe ./cmd/myapp
 
