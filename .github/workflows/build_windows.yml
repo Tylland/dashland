@@ -27,15 +27,22 @@ jobs:
         run: |
           set -euo pipefail
           
-          # Get latest tag (if none, default to v0.0.0)
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          # ---------------------------------------------------------
+          # Find latest semver tag (vX.Y.Z), fallback to v0.0.0
+          # ---------------------------------------------------------
+          LAST_TAG=$(git tag --list "v*" | sort -V | tail -n 1)
+          [[ -z "$LAST_TAG" ]] && LAST_TAG="v0.0.0"
+          
           echo "Last tag: $LAST_TAG"
           
-          # Get commits since last tag
+          # ---------------------------------------------------------
+          # Collect commits since last tag
+          # ---------------------------------------------------------
           COMMITS=$(git log ${LAST_TAG}..HEAD --pretty="%s")
           
-          # Init counters
-          major=0; minor=0; patch=0
+          major=0
+          minor=0
+          patch=0
           
           while IFS= read -r line; do
             [[ $line == fix:* ]] && ((patch++))
@@ -43,34 +50,44 @@ jobs:
             [[ $line == *"!:"* || $line == *"BREAKING CHANGE:"* ]] && { ((major++)); minor=0; patch=0; }
           done <<< "$COMMITS"
           
+          # ---------------------------------------------------------
           # Extract previous version numbers
+          # ---------------------------------------------------------
           IFS='.' read -r old_major old_minor old_patch <<< "${LAST_TAG#v}"
           
+          # ---------------------------------------------------------
           # Apply increments
+          # ---------------------------------------------------------
           new_major=$((old_major + major))
           new_minor=$((major > 0 ? 0 : old_minor + minor))
           new_patch=$((major > 0 || minor > 0 ? 0 : old_patch + patch))
           
+          # ---------------------------------------------------------
           # Build number = total commit count
+          # ---------------------------------------------------------
           BUILD=$(git rev-list --count HEAD)
           
           VERSION="v${new_major}.${new_minor}.${new_patch}.${BUILD}"
+          
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           
           echo "Computed version: $VERSION"
           
+          # ---------------------------------------------------------
           # Skip release if version already exists
+          # ---------------------------------------------------------
           if git rev-parse "$VERSION" >/dev/null 2>&1; then
             echo "Version $VERSION already exists. No new commits. Skipping release."
             echo "skip_release=true" >> $GITHUB_ENV
             exit 0
           fi
           
+          # ---------------------------------------------------------
           # Generate changelog
+          # ---------------------------------------------------------
           echo "Changelog since $LAST_TAG:" > CHANGELOG.md
           git log ${LAST_TAG}..HEAD --pretty="- %s" >> CHANGELOG.md
-
 
       # ---------------------------------------------------------
       # Build Windows binary
