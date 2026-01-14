@@ -29,39 +29,47 @@ jobs:
         id: semver
         run: |
           set -euo pipefail
-
-          declare -i major=0
-          declare -i minor=0
-          declare -i patch=0
-          declare -a commits
-
-          IFS=$'\n' read -r -d '' -a commits < <(git log --pretty="%s" | tac && printf '\0')
-
-          for line in "${commits[@]}"; do
-              if [[ $line == fix:* ]]; then
-                  fixes=$(grep -o "fix:" <<< "$line" | wc -l)
-                  ((patch += fixes))
-              fi
-
-              if [[ $line == feat:* ]]; then
-                  features=$(grep -o "feat:" <<< "$line" | wc -l)
-                  ((minor += features))
-                  patch=0
-              fi
-
-              if [[ $line == *"!:"* ]] || [[ $line == *"BREAKING CHANGE:"* ]]; then
-                  ((major++))
-                  minor=0
-                  patch=0
-              fi
-          done
-
+          
+          # Get last tag (or default to v0.0.0)
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "Last tag: $LAST_TAG"
+          
+          # Extract numeric parts
+          IFS='.' read -r major minor patch <<< "${LAST_TAG#v}"
+          
+          # Get commit messages since last tag
+          COMMITS=$(git log "${LAST_TAG}..HEAD" --pretty="%s")
+          
+          has_major=false
+          has_minor=false
+          has_patch=false
+          
+          while IFS= read -r line; do
+            [[ $line == *"BREAKING CHANGE:"* || $line == *"!:"* ]] && has_major=true
+            [[ $line == feat:* ]] && has_minor=true
+            [[ $line == fix:* ]] && has_patch=true
+          done <<< "$COMMITS"
+          
+          # Apply your rules
+          if $has_major; then
+            ((major++))
+            minor=0
+            patch=0
+          elif $has_minor; then
+            ((minor++))
+            patch=0
+          elif $has_patch; then
+            ((patch++))
+          fi
+          
           VERSION="v${major}.${minor}.${patch}"
+          
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-
+          
           echo "Computed version: $VERSION"
-
+          
+          # Create tag if missing
           if git rev-parse "$VERSION" >/dev/null 2>&1; then
             echo "Tag $VERSION already exists. Skipping tag creation."
           else
