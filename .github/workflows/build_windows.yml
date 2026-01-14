@@ -25,17 +25,17 @@ jobs:
           echo "Listing raylib directory:"
           ls -la raylib || (echo "raylib directory not found; ensure raylib/include and raylib/lib exist" && exit 1)
           ls -la raylib/lib || (echo "raylib/lib not found; ensure import lib and raylib.dll are present" && exit 1)
-          echo "Expecting: raylib/include, raylib/lib/libraylib.dll.a (or raylib.lib), raylib/lib/raylib.dll"
+          echo "Expecting: raylib/include, raylib/lib/libraylibdll.a (or raylib.lib), raylib/lib/raylib.dll"
 
       - name: Detect import library type
         id: detect_import
         run: |
-          if [ -f raylib/lib/libraylib.dll.a ]; then
+          if [ -f raylib/lib/libraylibdll.a ]; then
             echo "IMPORT_LIB_TYPE=mingw" >> $GITHUB_ENV
           elif [ -f raylib/lib/raylib.lib ]; then
             echo "IMPORT_LIB_TYPE=msvc" >> $GITHUB_ENV
           else
-            echo "No import library found. Place libraylib.dll.a (MinGW) or raylib.lib (MSVC) in raylib/lib"
+            echo "No import library found. Place libraylibdll.a (MinGW) or raylib.lib (MSVC) in raylib/lib"
             exit 1
           fi
           echo "IMPORT_LIB_TYPE set to $IMPORT_LIB_TYPE"
@@ -43,8 +43,8 @@ jobs:
       - name: Fail if only MSVC import lib present
         if: env.IMPORT_LIB_TYPE == 'msvc'
         run: |
-          echo "Found raylib/lib/raylib.lib (MSVC import lib). This job uses MinGW on ubuntu-latest and requires libraylib.dll.a."
-          echo "Either add a MinGW import lib (libraylib.dll.a) to raylib/lib or run the build on a Windows runner with MSVC."
+          echo "Found raylib/lib/raylib.lib (MSVC import lib). This job uses MinGW on ubuntu-latest and requires libraylibdll.a."
+          echo "Either add a MinGW import lib (libraylibdll.a) to raylib/lib or run the build on a Windows runner with MSVC."
           exit 1
 
       - name: Set binary name
