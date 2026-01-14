@@ -1,4 +1,6 @@
 name: Build and Release Windows
+permissions:
+  contents: write  
 
 on:
   push:
@@ -94,6 +96,6 @@ jobs:
         if: env.IMPORT_LIB_TYPE == 'mingw'
         uses: softprops/action-gh-release@v1
         with:
-          files: ${{ env.BINARY_NAME }}.zip
+          files: dist/${{ env.BINARY_NAME }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
