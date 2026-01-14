@@ -23,33 +23,37 @@ jobs:
           fetch-depth: 0
 
       # ---------------------------------------------------------
-      # Compute semantic version + create tag
+      # Compute semantic version + create tag (UNCHANGED)
       # ---------------------------------------------------------
       - name: Compute semantic version
         id: semver
         run: |
           set -euo pipefail
 
-          declare -i major=0 minor=0 patch=0
+          declare -i major=0
+          declare -i minor=0
+          declare -i patch=0
           declare -a commits
 
           IFS=$'\n' read -r -d '' -a commits < <(git log --pretty="%s" | tac && printf '\0')
 
           for line in "${commits[@]}"; do
-            if [[ $line == fix:* ]]; then
-              ((patch++))
-            fi
+              if [[ $line == fix:* ]]; then
+                  fixes=$(grep -o "fix:" <<< "$line" | wc -l)
+                  ((patch += fixes))
+              fi
 
-            if [[ $line == feat:* ]]; then
-              ((minor++))
-              patch=0
-            fi
+              if [[ $line == feat:* ]]; then
+                  features=$(grep -o "feat:" <<< "$line" | wc -l)
+                  ((minor += features))
+                  patch=0
+              fi
 
-            if [[ $line == *"!:"* ]] || [[ $line == *"BREAKING CHANGE:"* ]]; then
-              ((major++))
-              minor=0
-              patch=0
-            fi
+              if [[ $line == *"!:"* ]] || [[ $line == *"BREAKING CHANGE:"* ]]; then
+                  ((major++))
+                  minor=0
+                  patch=0
+              fi
           done
 
           VERSION="v${major}.${minor}.${patch}"
