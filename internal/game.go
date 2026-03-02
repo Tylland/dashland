@@ -78,6 +78,8 @@ func (g *DashlandGame) loadStageFromFile(name string) (*game.Stage, error) {
 
 	if tiledMap.Properties != nil {
 		stage.DiamondsRequired = tiledMap.Properties.GetInt("DiamondsRequired")
+		stage.DiamondPoints = tiledMap.Properties.GetInt("DiamondPoints")
+		stage.DiamondBonusPoints = tiledMap.Properties.GetInt("DiamondBonusPoints")
 	}
 
 	fmt.Printf("Reading blocks from layer %s \n", tiledMap.Layers[0].Name)

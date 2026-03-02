@@ -1,6 +1,7 @@
 package components
 
 type Inventory struct {
+	Points   int
 	Diamonds int
 	Items    map[string]int
 }

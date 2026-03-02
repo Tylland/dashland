@@ -87,3 +87,7 @@ func (m *EntityMap) TryRemoveEntity(doomed *ecs.Entity) bool {
 
 	return false
 }
+
+func (m *EntityMap) GetEntityTextures() *rl.Texture2D {
+	return m.entityTextures
+}

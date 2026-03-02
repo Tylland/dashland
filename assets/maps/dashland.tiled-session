@@ -40,7 +40,7 @@
             "selectedLayer": 3,
             "viewCenter": {
                 "x": 1232.5,
-                "y": 528.5
+                "y": 528
             }
         },
         "boulderdash-1c.tmx": {
@@ -58,8 +58,8 @@
             "scale": 1,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 441,
-                "y": 523.5
+                "x": 440.5,
+                "y": 523
             }
         },
         "start.tmx": {
@@ -69,8 +69,8 @@
             "scale": 2,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 310,
-                "y": -11.75
+                "x": 480.25,
+                "y": 320
             }
         },
         "start.tmx#Blocks": {

@@ -41,6 +41,11 @@ func (s *CollectorSystem) handleCollect(world *ecs.World, collect *game.CollectE
 				world.AddEvent("exitopen", game.NewExitOpenEvent())
 			}
 
+			if inventory.Diamonds < s.stage.DiamondsRequired {
+				inventory.Points += s.stage.DiamondPoints
+			} else {
+				inventory.Points += s.stage.DiamondBonusPoints
+			}
 		}
 
 		s.sound.PlayFx("diamond_collected")

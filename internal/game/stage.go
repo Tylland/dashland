@@ -19,11 +19,13 @@ type Stage struct {
 	MapSize
 	*BlockMap
 	*EntityMap
-	Name             string
-	EnterPosition    common.BlockPosition
-	DiamondsRequired int
-	ExitCondition    bool
-	ExitPosition     common.BlockPosition
+	Name               string
+	EnterPosition      common.BlockPosition
+	DiamondsRequired   int
+	DiamondPoints      int
+	DiamondBonusPoints int
+	ExitCondition      bool
+	ExitPosition       common.BlockPosition
 }
 
 func NewStage(name string, size MapSize, blockTexture, entityTextures, groundCorners *rl.Texture2D) *Stage {
