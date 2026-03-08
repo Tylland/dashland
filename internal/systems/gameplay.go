@@ -21,6 +21,14 @@ func NewGameplaySystem(stage *game.Stage, sound game.SoundPlayer) *GameplaySyste
 }
 
 func (s *GameplaySystem) Update(world *ecs.World, deltaTime float32) {
+	magicWallWasActive := s.stage.IsMagicWallActive()
+	s.stage.UpdateMagicWall(deltaTime)
+
+	// Magic wall just expired → switch all magic wall entities to idle animation
+	if magicWallWasActive && !s.stage.IsMagicWallActive() {
+		s.setMagicWallAnimation(world, "idle")
+	}
+
 	for _, event := range world.Events() {
 		if event != nil && event.Name == "exitopen" {
 			s.handleExitOpen(world)
@@ -32,6 +40,10 @@ func (s *GameplaySystem) Update(world *ecs.World, deltaTime float32) {
 
 		if event != nil && event.Name == "blockcollision" {
 			s.handleBlockCollision(world, event.Data.(*game.BlockCollisionEvent))
+		}
+
+		if event != nil && event.Name == "entityblocks" {
+			s.handleEntityBlocks(world, event.Data.(*game.EntityEvent))
 		}
 
 		if event != nil && event.Name == "entitycollision" {
@@ -54,6 +66,84 @@ func (s *GameplaySystem) handleBlockCollision(world *ecs.World, collision *game.
 
 	if collision.Block.BlockType == game.Soil && collision.Entity.Type == game.EntityDiamond {
 		s.sound.PlayFx("diamond_collision")
+	}
+}
+
+func (s *GameplaySystem) handleEntityBlocks(world *ecs.World, event *game.EntityEvent) {
+	// Magic wall: falling boulder/diamond hits magic wall entity → transform and pass through
+	target := event.Target
+	actor := event.Actor
+
+	targetCharacteristic := ecs.GetComponent[components.CharacteristicComponent](target)
+	if targetCharacteristic == nil || !targetCharacteristic.Has(characteristics.IsMagicWall) {
+		return
+	}
+
+	if actor.Type != game.EntityBoulder && actor.Type != game.EntityDiamond {
+		return
+	}
+
+	// Check the entity was falling (direction is down)
+	step := ecs.GetComponent[components.BlockStep](actor)
+	if step == nil || step.Direction.Y <= 0 {
+		return
+	}
+
+	// Determine output position (one cell below the magic wall entity)
+	targetPosition := ecs.GetComponent[components.PositionComponent](target)
+	if targetPosition == nil {
+		return
+	}
+	outputPos := targetPosition.CurrentBlockPosition.Add(common.DirectionDown)
+
+	// Check if the output position is empty
+	if s.stage.CheckPositionOccupied(outputPos) {
+		return
+	}
+
+	// Activate the magic wall timer and switch animations
+	if !s.stage.IsMagicWallActive() {
+		s.stage.ActivateMagicWall()
+		s.setMagicWallAnimation(world, "active")
+	}
+
+	// Remove the falling entity
+	actorPosition := ecs.GetComponent[components.PositionComponent](actor)
+	s.stage.RemoveEntity(actor, actorPosition.CurrentBlockPosition)
+	world.EnqueueRemoval(actor)
+
+	// Spawn the transformed entity below the magic wall
+	var newType ecs.EntityType
+	if actor.Type == game.EntityBoulder {
+		newType = game.EntityDiamond
+	} else {
+		newType = game.EntityBoulder
+	}
+
+	newEntity, err := game.NewGameEntity(world, s.stage, newType, outputPos)
+	if err == nil {
+		s.stage.SetEntity(newEntity, outputPos)
+
+		// Start the new entity falling
+		newCharacteristic := ecs.GetComponent[components.CharacteristicComponent](newEntity)
+		newStep := ecs.GetComponent[components.BlockStep](newEntity)
+		if newCharacteristic != nil && newStep != nil {
+			newCharacteristic.Add(characteristics.Falling)
+			newStep.Move(common.DirectionDown, moveSpeed)
+		}
+	}
+
+	fmt.Printf("Magic wall: %s transformed at %v\n", actor.ID, outputPos)
+}
+
+func (s *GameplaySystem) setMagicWallAnimation(world *ecs.World, animName string) {
+	for _, entity := range world.Entities() {
+		if entity.Type == game.EntityMagicWall {
+			anim := ecs.GetComponent[components.AnimationComponent](entity)
+			if anim != nil {
+				anim.Current = animName
+			}
+		}
 	}
 }
 

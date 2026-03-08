@@ -29,6 +29,8 @@ func NewGameEntity(world *ecs.World, stage *Stage, entityType ecs.EntityType, bl
 		return NewBoulder(world, stage, blockPosition, position), nil
 	case EntityExplosion:
 		return NewExplosion(world, stage, blockPosition, position), nil
+	case EntityMagicWall:
+		return NewMagicWall(world, stage, blockPosition, position), nil
 	// case EntityDoor:
 	// 	return NewDoor(world, stage, blockPosition, position), nil
 	case EntityFirefly:
@@ -127,6 +129,26 @@ func NewDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosition,
 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDoor)*stage.BlockWidth, 0, 0)))
 	entity.AddComponent(components.NewColliderComponent(LayerTrigger, LayerAll&(^LayerPlayer|LayerEnemy), LayerPlayer))
 	entity.AddComponent(components.NewDoorComponent(targetStage, targetPosition, components.DoorClosed))
+
+	world.AddEntity(entity)
+
+	return entity
+}
+
+func NewMagicWall(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
+	entity := ecs.NewEntity(NewEntityId("magicwall"), EntityMagicWall)
+
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity | characteristics.IsMagicWall))
+	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
+	entity.AddComponent(components.NewColliderComponent(LayerWall, LayerAll, LayerNone))
+
+	animations := map[string]components.Animation{
+		"idle":   {BaseX: 0, BaseY: 0, FrameCount: 1, FrameDuration: 1, Loop: true},
+		"active": {BaseX: 0, BaseY: 0, FrameCount: 4, FrameDuration: 0.100, Loop: true},
+	}
+
+	entity.AddComponent(components.NewAnimationComponent(animations, "idle"))
+	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(assets.LoadTexture("magicwall"), stage.BlockWidth, stage.BlockHeight, 0, 0, 0)))
 
 	world.AddEntity(entity)
 

@@ -13,6 +13,7 @@ const (
 	CanHoldGravity
 	GravityRollOff
 	Destructable
+	IsMagicWall
 )
 
 func (c Characteristics) String() string {
@@ -41,6 +42,9 @@ func (c Characteristics) String() string {
 	}
 	if c&Destructable == Destructable {
 		str = append(str, "Destructable")
+	}
+	if c&IsMagicWall == IsMagicWall {
+		str = append(str, "IsMagicWall")
 	}
 
 	return strings.Join(str, "|")

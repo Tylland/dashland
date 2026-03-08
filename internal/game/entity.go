@@ -16,6 +16,7 @@ const (
 	EntityFlash                    = 7
 	EntityDoor                     = 11
 	EntityExitDoor                 = 12
+	EntityMagicWall                = 8
 	EntityFirefly                  = 101
 	EntityButterfly                = 102
 )

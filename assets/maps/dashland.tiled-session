@@ -44,11 +44,11 @@
             }
         },
         "boulderdash-1c.tmx": {
-            "scale": 4,
+            "scale": 1,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 172.125,
-                "y": 124.375
+                "x": 264.5,
+                "y": 149
             }
         },
         "firstbd.tmx": {

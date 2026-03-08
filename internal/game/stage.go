@@ -26,10 +26,13 @@ type Stage struct {
 	DiamondBonusPoints int
 	ExitCondition      bool
 	ExitPosition       common.BlockPosition
+	MagicWallActive    bool
+	MagicWallTimer     float32
+	MagicWallDuration  float32
 }
 
 func NewStage(name string, size MapSize, blockTexture, entityTextures, groundCorners *rl.Texture2D) *Stage {
-	return &Stage{Name: name, MapSize: size, BlockMap: NewBlockMap(size, blockTexture), EntityMap: NewEntityMap(size, entityTextures, groundCorners)}
+	return &Stage{Name: name, MapSize: size, BlockMap: NewBlockMap(size, blockTexture), EntityMap: NewEntityMap(size, entityTextures, groundCorners), MagicWallDuration: 20.0}
 }
 
 func (s *Stage) GetPosition(position common.BlockPosition) rl.Vector2 {
@@ -54,6 +57,29 @@ func (s *Stage) VisitBlock(position common.BlockPosition) {
 	fmt.Printf("Block at position %d,%d changed from %s", position.X, position.Y, s.blocks[position.Y*s.Width+position.X].BlockType.String())
 	s.SetBlock(NewBlock(s.BlockMap, s.EntityMap, Void, position), position)
 	fmt.Printf(" to %s \n", s.blocks[position.Y*s.Width+position.X].BlockType.String())
+}
+
+func (s *Stage) ActivateMagicWall() {
+	if !s.MagicWallActive {
+		s.MagicWallActive = true
+		s.MagicWallTimer = s.MagicWallDuration
+		fmt.Println("Magic wall activated!")
+	}
+}
+
+func (s *Stage) UpdateMagicWall(deltaTime float32) {
+	if s.MagicWallActive {
+		s.MagicWallTimer -= deltaTime
+		if s.MagicWallTimer <= 0 {
+			s.MagicWallActive = false
+			s.MagicWallTimer = 0
+			fmt.Println("Magic wall expired!")
+		}
+	}
+}
+
+func (s *Stage) IsMagicWallActive() bool {
+	return s.MagicWallActive
 }
 
 func (s *Stage) CheckCharacteristics(position common.BlockPosition, character characteristics.Characteristics) bool {
