@@ -102,6 +102,10 @@ func (g *DashlandGame) loadStageFromFile(name string) (*game.Stage, error) {
 }
 
 func (g *DashlandGame) LoadStage(name string, position common.BlockPosition) error {
+	if name == "generated" {
+		return g.LoadGeneratedStage(game.DefaultCaveParams())
+	}
+
 	g.world.Clear()
 
 	stage, err := g.loadStageFromFile(name)
@@ -114,6 +118,54 @@ func (g *DashlandGame) LoadStage(name string, position common.BlockPosition) err
 		position = stage.EnterPosition
 	}
 
+	g.setupStage(stage, position)
+
+	return nil
+}
+
+func (g *DashlandGame) LoadGeneratedStage(params game.CaveParams) error {
+	g.world.Clear()
+
+	cave := game.GenerateCave(params)
+
+	blockTexture := assets.LoadTexture("blocks")
+	entityTextures := assets.LoadTexture("entities")
+	groundCorners := assets.LoadTexture("ground_corners")
+
+	mapSize := game.NewMapSize(params.Width, params.Height, params.BlockSize, params.BlockSize)
+	stage := game.NewStage("generated", mapSize, blockTexture, entityTextures, groundCorners)
+
+	stage.DiamondsRequired = params.DiamondsRequired
+	stage.DiamondPoints = params.DiamondPoints
+	stage.DiamondBonusPoints = params.DiamondBonusPoints
+	stage.MagicWallDuration = params.MagicWallDuration
+	stage.EnterPosition = cave.PlayerPosition
+
+	// Init blocks from generated grid
+	stage.InitBlocksFromGrid(cave.Blocks)
+
+	// Allocate entity map
+	stage.InitEmptyEntityMap()
+
+	// Spawn entities from generated placements
+	for _, ep := range cave.Entities {
+		entity, err := game.NewGameEntity(g.world, stage, ep.Type, ep.Position)
+		if err == nil {
+			stage.EntityMap.SetEntity(entity, ep.Position)
+		}
+	}
+
+	// Spawn exit door (target = "generated" so exiting generates a new cave)
+	exitDoor := game.NewExitDoor(g.world, stage, cave.ExitPosition, stage.GetPosition(cave.ExitPosition), "generated", common.NewBlockPosition(0, 0))
+	stage.EntityMap.SetEntity(exitDoor, cave.ExitPosition)
+	stage.ExitPosition = cave.ExitPosition
+
+	g.setupStage(stage, cave.PlayerPosition)
+
+	return nil
+}
+
+func (g *DashlandGame) setupStage(stage *game.Stage, position common.BlockPosition) {
 	playerTexture := assets.LoadTexture("player")
 
 	player := game.NewPlayerEntity(g.world, stage, position, playerTexture)
@@ -141,8 +193,6 @@ func (g *DashlandGame) LoadStage(name string, position common.BlockPosition) err
 	g.world.AddSystem(systems.NewCleanup(stage, g))
 
 	g.stage = stage
-
-	return nil
 }
 
 func (g *DashlandGame) Update(deltaTime float32) {

@@ -113,6 +113,10 @@ func (s *Stage) CheckBlocked(world *ecs.World, position common.BlockPosition, co
 		entCollider := ecs.GetComponent[components.ColliderComponent](entity)
 
 		if entCharacter != nil && entCollider != nil {
+			// Falling entities are not considered obstacles
+			if entCharacter.Has(characteristics.Falling) {
+				return false
+			}
 			blocked, _ := collider.Result(entCollider)
 			if blocked {
 				return true
@@ -152,6 +156,23 @@ func (s *Stage) InitBlocks(world *Stage, tiles []*tiled.LayerTile) {
 	}
 
 	s.BlockMap.PrintBlockMap()
+}
+
+// InitBlocksFromGrid populates the block map from a flat BlockType slice (used by procedural generation).
+func (s *Stage) InitBlocksFromGrid(blockTypes []BlockType) {
+	s.blocks = make([]*Block, len(blockTypes))
+
+	for i, bt := range blockTypes {
+		pos := common.NewBlockPositionFromIndex(i, s.BlockMap.Width)
+		s.BlockMap.SetBlock(NewBlock(s.BlockMap, s.EntityMap, bt, pos), pos)
+	}
+
+	s.BlockMap.PrintBlockMap()
+}
+
+// InitEmptyEntityMap allocates the entity grid without requiring Tiled layer data.
+func (s *Stage) InitEmptyEntityMap() {
+	s.EntityMap.entities = make([]*ecs.Entity, s.Width*s.Height)
 }
 
 func getString(obj *tiled.Object, name string) string {
