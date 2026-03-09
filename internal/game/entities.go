@@ -138,7 +138,7 @@ func NewDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosition,
 func NewMagicWall(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityId("magicwall"), EntityMagicWall)
 
-	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity | characteristics.IsMagicWall))
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity | characteristics.IsMagicWall | characteristics.GravityRollOff))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewColliderComponent(LayerWall, LayerAll, LayerNone))
 

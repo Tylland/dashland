@@ -123,14 +123,7 @@ func (s *GameplaySystem) handleEntityBlocks(world *ecs.World, event *game.Entity
 	newEntity, err := game.NewGameEntity(world, s.stage, newType, outputPos)
 	if err == nil {
 		s.stage.SetEntity(newEntity, outputPos)
-
-		// Start the new entity falling
-		newCharacteristic := ecs.GetComponent[components.CharacteristicComponent](newEntity)
-		newStep := ecs.GetComponent[components.BlockStep](newEntity)
-		if newCharacteristic != nil && newStep != nil {
-			newCharacteristic.Add(characteristics.Falling)
-			newStep.Move(common.DirectionDown, moveSpeed)
-		}
+		// Gravity will detect empty space below and start it falling naturally
 	}
 
 	fmt.Printf("Magic wall: %s transformed at %v\n", actor.ID, outputPos)
@@ -142,6 +135,17 @@ func (s *GameplaySystem) setMagicWallAnimation(world *ecs.World, animName string
 			anim := ecs.GetComponent[components.AnimationComponent](entity)
 			if anim != nil {
 				anim.Current = animName
+			}
+
+			// When active, remove CanHoldGravity so objects above fall into the wall.
+			// When inactive/expired, restore it so objects rest on top.
+			characteristic := ecs.GetComponent[components.CharacteristicComponent](entity)
+			if characteristic != nil {
+				if animName == "active" {
+					characteristic.Remove(characteristics.CanHoldGravity)
+				} else {
+					characteristic.Add(characteristics.CanHoldGravity)
+				}
 			}
 		}
 	}
