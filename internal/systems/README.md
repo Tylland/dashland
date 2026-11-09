@@ -4,6 +4,7 @@ This document lists the game systems, a short description of what each does, and
 
 ## Systems (what they do)
 
+- **StageTimerSystem**: counts down the configured stage time limit, pauses gameplay at expiry, and triggers player death after a three-second grace period.
 - **InputSystem**: reads keyboard state into InputComponent booleans.
 - **InputActionSystem**: converts InputComponent into movement intent (`BlockStep.Move`) for entities (player).
 - **GravitySystem**: applies gravity to entities with `CanFall`, creating downward/diagonal `BlockStep` moves when unsupported.
@@ -17,21 +18,24 @@ This document lists the game systems, a short description of what each does, and
 
 ## Recommended Execution Order (per frame)
 
-1. `InputSystem`
-2. `InputActionSystem`
-3. `GravitySystem`
-4. `WallWalkerSystem`
-5. `Pusher`
-6. `BlockCollisionSystem`
-7. `Combat` and `Collector` (event handlers)
-8. `BlockMovement`
-9. `Renderer`
+1. `StageTimerSystem`
+2. `InputSystem`
+3. `InputActionSystem`
+4. `GravitySystem`
+5. `WallWalkerSystem`
+6. `Pusher`
+7. `BlockCollisionSystem`
+8. `Combat` and `Collector` (event handlers)
+9. `BlockMovement`
+10. `Renderer`
 
 ## Notes
 
 - Movement intent producers (input, AI, gravity, pusher) must run before `BlockCollisionSystem`.
 - Event handlers should run immediately after collision detection so removals/changes are applied before movement commit.
 - `BlockMovement` must run after collision resolution so only validated moves are committed.
+- Stages set `TimeLimit` in seconds; `0` disables the countdown. On expiry the world pauses except for the timer, gameplay-event handling, rendering, and cleanup.
+- The timer kills the player through the existing damage flow after a three-second timeout grace period.
 
 ---
 

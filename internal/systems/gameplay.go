@@ -34,6 +34,16 @@ func (s *GameplaySystem) Update(world *ecs.World, deltaTime float32) {
 			s.handleExitOpen(world)
 		}
 
+		if event != nil && event.Name == "stageexpired" {
+			s.stage.TimeExpired = true
+		}
+
+		if event != nil && event.Name == "timeoutdeath" {
+			if player := world.GetEntity("player"); player != nil {
+				s.DamageOnPlayer(world, player)
+			}
+		}
+
 		if event != nil && event.Name == "damage" {
 			s.handleDamage(world, event.Data.(*game.DamageEvent))
 		}
@@ -50,6 +60,10 @@ func (s *GameplaySystem) Update(world *ecs.World, deltaTime float32) {
 			s.handleCollision(world, event.Data.(*game.EntityCollisionEvent))
 		}
 	}
+}
+
+func (s *GameplaySystem) RunWhenPaused() bool {
+	return true
 }
 
 func (s *GameplaySystem) handleBlockCollision(world *ecs.World, collision *game.BlockCollisionEvent) {
@@ -124,6 +138,10 @@ func (s *GameplaySystem) handleEntityBlocks(world *ecs.World, event *game.Entity
 	if err == nil {
 		s.stage.SetEntity(newEntity, outputPos)
 		// Gravity will detect empty space below and start it falling naturally
+
+		if newType == game.EntityDiamond {
+			s.sound.PlayFx("diamond_created")
+		}
 	}
 
 	fmt.Printf("Magic wall: %s transformed at %v\n", actor.ID, outputPos)
@@ -185,7 +203,7 @@ func (s *GameplaySystem) handleExitOpen(world *ecs.World) {
 func (s *GameplaySystem) handleDamage(world *ecs.World, damage *game.DamageEvent) {
 
 	if damage.Target.Type == game.EntityPlayer {
-		s.DamageOnPlayer(world, damage.Source, damage.Target)
+		s.DamageOnPlayer(world, damage.Target)
 	}
 
 	if damage.Target.Type == game.EntityFirefly || damage.Target.Type == game.EntityButterfly {
@@ -244,10 +262,11 @@ func (s *GameplaySystem) OnBoulderPlayerCollision(world *ecs.World, boulder *ecs
 	s.CreateDiamonds(world, position, 2, 2)
 }
 
-func (s *GameplaySystem) DamageOnPlayer(world *ecs.World, enemy *ecs.Entity, player *ecs.Entity) {
+func (s *GameplaySystem) DamageOnPlayer(world *ecs.World, player *ecs.Entity) {
 	fmt.Println("Player damage triggered!!")
 
 	s.sound.PlayFx("player_hurt")
+	s.sound.PlayFx("player_died")
 
 	playerPosition := ecs.GetComponent[components.PositionComponent](player)
 	position := playerPosition.CurrentBlockPosition

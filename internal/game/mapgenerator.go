@@ -15,6 +15,7 @@ type CaveParams struct {
 	DiamondsRequired   int
 	DiamondPoints      int
 	DiamondBonusPoints int
+	TimeLimit          int
 	MagicWallDuration  float32
 
 	// Object counts
@@ -53,6 +54,7 @@ func DefaultCaveParams() CaveParams {
 		DiamondsRequired:   12,
 		DiamondPoints:      10,
 		DiamondBonusPoints: 20,
+		TimeLimit:          180,
 		MagicWallDuration:  20.0,
 		BoulderCount:       30,
 		DiamondCount:       15,

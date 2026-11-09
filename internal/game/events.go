@@ -115,3 +115,15 @@ type ExitOpenEvent struct {
 func NewExitOpenEvent() *ExitOpenEvent {
 	return &ExitOpenEvent{}
 }
+
+type StageExpiredEvent struct{}
+
+func NewStageExpiredEvent() *StageExpiredEvent {
+	return &StageExpiredEvent{}
+}
+
+type TimeoutDeathEvent struct{}
+
+func NewTimeoutDeathEvent() *TimeoutDeathEvent {
+	return &TimeoutDeathEvent{}
+}

@@ -9,6 +9,7 @@ type World struct {
 	events       []*Event
 	singeltons   map[string]Component
 	systems      []System
+	paused       bool
 }
 
 func NewWorld() *World {
@@ -97,8 +98,22 @@ func (w *World) AddSystems(systems ...System) {
 
 func (w *World) Update(deltaTime float32) {
 	for _, system := range w.systems {
+		if w.paused {
+			pausedSystem, ok := system.(interface{ RunWhenPaused() bool })
+			if !ok || !pausedSystem.RunWhenPaused() {
+				continue
+			}
+		}
 		system.Update(w, deltaTime)
 	}
+}
+
+func (w *World) SetPaused(paused bool) {
+	w.paused = paused
+}
+
+func (w *World) Paused() bool {
+	return w.paused
 }
 
 func (w *World) Clear() {
@@ -108,4 +123,5 @@ func (w *World) Clear() {
 	w.events = make([]*Event, 10)
 	w.singeltons = make(map[string]Component)
 	w.systems = make([]System, 0)
+	w.paused = false
 }

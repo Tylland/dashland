@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="6" nextobjectid="4">
+ <properties>
+  <property name="TimeLimit" type="int" value="20"/>
+ </properties>
  <tileset firstgid="1" name="Start" tilewidth="32" tileheight="32" tilecount="20" columns="20">
   <image source="../images/blocks_start.png" width="640" height="32"/>
   <wangsets>

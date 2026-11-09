@@ -20,6 +20,10 @@ func NewCleanup(stage *game.Stage, loader StageLoader) *Cleanup {
 	return &Cleanup{stage: stage, loader: loader}
 }
 
+func (s *Cleanup) RunWhenPaused() bool {
+	return true
+}
+
 func (s *Cleanup) Update(world *ecs.World, deltaTime float32) {
 	for _, doomed := range world.RemovalQueue() {
 		if position := ecs.GetComponent[components.PositionComponent](doomed); position != nil {

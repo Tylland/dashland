@@ -24,6 +24,9 @@ type Stage struct {
 	DiamondsRequired   int
 	DiamondPoints      int
 	DiamondBonusPoints int
+	TimeLimit          int
+	TimeRemaining      float32
+	TimeExpired        bool
 	ExitCondition      bool
 	ExitPosition       common.BlockPosition
 	MagicWallActive    bool
@@ -33,6 +36,12 @@ type Stage struct {
 
 func NewStage(name string, size MapSize, blockTexture, entityTextures, groundCorners *rl.Texture2D) *Stage {
 	return &Stage{Name: name, MapSize: size, BlockMap: NewBlockMap(size, blockTexture), EntityMap: NewEntityMap(size, entityTextures, groundCorners), MagicWallDuration: 20.0}
+}
+
+func (s *Stage) SetTimeLimit(seconds int) {
+	s.TimeLimit = seconds
+	s.TimeRemaining = float32(seconds)
+	s.TimeExpired = false
 }
 
 func (s *Stage) GetPosition(position common.BlockPosition) rl.Vector2 {

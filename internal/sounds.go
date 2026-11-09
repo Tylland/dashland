@@ -19,13 +19,16 @@ func (s *Sounds) LoadSounds(soundDir string) {
 
 	s.sounds["diamond_collision"] = rl.LoadSound(filepath.Join(soundDir, "effects", "diamond_collision.mp3"))
 	s.sounds["diamond_collected"] = rl.LoadSound(filepath.Join(soundDir, "effects", "diamond_collected.mp3"))
+	s.sounds["diamond_created"] = rl.LoadSound(filepath.Join(soundDir, "effects", "diamond_magic.mp3"))
 
 	s.sounds["player_hurt"] = rl.LoadSound(filepath.Join(soundDir, "effects", "player_hurt.mp3"))
+	s.sounds["player_died"] = rl.LoadSound(filepath.Join(soundDir, "effects", "death_bell.mp3"))
 
 	s.sounds["boulder_collision"] = rl.LoadSound(filepath.Join(soundDir, "effects", "boulder_collision.mp3"))
 
 	s.sounds["stage_exit_opened"] = rl.LoadSound(filepath.Join(soundDir, "effects", "bang.mp3"))
-	s.sounds["explosion"] = rl.LoadSound(filepath.Join(soundDir, "effects", "explosion.mp3"))
+
+	s.sounds["countdown_beep"] = rl.LoadSound(filepath.Join(soundDir, "effects", "countdown_beep.mp3"))
 }
 
 func (s *Sounds) PlayFx(name string) {

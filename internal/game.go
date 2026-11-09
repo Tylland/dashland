@@ -80,6 +80,7 @@ func (g *DashlandGame) loadStageFromFile(name string) (*game.Stage, error) {
 		stage.DiamondsRequired = tiledMap.Properties.GetInt("DiamondsRequired")
 		stage.DiamondPoints = tiledMap.Properties.GetInt("DiamondPoints")
 		stage.DiamondBonusPoints = tiledMap.Properties.GetInt("DiamondBonusPoints")
+		stage.SetTimeLimit(tiledMap.Properties.GetInt("TimeLimit"))
 	}
 
 	fmt.Printf("Reading blocks from layer %s \n", tiledMap.Layers[0].Name)
@@ -138,6 +139,7 @@ func (g *DashlandGame) LoadGeneratedStage(params game.CaveParams) error {
 	stage.DiamondsRequired = params.DiamondsRequired
 	stage.DiamondPoints = params.DiamondPoints
 	stage.DiamondBonusPoints = params.DiamondBonusPoints
+	stage.SetTimeLimit(params.TimeLimit)
 	stage.MagicWallDuration = params.MagicWallDuration
 	stage.EnterPosition = cave.PlayerPosition
 
@@ -176,6 +178,8 @@ func (g *DashlandGame) setupStage(stage *game.Stage, position common.BlockPositi
 	g.camera = game.NewSmoothFollowCamera(&g.Screen, playerPosition)
 
 	g.world.AddSystems(
+		systems.NewPauseSystem(),
+		systems.NewStageTimerSystem(stage, &g.Sounds),
 		systems.NewInputSystem(),
 		systems.NewInputBehavior(stage),
 		systems.NewGravityBehavior(stage),

@@ -52,10 +52,43 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 
 	rl.EndMode2D()
 
-	// Draw inventory at the top of the screen
+	s.drawTimer()
 	s.drawInventory(world)
 
+	if s.stage.TimeExpired {
+		s.drawTimeExpired()
+	}
+
 	rl.EndDrawing()
+}
+
+func (s *Renderer) RunWhenPaused() bool {
+	return true
+}
+
+func (s *Renderer) drawTimer() {
+	if s.stage.TimeLimit <= 0 {
+		return
+	}
+
+	seconds := int(s.stage.TimeRemaining + 0.99)
+	timerText := fmt.Sprintf("%02d:%02d", seconds/60, seconds%60)
+	fontSize := int32(32)
+	padding := int32(10)
+	x := int32(rl.GetScreenWidth()) - rl.MeasureText(timerText, fontSize) - padding
+	color := rl.White
+	if seconds <= 10 {
+		color = rl.Red
+	}
+	rl.DrawText(timerText, x, padding, fontSize, color)
+}
+
+func (s *Renderer) drawTimeExpired() {
+	message := "TIME OUT"
+	fontSize := int32(56)
+	x := (int32(rl.GetScreenWidth()) - rl.MeasureText(message, fontSize)) / 2
+	y := int32(rl.GetScreenHeight()) / 2
+	rl.DrawText(message, x, y, fontSize, rl.Red)
 }
 
 func (s *Renderer) drawInventory(world *ecs.World) {
