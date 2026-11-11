@@ -2,6 +2,7 @@ package systems
 
 import (
 	"fmt"
+	"math"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/components"
@@ -10,15 +11,25 @@ import (
 )
 
 type Renderer struct {
-	stage  *game.Stage
-	camera game.Camera
+	stage       *game.Stage
+	camera      game.Camera
+	elapsedTime float64
+	mist        rl.Texture2D
 }
 
 func NewRenderSystem(stage *game.Stage, camera game.Camera) *Renderer {
-	return &Renderer{stage: stage, camera: camera}
+	// Soft radial puff texture used by every mist particle
+	img := rl.GenImageGradientRadial(256, 256, 0.0, rl.White, rl.Blank)
+	mist := rl.LoadTextureFromImage(img)
+	rl.UnloadImage(img)
+	rl.SetTextureFilter(mist, rl.FilterBilinear)
+
+	return &Renderer{stage: stage, camera: camera, mist: mist}
 }
 
 func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
+	s.elapsedTime += float64(deltaTime)
+
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.Black)
 	rl.BeginMode2D(s.camera.GetCamera())
@@ -33,7 +44,6 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 		if position != nil && sprite != nil {
 			rl.DrawTextureRec(*sprite.Texture, sprite.Source, position.Vector2, rl.White)
 		}
-
 	}
 
 	for _, entity := range world.Entities() {
@@ -47,6 +57,12 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 				int32(rl.GetScreenHeight()),
 				rl.White,
 			)
+		}
+
+		particle := ecs.GetComponent[components.ParticleComponent](entity)
+
+		if particle != nil {
+			s.drawParticle(particle)
 		}
 	}
 
@@ -64,6 +80,17 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 
 func (s *Renderer) RunWhenPaused() bool {
 	return true
+}
+
+func (s *Renderer) drawParticle(particle *components.ParticleComponent) {
+	src := rl.NewRectangle(0, 0, float32(s.mist.Width), float32(s.mist.Height))
+	for _, p := range particle.Parts {
+		a := p.Alpha * (0.75 + 0.25*float32(math.Sin(s.elapsedTime*0.5+float64(p.Phase))))
+		c := particle.Tint
+		c.A = uint8(a * 255)
+		dst := rl.NewRectangle(p.X, p.Y, p.Size, p.Size*0.6)
+		rl.DrawTexturePro(s.mist, src, dst, rl.NewVector2(p.Size/2, p.Size*0.3), 0, c)
+	}
 }
 
 func (s *Renderer) drawTimer() {

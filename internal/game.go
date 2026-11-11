@@ -190,6 +190,7 @@ func (g *DashlandGame) setupStage(stage *game.Stage, position common.BlockPositi
 		systems.NewGameplaySystem(stage, &g.Sounds),
 		systems.NewBlockMovement(stage),
 		systems.NewAnimationSystem(),
+		systems.NewParticleSystem(),
 		systems.NewLifecycleSystem(),
 	)
 

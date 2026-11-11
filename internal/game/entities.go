@@ -130,6 +130,9 @@ func NewDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosition,
 	entity.AddComponent(components.NewColliderComponent(LayerTrigger, LayerAll&(^LayerPlayer|LayerEnemy), LayerPlayer))
 	entity.AddComponent(components.NewDoorComponent(targetStage, targetPosition, components.DoorClosed))
 
+	area := rl.NewRectangle(position.X, position.Y, stage.BlockWidth, stage.BlockHeight)
+	entity.AddComponent(components.NewParticleComponent("mist", area, 40, 0.5, 32, 64, 0.20, rl.NewColor(235, 205, 205, 255)))
+
 	world.AddEntity(entity)
 
 	return entity
@@ -149,6 +152,9 @@ func NewMagicWall(world *ecs.World, stage *Stage, blockPosition common.BlockPosi
 
 	entity.AddComponent(components.NewAnimationComponent(animations, "idle"))
 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(assets.LoadTexture("magicwall"), stage.BlockWidth, stage.BlockHeight, 0, 0, 0)))
+
+	area := rl.NewRectangle(position.X, position.Y, stage.BlockWidth, stage.BlockHeight)
+	entity.AddComponent(components.NewParticleComponent("mist", area, 1, 0.2, 32, 64, 0.20, rl.NewColor(235, 205, 205, 255)))
 
 	world.AddEntity(entity)
 
