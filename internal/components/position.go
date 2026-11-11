@@ -1,8 +1,11 @@
 package components
 
 import (
+	"fmt"
+
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/common"
+	"github.com/tylland/dashland/internal/ecs"
 )
 
 type PositionComponent struct {
@@ -66,4 +69,48 @@ func (p *PositionComponent) Update(position common.BlockPosition) {
 // Rollback rolls back the position to the previous block position
 func (p *PositionComponent) Rollback() {
 	p.CurrentBlockPosition = p.PreviousBlockPosition
+}
+
+func (p *PositionComponent) WriteTo(ew ecs.Writer) error {
+	ew.WriteLabel(ecs.ComponentName(p))
+	ew.WriteIntValue(p.CurrentBlockPosition.X, false)
+	ew.WriteIntValue(p.CurrentBlockPosition.Y, false)
+	ew.WriteFloatValue(p.Vector2.X, false)
+	ew.WriteFloatValue(p.Vector2.Y, false)
+
+	return nil
+}
+
+func (p *PositionComponent) ReadFrom(r ecs.Reader) error {
+	name, _ := r.ReadLabel()
+
+	if name != ecs.ComponentName(p) {
+		return fmt.Errorf("expected %q found %q", ecs.ComponentName(p), name)
+	}
+
+	if v, _, err := r.ReadIntValue(); err == nil {
+		p.CurrentBlockPosition.X = v
+	} else {
+		return err
+	}
+
+	if v, _, err := r.ReadIntValue(); err == nil {
+		p.CurrentBlockPosition.X = v
+	} else {
+		return err
+	}
+
+	if v, _, err := r.ReadFloatValue(); err == nil {
+		p.Vector2.X = v
+	} else {
+		return err
+	}
+
+	if v, _, err := r.ReadFloatValue(); err == nil {
+		p.Vector2.Y = v
+	} else {
+		return err
+	}
+
+	return nil
 }
