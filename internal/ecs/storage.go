@@ -18,12 +18,17 @@ type WriterTo interface {
 }
 
 type Reader interface {
+	ConsumeLine() error
 	ReadEntityID() (EntityID, error)
 	ReadEntityType() (EntityType, error)
+	ReadBlockType() (int, error)
 	ReadVersion() (int, error)
+	ReadBool() (bool, bool, error)
+	ReadEnum() (uint32, bool, error)
+	ReadFloat() (float32, bool, error)
+	ReadInt() (int, bool, error)
 	ReadLabel() (string, error)
-	ReadIntValue() (int, bool, error)
-	ReadFloatValue() (float32, bool, error)
+	ReadString() (string, bool, error)
 }
 
 type ReaderFrom interface {

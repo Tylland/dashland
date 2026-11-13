@@ -47,8 +47,8 @@ func NewGameEntity(world *ecs.World, stage *Stage, entityType ecs.EntityType, bl
 func NewBoulder(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityId("boulder"), EntityBoulder)
 
-	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff | characteristics.Destructable))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff | characteristics.Destructable))
 	entity.AddComponent(components.NewBlockStep(position))
 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityBoulder)*stage.BlockWidth, 0, 0)))
 	entity.AddComponent(components.NewColliderComponent(collider.LayerItem, collider.LayerAll, collider.LayerPlayer|collider.LayerEnemy))

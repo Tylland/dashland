@@ -16,3 +16,10 @@ func (c *PushableComponent) WriteTo(w ecs.Writer) error {
 
 	return nil
 }
+
+func (c *PushableComponent) ReadFrom(r ecs.Reader) error {
+	r.ConsumeLine()
+	r.ConsumeLine()
+
+	return nil
+}

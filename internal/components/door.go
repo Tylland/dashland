@@ -30,8 +30,6 @@ type DoorComponent struct {
 	Stage    string
 	Position common.BlockPosition
 	State    DoorState
-	// SourceX  float32 // base X in the tileset for the closed state
-	// OpenX    float32 // base X in the tileset for the open state
 }
 
 func NewDoorComponent(stage string, pos common.BlockPosition, state DoorState) *DoorComponent {
@@ -44,8 +42,16 @@ func (c *DoorComponent) WriteTo(w ecs.Writer) error {
 	w.WriteInt(c.Position.X, false)
 	w.WriteInt(c.Position.Y, false)
 	w.WriteEnum(c.State, false, "state")
-	// w.WriteFloatValue(c.SourceX, true)
-	// w.WriteFloatValue(c.OpenX, true)
+
+	return nil
+}
+
+func (c *DoorComponent) ReadFrom(r ecs.Reader) error {
+	r.ConsumeLine()
+	r.ConsumeLine()
+	r.ConsumeLine()
+	r.ConsumeLine()
+	r.ConsumeLine()
 
 	return nil
 }

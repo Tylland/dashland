@@ -21,3 +21,12 @@ func (c *SpriteComponent) WriteTo(w ecs.Writer) error {
 
 	return nil
 }
+
+func (c *SpriteComponent) ReadFrom(r ecs.Reader) error {
+	r.ConsumeLine()
+	r.ConsumeLine()
+	r.ConsumeLine()
+	r.ConsumeLine()
+
+	return nil
+}

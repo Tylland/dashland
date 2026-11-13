@@ -35,3 +35,15 @@ func (c *CharacteristicComponent) WriteTo(w ecs.Writer) error {
 
 	return nil
 }
+
+func (c *CharacteristicComponent) ReadFrom(r ecs.Reader) error {
+	r.ConsumeLine()
+
+	if enum, changed, err := r.ReadEnum(); err == nil {
+		if changed {
+			c.characteristics = characteristics.Characteristics(enum)
+		}
+	}
+
+	return nil
+}

@@ -16,3 +16,10 @@ func (c *Health) WriteTo(w ecs.Writer) error {
 
 	return nil
 }
+
+func (c *Health) ReadFrom(r ecs.Reader) error {
+	r.ConsumeLine()
+	r.ConsumeLine()
+
+	return nil
+}
