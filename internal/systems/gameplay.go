@@ -5,6 +5,7 @@ import (
 
 	"github.com/tylland/dashland/internal/assets"
 	"github.com/tylland/dashland/internal/characteristics"
+	"github.com/tylland/dashland/internal/collider"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
@@ -52,7 +53,7 @@ func (s *GameplaySystem) Update(world *ecs.World, deltaTime float32) {
 			s.handleBlockCollision(world, event.Data.(*game.BlockCollisionEvent))
 		}
 
-		if event != nil && event.Name == "entityblocks" {
+		if event != nil && event.Name == "entityobstructed" {
 			s.handleEntityBlocks(world, event.Data.(*game.EntityEvent))
 		}
 
@@ -190,7 +191,7 @@ func (s *GameplaySystem) handleExitOpen(world *ecs.World) {
 		ecs.RemoveComponent[components.SpriteComponent](exit)
 
 		exit.AddComponent(components.NewSpriteComponent(common.NewSprite(assets.LoadTexture("entities"), s.stage.BlockWidth, s.stage.BlockHeight, float32(game.EntityExitDoor)*s.stage.BlockWidth, 0, 0)))
-		exit.AddComponent(components.NewColliderComponent(game.LayerTrigger, game.LayerNone, game.LayerPlayer))
+		exit.AddComponent(components.NewColliderComponent(collider.LayerTrigger, collider.LayerNone, collider.LayerPlayer))
 
 		door := ecs.GetComponent[components.DoorComponent](exit)
 		door.State = components.DoorOpen

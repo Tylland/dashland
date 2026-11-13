@@ -1,7 +1,7 @@
 package ecs
 
-type EntityCategory uint16
-type EntityType uint16
+type EntityCategory uint32
+type EntityType uint32
 type EntityID string
 
 type Entity struct {
@@ -33,7 +33,7 @@ func (e *Entity) WriteTo(ew Writer) error {
 	ew.WriteEntityType(e.Type)
 	ew.WriteVersion(e.Version)
 
-	for _, comp := range e.Components.components {
+	for _, comp := range e.Components.index {
 		if wt, ok := comp.(WriterTo); ok {
 			wt.WriteTo(ew)
 		}
@@ -57,7 +57,7 @@ func (e *Entity) ReadFrom(r Reader) error {
 
 	r.ReadVersion()
 
-	for _, comp := range e.Components.components {
+	for _, comp := range e.Components.Ordered() {
 		if rf, ok := comp.(ReaderFrom); ok {
 			rf.ReadFrom(r)
 		}

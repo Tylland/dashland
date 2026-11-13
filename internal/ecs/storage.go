@@ -3,10 +3,12 @@ package ecs
 type Writer interface {
 	WriteEntityID(id EntityID) error
 	WriteEntityType(et EntityType) error
+	WriteBlockType(v int) error
 	WriteVersion(ver int) error
 	WriteLabel(lbl string) error
 	WriteIntValue(v int, d bool) error
 	WriteFloatValue(v float32, d bool) error
+	WriteEnumValue(v any, d bool) error
 }
 
 type WriterTo interface {

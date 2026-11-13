@@ -1,6 +1,6 @@
 module github.com/tylland/dashland
 
-go 1.23.2
+go 1.27.1
 
 require (
 	github.com/gen2brain/raylib-go/raylib v0.55.1

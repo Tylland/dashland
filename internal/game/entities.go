@@ -6,6 +6,7 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/assets"
 	"github.com/tylland/dashland/internal/characteristics"
+	"github.com/tylland/dashland/internal/collider"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
@@ -50,7 +51,7 @@ func NewBoulder(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewBlockStep(position))
 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityBoulder)*stage.BlockWidth, 0, 0)))
-	entity.AddComponent(components.NewColliderComponent(LayerItem, LayerAll, LayerPlayer|LayerEnemy))
+	entity.AddComponent(components.NewColliderComponent(collider.LayerItem, collider.LayerAll, collider.LayerPlayer|collider.LayerEnemy))
 	entity.AddComponent(components.NewPushableComponent(1))
 	entity.AddComponent(components.NewDamage(1))
 
@@ -66,7 +67,7 @@ func NewDiamond(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewBlockStep(position))
 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDiamond)*stage.BlockWidth, 0, 0)))
-	entity.AddComponent(components.NewColliderComponent(LayerCollectable, LayerAll&(^LayerPlayer|LayerEnemy), LayerPlayer|LayerGround|LayerEnemy))
+	entity.AddComponent(components.NewColliderComponent(collider.LayerCollectable, collider.LayerAll&(^collider.LayerPlayer|collider.LayerEnemy), collider.LayerPlayer|collider.LayerGround|collider.LayerEnemy))
 	entity.AddComponent(components.NewCollectableComponent("diamond", 1))
 	entity.AddComponent(components.NewDamage(1))
 
@@ -81,7 +82,7 @@ func NewFirefly(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy | characteristics.Destructable))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewBlockStep(position))
-	entity.AddComponent(components.NewColliderComponent(LayerEnemy, LayerEnemy, LayerPlayer))
+	entity.AddComponent(components.NewColliderComponent(collider.LayerEnemy, collider.LayerEnemy, collider.LayerPlayer))
 	entity.AddComponent(components.NewDamage(1))
 	entity.AddComponent(components.NewHealth(1))
 	entity.AddComponent(components.NewWallWalkerComponent(true))
@@ -104,7 +105,7 @@ func NewButterfly(world *ecs.World, stage *Stage, blockPosition common.BlockPosi
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy | characteristics.Destructable))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewBlockStep(position))
-	entity.AddComponent(components.NewColliderComponent(LayerEnemy, LayerEnemy, LayerPlayer))
+	entity.AddComponent(components.NewColliderComponent(collider.LayerEnemy, collider.LayerEnemy, collider.LayerPlayer))
 	entity.AddComponent(components.NewDamage(1))
 	entity.AddComponent(components.NewHealth(1))
 	entity.AddComponent(components.NewWallWalkerComponent(false))
@@ -127,7 +128,7 @@ func NewDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosition,
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDoor)*stage.BlockWidth, 0, 0)))
-	entity.AddComponent(components.NewColliderComponent(LayerTrigger, LayerAll&(^LayerPlayer|LayerEnemy), LayerPlayer))
+	entity.AddComponent(components.NewColliderComponent(collider.LayerTrigger, collider.LayerAll&(^collider.LayerPlayer|collider.LayerEnemy), collider.LayerPlayer))
 	entity.AddComponent(components.NewDoorComponent(targetStage, targetPosition, components.DoorClosed))
 
 	area := rl.NewRectangle(position.X, position.Y, stage.BlockWidth, stage.BlockHeight)
@@ -143,7 +144,7 @@ func NewMagicWall(world *ecs.World, stage *Stage, blockPosition common.BlockPosi
 
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity | characteristics.IsMagicWall | characteristics.GravityRollOff))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
-	entity.AddComponent(components.NewColliderComponent(LayerWall, LayerAll, LayerNone))
+	entity.AddComponent(components.NewColliderComponent(collider.LayerWall, collider.LayerAll, collider.LayerNone))
 
 	animations := map[string]components.Animation{
 		"idle":   {BaseX: 0, BaseY: 0, FrameCount: 1, FrameDuration: 1, Loop: true},
@@ -167,7 +168,7 @@ func NewExitDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosit
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.blockTextures, stage.BlockWidth, stage.BlockHeight, float32(Bedrock)*stage.BlockWidth, 0, 0)))
-	entity.AddComponent(components.NewColliderComponent(LayerBedrock, LayerAll, LayerNone))
+	entity.AddComponent(components.NewColliderComponent(collider.LayerBedrock, collider.LayerAll, collider.LayerNone))
 	entity.AddComponent(components.NewDoorComponent(targetStage, targetPosition, components.DoorHidden))
 
 	world.AddEntity(entity)
@@ -180,7 +181,7 @@ func NewExplosion(world *ecs.World, stage *Stage, blockPosition common.BlockPosi
 
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
-	entity.AddComponent(components.NewColliderComponent(LayerEnemy, LayerEnemy, LayerPlayer))
+	entity.AddComponent(components.NewColliderComponent(collider.LayerEnemy, collider.LayerEnemy, collider.LayerPlayer))
 	entity.AddComponent(components.NewDamage(1))
 
 	animations := map[string]components.Animation{

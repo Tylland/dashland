@@ -2,6 +2,8 @@ package internal
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -121,6 +123,8 @@ func (g *DashlandGame) LoadStage(name string, position common.BlockPosition) err
 
 	g.setupStage(stage, position)
 
+	g.saveStage(stage)
+
 	return nil
 }
 
@@ -203,4 +207,15 @@ func (g *DashlandGame) setupStage(stage *game.Stage, position common.BlockPositi
 func (g *DashlandGame) Update(deltaTime float32) {
 	g.world.Update(deltaTime)
 	g.camera.Update(deltaTime)
+}
+
+func (g *DashlandGame) saveStage(stage *game.Stage) {
+
+	outputDir := filepath.Join(`c:\\temp`, "dashland", "stages", stage.Name)
+
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		log.Fatalf("error creating output dir: %v", err)
+	}
+
+	stage.Save(outputDir)
 }

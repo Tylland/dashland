@@ -3,12 +3,13 @@ package game
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/characteristics"
+	"github.com/tylland/dashland/internal/collider"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
 )
 
-type BlockType uint16
+type BlockType uint32
 
 const (
 	Unknown BlockType = iota
@@ -46,7 +47,7 @@ type Block struct {
 	Corners   [4]uint8
 }
 
-func NewBlockWithCharacteristics(bm *BlockMap, gm *EntityMap, blockType BlockType, position common.BlockPosition, character characteristics.Characteristics, layer common.CollisionLayer, block common.CollisionLayer, overlap common.CollisionLayer) *Block {
+func NewBlockWithCharacteristics(bm *BlockMap, gm *EntityMap, blockType BlockType, position common.BlockPosition, character characteristics.Characteristics, layer collider.CollisionLayer, block collider.CollisionLayer, overlap collider.CollisionLayer) *Block {
 	id := NewEntityId(blockType.String())
 	return &Block{bm: bm, gm: gm, ID: id, BlockType: blockType, Position: position, Character: character, Collider: components.NewColliderComponent(layer, block, overlap)}
 }
@@ -54,15 +55,15 @@ func NewBlockWithCharacteristics(bm *BlockMap, gm *EntityMap, blockType BlockTyp
 func NewBlock(bm *BlockMap, gm *EntityMap, blockType BlockType, position common.BlockPosition) *Block {
 	switch blockType {
 	case Void:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.Destructable, LayerNone, LayerNone, LayerNone)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.Destructable, collider.LayerNone, collider.LayerNone, collider.LayerNone)
 	case Soil:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.CanHoldGravity|characteristics.Destructable, LayerGround, LayerEnemy, LayerAll)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.CanHoldGravity|characteristics.Destructable, collider.LayerGround, collider.LayerEnemy, collider.LayerAll)
 	case Wall:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.CanHoldGravity|characteristics.GravityRollOff|characteristics.Destructable, LayerWall, LayerAll, LayerNone)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.CanHoldGravity|characteristics.GravityRollOff|characteristics.Destructable, collider.LayerWall, collider.LayerAll, collider.LayerNone)
 	case Bedrock:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.CanHoldGravity, LayerBedrock, LayerAll, LayerNone)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.CanHoldGravity, collider.LayerBedrock, collider.LayerAll, collider.LayerNone)
 	default:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.None, LayerGround, LayerNone, LayerNone)
+		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.None, collider.LayerGround, collider.LayerNone, collider.LayerNone)
 	}
 }
 
@@ -167,4 +168,31 @@ func (b *Block) Render() {
 
 func (b *Block) Rectangle() rl.Rectangle {
 	return rl.Rectangle{X: float32(b.Position.X) * b.bm.BlockWidth, Y: float32(b.Position.Y) * b.bm.BlockHeight, Width: b.bm.BlockWidth, Height: b.bm.BlockHeight}
+}
+
+func (b *Block) WriteTo(w ecs.Writer) error {
+	w.WriteEntityID(b.ID)
+	w.WriteBlockType(int(b.BlockType))
+	w.WriteVersion(0)
+
+	w.WriteLabel("position")
+	w.WriteIntValue(b.Position.X, false)
+	w.WriteIntValue(b.Position.Y, false)
+
+	w.WriteLabel("characteristics")
+	w.WriteEnumValue(b.Character, true)
+
+	err := b.Collider.WriteTo(w)
+
+	if err != nil {
+		return err
+	}
+
+	w.WriteLabel("corners")
+	w.WriteIntValue(int(b.Corners[0]), b.Corners[0] == 0)
+	w.WriteIntValue(int(b.Corners[1]), b.Corners[1] == 0)
+	w.WriteIntValue(int(b.Corners[2]), b.Corners[2] == 0)
+	w.WriteIntValue(int(b.Corners[3]), b.Corners[3] == 0)
+
+	return nil
 }

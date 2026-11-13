@@ -2,6 +2,7 @@ package game
 
 import (
 	"fmt"
+	"os"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/lafriks/go-tiled"
@@ -55,11 +56,10 @@ func (s *Stage) GetBlockPosition(position rl.Vector2) common.BlockPosition {
 	return common.BlockPosition{X: bx, Y: by}
 }
 
-func (w *Stage) Render(deltaTime float32) {
-	for _, block := range w.blocks {
+func (s *Stage) Render(deltaTime float32) {
+	for _, block := range s.blocks {
 		block.Render()
 	}
-
 }
 
 func (s *Stage) VisitBlock(position common.BlockPosition) {
@@ -111,8 +111,8 @@ func (s *Stage) CheckCharacteristics(position common.BlockPosition, character ch
 func (s *Stage) CheckBlocked(world *ecs.World, position common.BlockPosition, collider *components.ColliderComponent) bool {
 
 	if block, ok := s.GetBlock(position.X, position.Y); ok {
-		blocked, _ := collider.Result(block.Collider)
-		if blocked {
+		obstructs, _ := collider.Collide(block.Collider)
+		if obstructs {
 			return true
 		}
 	}
@@ -126,8 +126,8 @@ func (s *Stage) CheckBlocked(world *ecs.World, position common.BlockPosition, co
 			if entCharacter.Has(characteristics.Falling) {
 				return false
 			}
-			blocked, _ := collider.Result(entCollider)
-			if blocked {
+			obstructs, _ := collider.Collide(entCollider)
+			if obstructs {
 				return true
 			}
 		}
@@ -228,3 +228,41 @@ func (s *Stage) InitObjectsEntities(world *ecs.World, category ecs.EntityCategor
 // 	s.EntityMap.SetEntity(door, blockPos)
 // 	return door
 // }
+
+func (s *Stage) Save(path string) error {
+	for _, b := range s.blocks {
+		fileName := fmt.Sprintf("block_%03d_%03d.entity.txt", b.Position.Y, b.Position.X)
+		file, err := os.Create(path + "/" + fileName)
+
+		if err != nil {
+			return err
+		}
+
+		writer := NewTextWriter(file)
+
+		b.WriteTo(writer)
+
+		file.Close()
+	}
+
+	for _, e := range s.entities {
+		if e == nil {
+			continue
+		}
+
+		fileName := fmt.Sprintf("entity_%s.entity.txt", e.ID)
+		file, err := os.Create(path + "/" + fileName)
+
+		if err != nil {
+			return err
+		}
+
+		writer := NewTextWriter(file)
+
+		e.WriteTo(writer)
+
+		file.Close()
+	}
+
+	return nil
+}

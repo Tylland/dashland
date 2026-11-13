@@ -1,7 +1,5 @@
 package common
 
-type CollisionLayer uint16
-
 // type Collider struct {
 // 	Layer CollisionLayer
 // 	Mask  CollisionLayer

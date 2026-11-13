@@ -32,7 +32,7 @@ func (r *TextReader) readLine() (string, error) {
 
 	line := string(data)
 
-	if idx := strings.Index(line, Comment); idx != -1 {
+	if idx := strings.Index(line, TokenComment); idx != -1 {
 		line = line[:idx]
 	}
 
@@ -73,12 +73,12 @@ func (r *TextReader) readNumValues() (bool, string, string, error) {
 		return changed, "", "", fmt.Errorf("invalid format")
 	}
 
-	if strings.HasPrefix(line, PrefixChanged) {
+	if strings.HasPrefix(line, TokenChanged) {
 		changed = true
-		line = strings.TrimPrefix(line, PrefixChanged)
+		line = strings.TrimPrefix(line, TokenChanged)
 	}
 
-	nums := strings.Split(line, NumberDelimiter)
+	nums := strings.Split(line, TokenNumberDelimiter)
 
 	if len(nums) != 2 {
 		return changed, "", "", fmt.Errorf("invalid format")
@@ -94,10 +94,10 @@ func (r *TextReader) ReadLabel() (string, error) {
 		return "", fmt.Errorf("read line: %w", err)
 	}
 
-	if strings.HasPrefix(line, PrefixLabel) {
-		line = strings.TrimPrefix(line, PrefixLabel)
+	if strings.HasPrefix(line, TokenLabel) {
+		line = strings.TrimPrefix(line, TokenLabel)
 	} else {
-		return "", fmt.Errorf("invalid format, %q is missing for label", PrefixLabel)
+		return "", fmt.Errorf("invalid format, %q is missing for label", TokenLabel)
 	}
 
 	return strings.TrimSpace(line), nil

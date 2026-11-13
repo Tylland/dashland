@@ -40,10 +40,10 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 	targetPosition := position.CurrentBlockPosition.Add(step.Increment)
 
 	if block, ok := s.stage.GetBlockAtPosition(targetPosition); ok {
-		blocks, collides := collider.Result(block.Collider)
+		obstructs, interacts := collider.Collide(block.Collider)
 
-		if blocks {
-			fmt.Printf("%s is blocked by %s\n", actor.ID, block.ID)
+		if obstructs {
+			fmt.Printf("%s is obstructed by %s\n", actor.ID, block.ID)
 
 			if character.Has(characteristics.Falling) {
 				s.StopFalling(actor, step, character)
@@ -54,7 +54,7 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 			world.AddEvent("blockblocks", game.NewBlockEvent(block, actor))
 		}
 
-		if collides {
+		if interacts {
 			fmt.Printf("%s overlap %s\n", actor.ID, block.ID)
 			world.AddEvent("blockcollision", game.NewBlockCollisionEvent(block, actor))
 		}
@@ -64,10 +64,10 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 		targetCollider := ecs.GetComponent[components.ColliderComponent](target)
 
 		if targetCollider != nil {
-			blocked, collides := collider.Result(targetCollider)
+			obstructs, interacts := collider.Collide(targetCollider)
 
-			if blocked {
-				fmt.Printf("%s is blocked by %s\n", actor.ID, target.ID)
+			if obstructs {
+				fmt.Printf("%s is obstructed by %s\n", actor.ID, target.ID)
 
 				if character.Has(characteristics.Falling) {
 					s.StopFalling(actor, step, character)
@@ -75,10 +75,10 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 					step.Cancel()
 				}
 
-				world.AddEvent("entityblocks", game.NewEntityEvent(actor, target))
+				world.AddEvent("entityobstructed", game.NewEntityEvent(actor, target))
 			}
 
-			if collides {
+			if interacts {
 				// If player collides with a door trigger -> stage change
 				if actor.Type == game.EntityPlayer && target.Type == game.EntityDoor {
 					door := ecs.GetComponent[components.DoorComponent](target)

@@ -5,6 +5,7 @@ import (
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/characteristics"
+	"github.com/tylland/dashland/internal/collider"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
@@ -32,7 +33,7 @@ func NewPlayerEntity(world *ecs.World, stage *Stage, position common.BlockPositi
 	player.AddComponent(components.NewInputComponent())
 	player.AddComponent(components.NewPositionComponent(position, stage.GetPosition(position)))
 	player.AddComponent(components.NewBlockStep(stage.GetPosition(position)))
-	player.AddComponent(components.NewColliderComponent(LayerPlayer, LayerNone, LayerAll))
+	player.AddComponent(components.NewColliderComponent(collider.LayerPlayer, collider.LayerNone, collider.LayerAll))
 	player.AddComponent(components.NewSpriteComponent(common.NewSprite(texture, stage.BlockWidth, stage.BlockHeight, float32(1)*stage.BlockWidth, 0, 0)))
 
 	// Example animations for the player: idle and walk.

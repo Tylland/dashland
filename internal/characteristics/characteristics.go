@@ -2,7 +2,7 @@ package characteristics
 
 import "strings"
 
-type Characteristics uint16
+type Characteristics uint32
 
 const (
 	None                    = Characteristics(0)
@@ -19,9 +19,6 @@ const (
 func (c Characteristics) String() string {
 	str := make([]string, 0)
 
-	if c&None == None {
-		str = append(str, "None")
-	}
 	if c&CanFall == CanFall {
 		str = append(str, "CanFall")
 	}
@@ -47,5 +44,9 @@ func (c Characteristics) String() string {
 		str = append(str, "IsMagicWall")
 	}
 
-	return strings.Join(str, "|")
+	if len(str) > 0 {
+		return strings.Join(str, " | ")
+	}
+
+	return "None"
 }

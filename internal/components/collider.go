@@ -1,20 +1,37 @@
 package components
 
-import "github.com/tylland/dashland/internal/common"
+import (
+	"github.com/tylland/dashland/internal/collider"
+	"github.com/tylland/dashland/internal/ecs"
+)
 
 type ColliderComponent struct {
-	Layer       common.CollisionLayer
-	BlockMask   common.CollisionLayer
-	CollideMask common.CollisionLayer
+	Layer        collider.CollisionLayer
+	ObstructMask collider.CollisionLayer
+	InteractMask collider.CollisionLayer
 }
 
-func NewColliderComponent(layer common.CollisionLayer, block common.CollisionLayer, overlap common.CollisionLayer) *ColliderComponent {
-	return &ColliderComponent{Layer: layer, BlockMask: block, CollideMask: overlap}
+func NewColliderComponent(layer collider.CollisionLayer, block collider.CollisionLayer, overlap collider.CollisionLayer) *ColliderComponent {
+	return &ColliderComponent{Layer: layer, ObstructMask: block, InteractMask: overlap}
 }
 
-func (c *ColliderComponent) Result(other *ColliderComponent) (bool, bool) {
-	block := c.BlockMask&other.Layer != 0 || other.BlockMask&c.Layer != 0
-	collide := c.CollideMask&other.Layer != 0 || other.CollideMask&c.Layer != 0
+func (c *ColliderComponent) Collide(other *ColliderComponent) (bool, bool) {
+	obstructs := c.ObstructMask&other.Layer != 0 || other.ObstructMask&c.Layer != 0
+	interacts := c.InteractMask&other.Layer != 0 || other.InteractMask&c.Layer != 0
 
-	return block, collide
+	return obstructs, interacts
+}
+
+func (c *ColliderComponent) WriteTo(w ecs.Writer) error {
+	w.WriteLabel(ecs.ComponentName(c))
+	w.WriteLabel("layer")
+	w.WriteEnumValue(c.Layer, true)
+
+	w.WriteLabel("obstructs")
+	w.WriteEnumValue(c.ObstructMask, true)
+
+	w.WriteLabel("interacts with")
+	w.WriteEnumValue(c.InteractMask, true)
+
+	return nil
 }

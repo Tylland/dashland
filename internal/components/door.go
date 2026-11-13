@@ -2,7 +2,7 @@ package components
 
 import "github.com/tylland/dashland/internal/common"
 
-type DoorState int
+type DoorState uint32
 
 const (
 	DoorHidden DoorState = iota
