@@ -3,6 +3,7 @@ package components
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/common"
+	"github.com/tylland/dashland/internal/ecs"
 )
 
 type BlockStep struct {
@@ -36,4 +37,23 @@ func (s *BlockStep) Cancel() {
 func (s *BlockStep) Commit(target rl.Vector2) {
 	s.Increment.Clear()
 	s.Target = target
+}
+
+func (c *BlockStep) WriteTo(w ecs.Writer) error {
+	w.WriteLabel(ecs.ComponentName(c))
+	w.WriteInt(c.Increment.X, false)
+	w.WriteInt(c.Increment.Y, false)
+
+	w.WriteInt(c.Direction.X, false)
+	w.WriteInt(c.Direction.Y, false)
+
+	w.WriteInt(c.previousDirection.X, false)
+	w.WriteInt(c.previousDirection.Y, false)
+
+	w.WriteFloat(c.Target.X, false)
+	w.WriteFloat(c.Target.Y, false)
+
+	w.WriteFloat(c.Speed, false)
+
+	return nil
 }

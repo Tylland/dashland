@@ -73,10 +73,10 @@ func (p *PositionComponent) Rollback() {
 
 func (p *PositionComponent) WriteTo(ew ecs.Writer) error {
 	ew.WriteLabel(ecs.ComponentName(p))
-	ew.WriteIntValue(p.CurrentBlockPosition.X, false)
-	ew.WriteIntValue(p.CurrentBlockPosition.Y, false)
-	ew.WriteFloatValue(p.Vector2.X, false)
-	ew.WriteFloatValue(p.Vector2.Y, false)
+	ew.WriteInt(p.CurrentBlockPosition.X, false)
+	ew.WriteInt(p.CurrentBlockPosition.Y, false)
+	ew.WriteFloat(p.Vector2.X, false)
+	ew.WriteFloat(p.Vector2.Y, false)
 
 	return nil
 }

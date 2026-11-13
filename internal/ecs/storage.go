@@ -6,9 +6,11 @@ type Writer interface {
 	WriteBlockType(v int) error
 	WriteVersion(ver int) error
 	WriteLabel(lbl string) error
-	WriteIntValue(v int, d bool) error
-	WriteFloatValue(v float32, d bool) error
-	WriteEnumValue(v any, d bool) error
+	WriteBool(v bool, d bool) error
+	WriteEnum(v any, d bool, c string) error
+	WriteFloat(v float32, d bool) error
+	WriteInt(v int, d bool) error
+	WriteString(v string, d bool) error
 }
 
 type WriterTo interface {

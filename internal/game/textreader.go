@@ -78,7 +78,7 @@ func (r *TextReader) readNumValues() (bool, string, string, error) {
 		line = strings.TrimPrefix(line, TokenChanged)
 	}
 
-	nums := strings.Split(line, TokenNumberDelimiter)
+	nums := strings.Split(line, TokenSeparator)
 
 	if len(nums) != 2 {
 		return changed, "", "", fmt.Errorf("invalid format")

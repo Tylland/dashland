@@ -1,5 +1,7 @@
 package components
 
+import "github.com/tylland/dashland/internal/ecs"
+
 type CollectableType uint32
 
 const (
@@ -15,4 +17,12 @@ type CollectableComponent struct {
 
 func NewCollectableComponent(name string, amount int) *CollectableComponent {
 	return &CollectableComponent{Name: name, Amount: amount, Collected: false}
+}
+
+func (c *CollectableComponent) WriteTo(w ecs.Writer) error {
+	w.WriteLabel(ecs.ComponentName(c))
+	w.WriteString(c.Name, false)
+	w.WriteInt(c.Amount, false)
+
+	return nil
 }

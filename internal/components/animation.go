@@ -2,6 +2,7 @@ package components
 
 import (
 	"github.com/tylland/dashland/internal/common"
+	"github.com/tylland/dashland/internal/ecs"
 )
 
 // Animation describes a named animation sequence inside a sprite sheet.
@@ -83,4 +84,15 @@ func clamp(val, max uint) uint {
 		return val
 	}
 	return max
+}
+
+func (c *AnimationComponent) WriteTo(w ecs.Writer) error {
+	w.WriteLabel(ecs.ComponentName(c))
+	w.WriteInt(len(c.Animations), true)
+	w.WriteString(c.Current, false)
+	w.WriteString(c.active, false)
+	w.WriteInt(int(c.Frame), false)
+	w.WriteFloat(c.FrameTimer, false)
+
+	return nil
 }

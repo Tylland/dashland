@@ -6,32 +6,27 @@ import (
 )
 
 type ColliderComponent struct {
-	Layer        collider.CollisionLayer
-	ObstructMask collider.CollisionLayer
-	InteractMask collider.CollisionLayer
+	Layer    collider.CollisionLayer
+	Obstruct collider.CollisionLayer
+	Interact collider.CollisionLayer
 }
 
-func NewColliderComponent(layer collider.CollisionLayer, block collider.CollisionLayer, overlap collider.CollisionLayer) *ColliderComponent {
-	return &ColliderComponent{Layer: layer, ObstructMask: block, InteractMask: overlap}
+func NewColliderComponent(layer collider.CollisionLayer, obstructs collider.CollisionLayer, interact collider.CollisionLayer) *ColliderComponent {
+	return &ColliderComponent{Layer: layer, Obstruct: obstructs, Interact: interact}
 }
 
 func (c *ColliderComponent) Collide(other *ColliderComponent) (bool, bool) {
-	obstructs := c.ObstructMask&other.Layer != 0 || other.ObstructMask&c.Layer != 0
-	interacts := c.InteractMask&other.Layer != 0 || other.InteractMask&c.Layer != 0
+	obstructs := c.Obstruct&other.Layer != collider.LayerNone || other.Obstruct&c.Layer != collider.LayerNone
+	interacts := c.Interact&other.Layer != collider.LayerNone || other.Interact&c.Layer != collider.LayerNone
 
 	return obstructs, interacts
 }
 
 func (c *ColliderComponent) WriteTo(w ecs.Writer) error {
 	w.WriteLabel(ecs.ComponentName(c))
-	w.WriteLabel("layer")
-	w.WriteEnumValue(c.Layer, true)
-
-	w.WriteLabel("obstructs")
-	w.WriteEnumValue(c.ObstructMask, true)
-
-	w.WriteLabel("interacts with")
-	w.WriteEnumValue(c.InteractMask, true)
+	w.WriteEnum(c.Layer, true, "is")
+	w.WriteEnum(c.Obstruct, true, "obstructs")
+	w.WriteEnum(c.Interact, true, "interacts with")
 
 	return nil
 }

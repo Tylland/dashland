@@ -33,7 +33,7 @@ func (e *Entity) WriteTo(ew Writer) error {
 	ew.WriteEntityType(e.Type)
 	ew.WriteVersion(e.Version)
 
-	for _, comp := range e.Components.index {
+	for _, comp := range e.Components.Ordered() {
 		if wt, ok := comp.(WriterTo); ok {
 			wt.WriteTo(ew)
 		}

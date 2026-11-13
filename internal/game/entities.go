@@ -63,8 +63,8 @@ func NewBoulder(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 func NewDiamond(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityId("diamond"), EntityDiamond)
 
-	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff | characteristics.Destructable))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff | characteristics.Destructable))
 	entity.AddComponent(components.NewBlockStep(position))
 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDiamond)*stage.BlockWidth, 0, 0)))
 	entity.AddComponent(components.NewColliderComponent(collider.LayerCollectable, collider.LayerAll&(^collider.LayerPlayer|collider.LayerEnemy), collider.LayerPlayer|collider.LayerGround|collider.LayerEnemy))
@@ -79,8 +79,8 @@ func NewDiamond(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 func NewFirefly(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityId("firefly"), EntityFirefly)
 
-	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy | characteristics.Destructable))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy | characteristics.Destructable))
 	entity.AddComponent(components.NewBlockStep(position))
 	entity.AddComponent(components.NewColliderComponent(collider.LayerEnemy, collider.LayerEnemy, collider.LayerPlayer))
 	entity.AddComponent(components.NewDamage(1))
@@ -102,8 +102,8 @@ func NewFirefly(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 func NewButterfly(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityId("butterfly"), EntityButterfly)
 
-	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy | characteristics.Destructable))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy | characteristics.Destructable))
 	entity.AddComponent(components.NewBlockStep(position))
 	entity.AddComponent(components.NewColliderComponent(collider.LayerEnemy, collider.LayerEnemy, collider.LayerPlayer))
 	entity.AddComponent(components.NewDamage(1))
@@ -125,8 +125,8 @@ func NewButterfly(world *ecs.World, stage *Stage, blockPosition common.BlockPosi
 func NewDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2, targetStage string, targetPosition common.BlockPosition) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityId("door"), EntityDoor)
 
-	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDoor)*stage.BlockWidth, 0, 0)))
 	entity.AddComponent(components.NewColliderComponent(collider.LayerTrigger, collider.LayerAll&(^collider.LayerPlayer|collider.LayerEnemy), collider.LayerPlayer))
 	entity.AddComponent(components.NewDoorComponent(targetStage, targetPosition, components.DoorClosed))
@@ -142,8 +142,8 @@ func NewDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosition,
 func NewMagicWall(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityId("magicwall"), EntityMagicWall)
 
-	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity | characteristics.IsMagicWall | characteristics.GravityRollOff))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity | characteristics.IsMagicWall | characteristics.GravityRollOff))
 	entity.AddComponent(components.NewColliderComponent(collider.LayerWall, collider.LayerAll, collider.LayerNone))
 
 	animations := map[string]components.Animation{
@@ -165,8 +165,8 @@ func NewMagicWall(world *ecs.World, stage *Stage, blockPosition common.BlockPosi
 func NewExitDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2, targetStage string, targetPosition common.BlockPosition) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityId("exitdoor"), EntityDoor)
 
-	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.blockTextures, stage.BlockWidth, stage.BlockHeight, float32(Bedrock)*stage.BlockWidth, 0, 0)))
 	entity.AddComponent(components.NewColliderComponent(collider.LayerBedrock, collider.LayerAll, collider.LayerNone))
 	entity.AddComponent(components.NewDoorComponent(targetStage, targetPosition, components.DoorHidden))
@@ -179,8 +179,8 @@ func NewExitDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosit
 func NewExplosion(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityId("explosion"), EntityExplosion)
 
-	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy))
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
+	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy))
 	entity.AddComponent(components.NewColliderComponent(collider.LayerEnemy, collider.LayerEnemy, collider.LayerPlayer))
 	entity.AddComponent(components.NewDamage(1))
 

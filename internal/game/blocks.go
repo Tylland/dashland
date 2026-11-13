@@ -176,11 +176,11 @@ func (b *Block) WriteTo(w ecs.Writer) error {
 	w.WriteVersion(0)
 
 	w.WriteLabel("position")
-	w.WriteIntValue(b.Position.X, false)
-	w.WriteIntValue(b.Position.Y, false)
+	w.WriteInt(b.Position.X, false)
+	w.WriteInt(b.Position.Y, false)
 
 	w.WriteLabel("characteristics")
-	w.WriteEnumValue(b.Character, true)
+	w.WriteEnum(b.Character, true, "")
 
 	err := b.Collider.WriteTo(w)
 
@@ -189,10 +189,10 @@ func (b *Block) WriteTo(w ecs.Writer) error {
 	}
 
 	w.WriteLabel("corners")
-	w.WriteIntValue(int(b.Corners[0]), b.Corners[0] == 0)
-	w.WriteIntValue(int(b.Corners[1]), b.Corners[1] == 0)
-	w.WriteIntValue(int(b.Corners[2]), b.Corners[2] == 0)
-	w.WriteIntValue(int(b.Corners[3]), b.Corners[3] == 0)
+	w.WriteInt(int(b.Corners[0]), b.Corners[0] == 0)
+	w.WriteInt(int(b.Corners[1]), b.Corners[1] == 0)
+	w.WriteInt(int(b.Corners[2]), b.Corners[2] == 0)
+	w.WriteInt(int(b.Corners[3]), b.Corners[3] == 0)
 
 	return nil
 }
