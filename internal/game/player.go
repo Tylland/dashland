@@ -27,7 +27,7 @@ func (v Vector) Normalized() Vector {
 }
 
 func NewPlayerEntity(world *ecs.World, stage *Stage, position common.BlockPosition, texture *rl.Texture2D) *ecs.Entity {
-	player := ecs.NewEntity(ecs.EntityID("player"), EntityPlayer)
+	player := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("player"), EntityPlayer))
 
 	player.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
 	player.AddComponent(components.NewInputComponent())

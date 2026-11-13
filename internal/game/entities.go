@@ -44,8 +44,29 @@ func NewGameEntity(world *ecs.World, stage *Stage, entityType ecs.EntityType, bl
 	}
 }
 
+func LoadEntity(world *ecs.World, stage *Stage, reader ecs.Reader) (*ecs.Entity, error) {
+	var blockPosition common.BlockPosition
+
+	header := &ecs.EntityHeader{}
+	header.ReadFrom(reader)
+
+	entity, err := NewGameEntity(world, stage, header.Type, blockPosition)
+
+	if err != nil {
+		return nil, err
+	}
+
+	entity.EntityHeader = header
+
+	if reader != nil {
+		entity.ReadFrom(reader)
+	}
+
+	return entity, nil
+}
+
 func NewBoulder(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
-	entity := ecs.NewEntity(NewEntityId("boulder"), EntityBoulder)
+	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("boulder"), EntityBoulder))
 
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff | characteristics.Destructable))
@@ -61,7 +82,7 @@ func NewBoulder(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 }
 
 func NewDiamond(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
-	entity := ecs.NewEntity(NewEntityId("diamond"), EntityDiamond)
+	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("diamond"), EntityDiamond))
 
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff | characteristics.Destructable))
@@ -77,7 +98,7 @@ func NewDiamond(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 }
 
 func NewFirefly(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
-	entity := ecs.NewEntity(NewEntityId("firefly"), EntityFirefly)
+	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("firefly"), EntityFirefly))
 
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy | characteristics.Destructable))
@@ -100,7 +121,7 @@ func NewFirefly(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 }
 
 func NewButterfly(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
-	entity := ecs.NewEntity(NewEntityId("butterfly"), EntityButterfly)
+	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("butterfly"), EntityButterfly))
 
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy | characteristics.Destructable))
@@ -123,7 +144,7 @@ func NewButterfly(world *ecs.World, stage *Stage, blockPosition common.BlockPosi
 }
 
 func NewDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2, targetStage string, targetPosition common.BlockPosition) *ecs.Entity {
-	entity := ecs.NewEntity(NewEntityId("door"), EntityDoor)
+	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("door"), EntityDoor))
 
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
@@ -140,7 +161,7 @@ func NewDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosition,
 }
 
 func NewMagicWall(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
-	entity := ecs.NewEntity(NewEntityId("magicwall"), EntityMagicWall)
+	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("magicwall"), EntityMagicWall))
 
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity | characteristics.IsMagicWall | characteristics.GravityRollOff))
@@ -163,7 +184,7 @@ func NewMagicWall(world *ecs.World, stage *Stage, blockPosition common.BlockPosi
 }
 
 func NewExitDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2, targetStage string, targetPosition common.BlockPosition) *ecs.Entity {
-	entity := ecs.NewEntity(NewEntityId("exitdoor"), EntityDoor)
+	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("exitdoor"), EntityDoor))
 
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
@@ -177,7 +198,7 @@ func NewExitDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosit
 }
 
 func NewExplosion(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
-	entity := ecs.NewEntity(NewEntityId("explosion"), EntityExplosion)
+	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("explosion"), EntityExplosion))
 
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy))
@@ -197,7 +218,7 @@ func NewExplosion(world *ecs.World, stage *Stage, blockPosition common.BlockPosi
 }
 
 func NewFlash(world *ecs.World) *ecs.Entity {
-	entity := ecs.NewEntity(NewEntityId("flash"), EntityFlash)
+	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("flash"), EntityFlash))
 
 	entity.AddComponent(components.NewFlashComponent())
 	entity.AddComponent(components.NewLifetime(0.1))

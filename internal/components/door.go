@@ -48,10 +48,22 @@ func (c *DoorComponent) WriteTo(w ecs.Writer) error {
 
 func (c *DoorComponent) ReadFrom(r ecs.Reader) error {
 	r.ConsumeLine()
-	r.ConsumeLine()
-	r.ConsumeLine()
-	r.ConsumeLine()
-	r.ConsumeLine()
+
+	ecs.WithChangedValue(r.ReadString, func(stage string) {
+		c.Stage = stage
+	})
+
+	ecs.WithChangedValue(r.ReadInt, func(x int) {
+		c.Position.X = x
+	})
+
+	ecs.WithChangedValue(r.ReadInt, func(y int) {
+		c.Position.Y = y
+	})
+
+	ecs.WithChangedValue(r.ReadEnum, func(val uint32) {
+		c.State = DoorState(val)
+	})
 
 	return nil
 }

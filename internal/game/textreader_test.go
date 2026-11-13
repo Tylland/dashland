@@ -12,7 +12,7 @@ import (
 
 func TestReader(t *testing.T) {
 
-	ent := ecs.NewEntity(NewEntityId(""), EntityUnknown)
+	ent := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId(""), EntityUnknown))
 	ent.AddComponent(components.NewPositionComponent(common.NewBlockPosition(10, 10), rl.NewVector2(320.0, 329.0)))
 
 	reader := NewTextReader(strings.NewReader(saved))

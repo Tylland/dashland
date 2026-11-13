@@ -4,45 +4,30 @@ type EntityCategory uint32
 type EntityType uint32
 type EntityID string
 
-type Entity struct {
-	ID         EntityID
-	Type       EntityType
-	TypeName   string
-	Version    int
-	Components *Components
+type EntityHeader struct {
+	ID       EntityID
+	Type     EntityType
+	TypeName string
+	Version  int
 }
 
-func NewEntity(id EntityID, entityType EntityType) *Entity {
-	return &Entity{
-		ID:         id,
-		Type:       entityType,
-		Components: NewComponents(),
+func NewEntityHeader(id EntityID, entType EntityType) *EntityHeader {
+	return &EntityHeader{
+		ID:      id,
+		Type:    entType,
+		Version: 1,
 	}
 }
 
-func (e *Entity) AddComponent(c Component) {
-	e.Components.AddComponent(c)
-}
-
-func (e *Entity) RemoveComponent(c Component) {
-	e.Components.RemoveComponent(c)
-}
-
-func (e *Entity) WriteTo(ew Writer) error {
+func (e *EntityHeader) WriteTo(ew Writer) error {
 	ew.WriteEntityID(e.ID)
 	ew.WriteEntityType(e.Type)
 	ew.WriteVersion(e.Version)
 
-	for _, comp := range e.Components.Ordered() {
-		if wt, ok := comp.(WriterTo); ok {
-			wt.WriteTo(ew)
-		}
-	}
-
 	return nil
 }
 
-func (e *Entity) ReadFrom(r Reader) error {
+func (e *EntityHeader) ReadFrom(r Reader) error {
 	if id, err := r.ReadEntityID(); err == nil {
 		e.ID = id
 	} else {
@@ -55,8 +40,48 @@ func (e *Entity) ReadFrom(r Reader) error {
 		return err
 	}
 
-	r.ReadVersion()
+	if ver, err := r.ReadVersion(); err == nil {
+		e.Version = ver
+	} else {
+		return err
+	}
 
+	return nil
+}
+
+type Entity struct {
+	*EntityHeader
+	Components *Components
+}
+
+func NewEntity(header *EntityHeader) *Entity {
+	return &Entity{
+		EntityHeader: header,
+		Components:   NewComponents(),
+	}
+}
+
+func (e *Entity) AddComponent(c Component) {
+	e.Components.AddComponent(c)
+}
+
+func (e *Entity) RemoveComponent(c Component) {
+	e.Components.RemoveComponent(c)
+}
+
+func (e *Entity) WriteTo(w Writer) error {
+	e.EntityHeader.WriteTo(w)
+
+	for _, comp := range e.Components.Ordered() {
+		if wt, ok := comp.(WriterTo); ok {
+			wt.WriteTo(w)
+		}
+	}
+
+	return nil
+}
+
+func (e *Entity) ReadFrom(r Reader) error {
 	for _, comp := range e.Components.Ordered() {
 		if rf, ok := comp.(ReaderFrom); ok {
 			rf.ReadFrom(r)

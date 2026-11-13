@@ -88,29 +88,21 @@ func (p *PositionComponent) ReadFrom(r ecs.Reader) error {
 		return fmt.Errorf("expected %q found %q", ecs.ComponentName(p), name)
 	}
 
-	if v, _, err := r.ReadInt(); err == nil {
-		p.CurrentBlockPosition.X = v
-	} else {
-		return err
-	}
+	ecs.WithChangedValue(r.ReadInt, func(x int) {
+		p.CurrentBlockPosition.X = x
+	})
 
-	if v, _, err := r.ReadInt(); err == nil {
-		p.CurrentBlockPosition.X = v
-	} else {
-		return err
-	}
+	ecs.WithChangedValue(r.ReadInt, func(y int) {
+		p.CurrentBlockPosition.Y = y
+	})
 
-	if x, _, err := r.ReadFloat(); err == nil {
+	ecs.WithChangedValue(r.ReadFloat, func(x float32) {
 		p.Vector2.X = x
-	} else {
-		return err
-	}
+	})
 
-	if y, _, err := r.ReadFloat(); err == nil {
+	ecs.WithChangedValue(r.ReadFloat, func(y float32) {
 		p.Vector2.Y = y
-	} else {
-		return err
-	}
+	})
 
 	return nil
 }

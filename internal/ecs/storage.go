@@ -34,3 +34,17 @@ type Reader interface {
 type ReaderFrom interface {
 	ReadFrom(r Reader) error
 }
+
+func WithChangedValue[T any](fetch func() (T, bool, error), update func(T)) error {
+	val, changed, err := fetch()
+
+	if err != nil {
+		return err
+	}
+
+	if changed {
+		update(val)
+	}
+
+	return nil
+}

@@ -40,7 +40,7 @@ func commonPrefix(expected, actual string) string {
 
 func TestWriter(t *testing.T) {
 
-	ent := ecs.NewEntity(NewEntityId("test"), EntityDoor)
+	ent := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("test"), EntityDoor))
 	ent.AddComponent(components.NewPositionComponent(common.NewBlockPosition(10, 10), rl.NewVector2(320.0, 329.0)))
 
 	var buf bytes.Buffer
