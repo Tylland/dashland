@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/tylland/dashland/internal/ecs"
 )
@@ -24,8 +23,8 @@ const (
 const CommentTab = 32
 
 type TextWriter struct {
-	w   io.Writer
-	sec *tabwriter.Writer
+	w     io.Writer
+	bytes int
 }
 
 func NewTextWriter(w io.Writer) *TextWriter {
@@ -33,38 +32,44 @@ func NewTextWriter(w io.Writer) *TextWriter {
 }
 
 func (m *TextWriter) write(format string, a ...any) error {
-	_, err := fmt.Fprintf(m.w, format, a...)
+	if m.bytes > 0 {
+		format = "\n" + format
+	}
+
+	n, err := fmt.Fprintf(m.w, format, a...)
 
 	if err != nil {
 		return err
 	}
 
+	m.bytes += n
+
 	return nil
 }
 
 func (m *TextWriter) WriteEntityID(id ecs.EntityID) error {
-	return m.write("%s\n", id)
+	return m.write("%s", id)
 }
 
 func (m *TextWriter) WriteEntityType(et ecs.EntityType) error {
-	return m.write("%d\n", et)
+	return m.write("%d", et)
 }
 
 func (m *TextWriter) WriteBlockType(v int) error {
-	return m.write("%d\n", v)
+	return m.write("%d", v)
 }
 
 func (m *TextWriter) WriteVersion(ver int) error {
-	return m.write("%d\n", ver)
+	return m.write("%d", ver)
 }
 
 func (m *TextWriter) WriteLabel(lbl string) error {
-	return m.write("%s %s\n", TokenLabel, lbl)
+	return m.write("%s %s", TokenLabel, lbl)
 }
 
 // func (m *TextWriter) StartSection(name string, version int) error {
 // 	m.sec = tabwriter.NewWriter(m.w, 1, 32, 0, ' ', 0)
-// 	return m.write("%s %s@%d\n", TokenLabel, name, version)
+// 	return m.write("%s %s@%d", TokenLabel, name, version)
 // }
 
 func (m *TextWriter) WriteString(str string, d bool) error {
@@ -74,7 +79,7 @@ func (m *TextWriter) WriteString(str string, d bool) error {
 		changed = TokenDefault
 	}
 
-	return m.write("%s%s %s\n", TokenIndent, changed, str)
+	return m.write("%s%s %s", TokenIndent, changed, str)
 }
 
 func (m *TextWriter) WriteBool(v bool, d bool) error {
@@ -90,7 +95,7 @@ func (m *TextWriter) WriteInt(v int, d bool) error {
 		dirty = TokenDefault
 	}
 
-	return m.write("%s%s %d%s%08x\n", TokenIndent, dirty, v, TokenSeparator, bits)
+	return m.write("%s%s %d%s%08x", TokenIndent, dirty, v, TokenSeparator, bits)
 }
 
 func (m *TextWriter) WriteFloat(v float32, d bool) error {
@@ -102,7 +107,7 @@ func (m *TextWriter) WriteFloat(v float32, d bool) error {
 		dirty = TokenDefault
 	}
 
-	return m.write("%s%s %6f%s%08x\n", TokenIndent, dirty, v, TokenSeparator, bits)
+	return m.write("%s%s %6f%s%08x", TokenIndent, dirty, v, TokenSeparator, bits)
 }
 
 func (m *TextWriter) WriteEnum(enum any, d bool, c string) error {
@@ -146,5 +151,13 @@ func (m *TextWriter) WriteEnum(enum any, d bool, c string) error {
 		line += fmt.Sprintf("%s%s %s", strings.Repeat(TokenIndent, pos-len(line)), TokenComment, comment)
 	}
 
-	return m.write("%s\n", line)
+	return m.write("%s", line)
+}
+
+func (m *TextWriter) Close() error {
+	if c, ok := m.w.(io.Closer); ok {
+		return c.Close()
+	}
+
+	return nil
 }

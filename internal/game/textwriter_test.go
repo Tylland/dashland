@@ -56,3 +56,22 @@ func TestWriter(t *testing.T) {
 
 	fmt.Print(text)
 }
+
+func TestRoundtrip(t *testing.T) {
+
+	ent := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("test"), EntityDoor))
+	ent.AddComponent(components.NewPositionComponent(common.NewBlockPosition(10, 10), rl.NewVector2(320.0, 329.0)))
+
+	var buf bytes.Buffer
+	writer := NewTextWriter(&buf)
+
+	ent.WriteTo(writer)
+
+	text := buf.String()
+
+	if text != saved {
+		t.Fatalf("%s<-- ERROR", commonPrefix(saved, text))
+	}
+
+	fmt.Print(text)
+}

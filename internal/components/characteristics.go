@@ -31,7 +31,7 @@ func (c *CharacteristicComponent) Remove(characteristic characteristics.Characte
 
 func (c *CharacteristicComponent) WriteTo(w ecs.Writer) error {
 	w.WriteLabel("characteristics")
-	w.WriteEnum(c.characteristics, true, "")
+	w.WriteEnum(c.characteristics, false, "")
 
 	return nil
 }
