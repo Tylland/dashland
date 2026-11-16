@@ -13,7 +13,7 @@ import (
 )
 
 const saved = `test-1
-11
+12
 0
 # position
  * 10 : 41200000
@@ -40,7 +40,7 @@ func commonPrefix(expected, actual string) string {
 
 func TestWriter(t *testing.T) {
 
-	ent := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("test"), EntityDoor))
+	ent := ecs.NewEntity(NewEntityHeader(EntityExitDoor))
 	ent.AddComponent(components.NewPositionComponent(common.NewBlockPosition(10, 10), rl.NewVector2(320.0, 329.0)))
 
 	var buf bytes.Buffer
@@ -58,8 +58,7 @@ func TestWriter(t *testing.T) {
 }
 
 func TestRoundtrip(t *testing.T) {
-
-	ent := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("test"), EntityDoor))
+	ent := ecs.NewEntity(NewEntityHeader(EntityExitDoor))
 	ent.AddComponent(components.NewPositionComponent(common.NewBlockPosition(10, 10), rl.NewVector2(320.0, 329.0)))
 
 	var buf bytes.Buffer

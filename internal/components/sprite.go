@@ -17,16 +17,16 @@ func (c *SpriteComponent) WriteTo(w ecs.Writer) error {
 	w.WriteLabel(ecs.ComponentName(c))
 	w.WriteFloat(c.Width, true)
 	w.WriteFloat(c.Height, true)
-	w.WriteInt(int(c.Texture.ID), true)
+	//w.WriteInt(int(c.Texture.ID), true)
 
 	return nil
 }
 
 func (c *SpriteComponent) ReadFrom(r ecs.Reader) error {
+	r.ConsumeLabel(ecs.ComponentName(c))
 	r.ConsumeLine()
 	r.ConsumeLine()
-	r.ConsumeLine()
-	r.ConsumeLine()
+	//r.ConsumeLine()
 
 	return nil
 }

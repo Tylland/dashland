@@ -6,6 +6,7 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
+	"github.com/tylland/dashland/internal/ecs"
 )
 
 type BlockMap struct {
@@ -15,18 +16,18 @@ type BlockMap struct {
 }
 
 func NewBlockMap(mapSize MapSize, blockTextures *rl.Texture2D) *BlockMap {
-	return &BlockMap{MapSize: mapSize, blockTextures: blockTextures}
+	return &BlockMap{MapSize: mapSize, blockTextures: blockTextures, blocks: make([]*Block, mapSize.Count())}
 }
 
-func (bm *BlockMap) CheckBlockAtPosition(blockType BlockType, position common.BlockPosition) bool {
+func (bm *BlockMap) CheckBlockAtPosition(blockType ecs.EntityType, position common.BlockPosition) bool {
 	if position.X < 0 || position.X >= bm.Width || position.Y < 0 || position.Y >= bm.Height {
 		return false
 	}
 
-	return bm.blocks[position.Y*bm.Width+position.X].BlockType == blockType
+	return bm.blocks[position.Y*bm.Width+position.X].Type == blockType
 }
 
-func (bm *BlockMap) CheckNeighbourTypes(blockType BlockType, position common.BlockPosition) (neighbours [9]bool) {
+func (bm *BlockMap) CheckNeighbourTypes(blockType ecs.EntityType, position common.BlockPosition) (neighbours [9]bool) {
 
 	neighbours[OverLeft] = bm.CheckBlockAtPosition(blockType, position.Offset(BlockLeft, BlockOver))
 	neighbours[OverCenter] = bm.CheckBlockAtPosition(blockType, position.Offset(BlockCenter, BlockOver))
@@ -54,7 +55,7 @@ func (bm *BlockMap) PrintBlockMap() {
 				row += ", "
 			}
 
-			row += fmt.Sprintf("%d", int(bm.blocks[y*bm.Width+x].BlockType))
+			row += fmt.Sprintf("%d", int(bm.blocks[y*bm.Width+x].Type))
 		}
 
 		fmt.Println(row)
@@ -75,7 +76,7 @@ func (bm *BlockMap) SetBlock(block *Block, pos common.BlockPosition) {
 func (bm *BlockMap) GetBlock(x int, y int) (*Block, bool) {
 
 	if x < 0 || x >= bm.Width || y < 0 || y >= bm.Height {
-		return &Block{BlockType: Unknown}, false
+		return nil, false
 	}
 
 	return bm.blocks[y*bm.Width+x], true
@@ -84,7 +85,7 @@ func (bm *BlockMap) GetBlock(x int, y int) (*Block, bool) {
 func (bm *BlockMap) GetBlockAtPosition(position common.BlockPosition) (*Block, bool) {
 
 	if position.X < 0 || position.X >= bm.Width || position.Y < 0 || position.Y >= bm.Height {
-		return &Block{BlockType: Unknown}, false
+		return nil, false
 	}
 
 	return bm.blocks[position.Y*bm.Width+position.X], true

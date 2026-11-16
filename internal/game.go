@@ -18,6 +18,10 @@ import (
 	"github.com/tylland/dashland/internal/systems"
 )
 
+const (
+	StageRootPath = `assets\stages`
+)
+
 const assetsBase = "assets"
 
 type DashlandGame struct {
@@ -86,7 +90,7 @@ func (g *DashlandGame) loadStageFromFile(name string) (*game.Stage, error) {
 	}
 
 	fmt.Printf("Reading blocks from layer %s \n", tiledMap.Layers[0].Name)
-	stage.InitBlocks(stage, tiledMap.Layers[0].Tiles)
+	game.InitBlocks(stage, tiledMap.Layers[0].Tiles)
 
 	fmt.Printf("Reading entities from layer \"%s\" \n", tiledMap.Layers[1].Name)
 
@@ -94,82 +98,33 @@ func (g *DashlandGame) loadStageFromFile(name string) (*game.Stage, error) {
 		stage.EnterPosition = pos
 	}
 
-	stage.InitEntities(g.world, game.EntityCategoryObject, tiledMap.Layers[1].Tiles)
-	stage.InitEntities(g.world, game.EntityCategoryEnemy, tiledMap.Layers[2].Tiles)
+	game.InitEntities(g.world, stage, game.EntityCategoryObject, tiledMap.Layers[1].Tiles)
+	game.InitEntities(g.world, stage, game.EntityCategoryEnemy, tiledMap.Layers[2].Tiles)
 
 	if len(tiledMap.ObjectGroups) > 0 {
-		stage.InitObjectsEntities(g.world, game.EntityCategoryObject, tiledMap.ObjectGroups[0])
+		game.InitObjectsEntities(g.world, stage, game.EntityCategoryObject, tiledMap.ObjectGroups[0])
 	}
 
 	return stage, nil
 }
 
-func (g *DashlandGame) LoadStage(name string, position common.BlockPosition) error {
-	if name == "generated" {
-		return g.LoadGeneratedStage(game.DefaultCaveParams())
-	}
+// func (g *DashlandGame) LoadStage(name string, position common.BlockPosition) error {
+// 	g.world.Clear()
 
-	g.world.Clear()
+// 	stage, err := g.loadStageFromFile(name)
 
-	stage, err := g.loadStageFromFile(name)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	if err != nil {
-		return err
-	}
+// 	if position.IsZero() {
+// 		position = stage.EnterPosition
+// 	}
 
-	if position.IsZero() {
-		position = stage.EnterPosition
-	}
+// 	g.setupStage(stage, position)
 
-	g.setupStage(stage, position)
-
-	g.saveStage(stage)
-
-	return nil
-}
-
-func (g *DashlandGame) LoadGeneratedStage(params game.CaveParams) error {
-	g.world.Clear()
-
-	cave := game.GenerateCave(params)
-
-	blockTexture := assets.LoadTexture("blocks")
-	entityTextures := assets.LoadTexture("entities")
-	groundCorners := assets.LoadTexture("ground_corners")
-
-	mapSize := game.NewMapSize(params.Width, params.Height, params.BlockSize, params.BlockSize)
-	stage := game.NewStage("generated", mapSize, blockTexture, entityTextures, groundCorners)
-
-	stage.DiamondsRequired = params.DiamondsRequired
-	stage.DiamondPoints = params.DiamondPoints
-	stage.DiamondBonusPoints = params.DiamondBonusPoints
-	stage.SetTimeLimit(params.TimeLimit)
-	stage.MagicWallDuration = params.MagicWallDuration
-	stage.EnterPosition = cave.PlayerPosition
-
-	// Init blocks from generated grid
-	stage.InitBlocksFromGrid(cave.Blocks)
-
-	// Allocate entity map
-	stage.InitEmptyEntityMap()
-
-	// Spawn entities from generated placements
-	for _, ep := range cave.Entities {
-		entity, err := game.NewGameEntity(g.world, stage, ep.Type, ep.Position)
-		if err == nil {
-			stage.EntityMap.SetEntity(entity, ep.Position)
-		}
-	}
-
-	// Spawn exit door (target = "generated" so exiting generates a new cave)
-	exitDoor := game.NewExitDoor(g.world, stage, cave.ExitPosition, stage.GetPosition(cave.ExitPosition), "generated", common.NewBlockPosition(0, 0))
-	stage.EntityMap.SetEntity(exitDoor, cave.ExitPosition)
-	stage.ExitPosition = cave.ExitPosition
-
-	g.setupStage(stage, cave.PlayerPosition)
-
-	return nil
-}
+// 	return nil
+// }
 
 func (g *DashlandGame) setupStage(stage *game.Stage, position common.BlockPosition) {
 	playerTexture := assets.LoadTexture("player")
@@ -218,4 +173,42 @@ func (g *DashlandGame) saveStage(stage *game.Stage) {
 	}
 
 	stage.Save(outputDir)
+}
+
+func (g *DashlandGame) LoadStage(name string, position common.BlockPosition) error {
+	g.world.Clear()
+
+	path := filepath.Join(StageRootPath, name)
+
+	stage, err := g.loadStage(path)
+
+	if err != nil {
+		return err
+	}
+
+	if position.IsZero() {
+		position = stage.EnterPosition
+	}
+
+	g.setupStage(stage, position)
+
+	return nil
+}
+
+func (g *DashlandGame) loadStage(path string) (*game.Stage, error) {
+
+	blockTexture := assets.LoadTexture("blocks")
+	entityTextures := assets.LoadTexture("entities")
+	groundCorners := assets.LoadTexture("ground_corners")
+
+	mapSize := game.MapSize{}
+	stage := game.NewStage("generated", mapSize, blockTexture, entityTextures, groundCorners)
+
+	err := stage.Load(g.world, path)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return stage, nil
 }

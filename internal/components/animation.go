@@ -98,7 +98,7 @@ func (c *AnimationComponent) WriteTo(w ecs.Writer) error {
 }
 
 func (c *AnimationComponent) ReadFrom(r ecs.Reader) error {
-	r.ConsumeLine()
+	r.ConsumeLabel(ecs.ComponentName(c))
 	r.ConsumeLine()
 	r.ConsumeLine()
 	r.ConsumeLine()

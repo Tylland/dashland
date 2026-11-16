@@ -35,35 +35,48 @@ func (bt BlockType) String() string {
 	}
 }
 
+func ToBlockName(id ecs.EntityType) string {
+	switch id {
+	case EntityBedrock:
+		return "bedrock"
+	case EntityVoid:
+		return "void"
+	case EntitySoil:
+		return "soil"
+	case EntityWall:
+		return "wall"
+	default:
+		return "unknown"
+	}
+}
+
 type Block struct {
+	*ecs.EntityHeader
 	bm *BlockMap
 	gm *EntityMap
 
-	ID        ecs.EntityID
-	BlockType BlockType
 	Position  common.BlockPosition
 	Character characteristics.Characteristics
 	Collider  *components.ColliderComponent
 	Corners   [4]uint8
 }
 
-func NewBlockWithCharacteristics(bm *BlockMap, gm *EntityMap, blockType BlockType, position common.BlockPosition, character characteristics.Characteristics, layer collider.CollisionLayer, block collider.CollisionLayer, overlap collider.CollisionLayer) *Block {
-	id := NewEntityId(blockType.String())
-	return &Block{bm: bm, gm: gm, ID: id, BlockType: blockType, Position: position, Character: character, Collider: components.NewColliderComponent(layer, block, overlap)}
+func NewBlockWithCharacteristics(header *ecs.EntityHeader, bm *BlockMap, gm *EntityMap, position common.BlockPosition, character characteristics.Characteristics, layer collider.CollisionLayer, block collider.CollisionLayer, overlap collider.CollisionLayer) *Block {
+	return &Block{EntityHeader: header, bm: bm, gm: gm, Position: position, Character: character, Collider: components.NewColliderComponent(layer, block, overlap)}
 }
 
-func NewBlock(bm *BlockMap, gm *EntityMap, blockType BlockType, position common.BlockPosition) *Block {
-	switch blockType {
-	case Void:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.Destructable, collider.LayerNone, collider.LayerNone, collider.LayerNone)
-	case Soil:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.CanHoldGravity|characteristics.Destructable, collider.LayerGround, collider.LayerEnemy, collider.LayerAll)
-	case Wall:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.CanHoldGravity|characteristics.GravityRollOff|characteristics.Destructable, collider.LayerWall, collider.LayerAll, collider.LayerNone)
-	case Bedrock:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.CanHoldGravity, collider.LayerBedrock, collider.LayerAll, collider.LayerNone)
+func NewBlock(header *ecs.EntityHeader, bm *BlockMap, gm *EntityMap, position common.BlockPosition) *Block {
+	switch header.Type {
+	case EntityVoid:
+		return NewBlockWithCharacteristics(header, bm, gm, position, characteristics.Destructable, collider.LayerNone, collider.LayerNone, collider.LayerNone)
+	case EntitySoil:
+		return NewBlockWithCharacteristics(header, bm, gm, position, characteristics.CanHoldGravity|characteristics.Destructable, collider.LayerGround, collider.LayerEnemy, collider.LayerAll)
+	case EntityWall:
+		return NewBlockWithCharacteristics(header, bm, gm, position, characteristics.CanHoldGravity|characteristics.GravityRollOff|characteristics.Destructable, collider.LayerWall, collider.LayerAll, collider.LayerNone)
+	case EntityBedrock:
+		return NewBlockWithCharacteristics(header, bm, gm, position, characteristics.CanHoldGravity, collider.LayerBedrock, collider.LayerAll, collider.LayerNone)
 	default:
-		return NewBlockWithCharacteristics(bm, gm, blockType, position, characteristics.None, collider.LayerGround, collider.LayerNone, collider.LayerNone)
+		return NewBlockWithCharacteristics(header, bm, gm, position, characteristics.None, collider.LayerGround, collider.LayerNone, collider.LayerNone)
 	}
 }
 
@@ -124,8 +137,8 @@ func (b *Block) cornerIndex(neighbors [9]bool, corner CornerPosition, strict boo
 
 func (b *Block) Update(_ float32) {
 
-	if b.BlockType == Soil {
-		voids := b.bm.CheckNeighbourTypes(Void, b.Position)
+	if b.Type == EntitySoil {
+		voids := b.bm.CheckNeighbourTypes(EntityVoid, b.Position)
 		strict := true
 
 		b.Corners[CornerOverLeft] = b.cornerIndex(voids, CornerOverLeft, strict)
@@ -134,8 +147,8 @@ func (b *Block) Update(_ float32) {
 		b.Corners[CornerUnderLeft] = b.cornerIndex(voids, CornerUnderLeft, strict)
 	}
 
-	if b.BlockType == Void {
-		soils := b.bm.CheckNeighbourTypes(Soil, b.Position)
+	if b.Type == EntityVoid {
+		soils := b.bm.CheckNeighbourTypes(EntitySoil, b.Position)
 		strict := false
 
 		b.Corners[CornerOverLeft] = b.cornerIndex(soils, CornerOverLeft, strict)
@@ -156,13 +169,13 @@ func (b *Block) renderCorners(row float32) {
 }
 
 func (b *Block) Render() {
-	switch b.BlockType {
-	case Soil:
+	switch b.Type {
+	case EntitySoil:
 		b.renderCorners(1)
-	case Void:
+	case EntityVoid:
 		b.renderCorners(0)
 	default:
-		rl.DrawTextureRec(*b.bm.blockTextures, rl.NewRectangle(float32(b.BlockType)*b.bm.BlockWidth, 0, b.bm.BlockWidth, b.bm.BlockHeight), rl.NewVector2(float32(b.Position.X)*b.bm.BlockWidth, float32(b.Position.Y)*b.bm.BlockHeight), rl.White)
+		rl.DrawTextureRec(*b.bm.blockTextures, rl.NewRectangle(float32(b.Type)*b.bm.BlockWidth, 0, b.bm.BlockWidth, b.bm.BlockHeight), rl.NewVector2(float32(b.Position.X)*b.bm.BlockWidth, float32(b.Position.Y)*b.bm.BlockHeight), rl.White)
 	}
 }
 
@@ -171,9 +184,7 @@ func (b *Block) Rectangle() rl.Rectangle {
 }
 
 func (b *Block) WriteTo(w ecs.Writer) error {
-	w.WriteEntityID(b.ID)
-	w.WriteBlockType(int(b.BlockType))
-	w.WriteVersion(0)
+	b.EntityHeader.WriteTo(w)
 
 	w.WriteLabel("position")
 	w.WriteInt(b.Position.X, false)
@@ -193,6 +204,38 @@ func (b *Block) WriteTo(w ecs.Writer) error {
 	w.WriteInt(int(b.Corners[1]), b.Corners[1] == 0)
 	w.WriteInt(int(b.Corners[2]), b.Corners[2] == 0)
 	w.WriteInt(int(b.Corners[3]), b.Corners[3] == 0)
+
+	return nil
+}
+
+func (b *Block) ReadFrom(r ecs.Reader) error {
+	r.ConsumeLabel("position")
+
+	ecs.WithChangedValue(r.ReadInt, func(x int) {
+		b.Position.X = x
+	})
+
+	ecs.WithChangedValue(r.ReadInt, func(y int) {
+		b.Position.Y = y
+	})
+
+	r.ConsumeLabel("characteristics")
+
+	ecs.WithChangedValue(r.ReadEnum, func(enum uint32) {
+		b.Character = characteristics.Characteristics(enum)
+	})
+
+	err := b.Collider.ReadFrom(r)
+
+	if err != nil {
+		return err
+	}
+
+	r.ConsumeLabel("corners")
+	r.ConsumeLine()
+	r.ConsumeLine()
+	r.ConsumeLine()
+	r.ConsumeLine()
 
 	return nil
 }

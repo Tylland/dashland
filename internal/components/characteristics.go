@@ -30,14 +30,14 @@ func (c *CharacteristicComponent) Remove(characteristic characteristics.Characte
 }
 
 func (c *CharacteristicComponent) WriteTo(w ecs.Writer) error {
-	w.WriteLabel("characteristics")
+	w.WriteLabel(ecs.ComponentName(c))
 	w.WriteEnum(c.characteristics, false, "")
 
 	return nil
 }
 
 func (c *CharacteristicComponent) ReadFrom(r ecs.Reader) error {
-	r.ConsumeLine()
+	r.ConsumeLabel(ecs.ComponentName(c))
 
 	if enum, changed, err := r.ReadEnum(); err == nil {
 		if changed {

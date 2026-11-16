@@ -59,10 +59,7 @@ func (c *BlockStep) WriteTo(w ecs.Writer) error {
 }
 
 func (c *BlockStep) ReadFrom(r ecs.Reader) error {
-	r.ConsumeLine()
-	r.ConsumeLine()
-	r.ConsumeLine()
-
+	r.ConsumeLabel(ecs.ComponentName(c))
 	r.ConsumeLine()
 	r.ConsumeLine()
 
@@ -72,7 +69,17 @@ func (c *BlockStep) ReadFrom(r ecs.Reader) error {
 	r.ConsumeLine()
 	r.ConsumeLine()
 
-	r.ConsumeLine()
+	ecs.WithChangedValue(r.ReadFloat, func(x float32) {
+		c.Target.X = x
+	})
+
+	ecs.WithChangedValue(r.ReadFloat, func(y float32) {
+		c.Target.Y = y
+	})
+
+	ecs.WithChangedValue(r.ReadFloat, func(speed float32) {
+		c.Speed = speed
+	})
 
 	return nil
 }

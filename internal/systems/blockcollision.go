@@ -80,7 +80,7 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 
 			if interacts {
 				// If player collides with a door trigger -> stage change
-				if actor.Type == game.EntityPlayer && target.Type == game.EntityDoor {
+				if actor.Type == game.EntityPlayer && target.Type == game.EntityExitDoor {
 					door := ecs.GetComponent[components.DoorComponent](target)
 
 					if door != nil && door.State == components.DoorOpen {

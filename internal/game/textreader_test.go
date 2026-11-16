@@ -12,7 +12,7 @@ import (
 
 func TestReader(t *testing.T) {
 
-	ent := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId(""), EntityUnknown))
+	ent := ecs.NewEntity(NewEntityHeader(EntityUnknown))
 	ent.AddComponent(components.NewPositionComponent(common.NewBlockPosition(10, 10), rl.NewVector2(320.0, 329.0)))
 
 	reader := NewTextReader(strings.NewReader(saved))
@@ -23,7 +23,7 @@ func TestReader(t *testing.T) {
 		t.Fatalf("<-- ERROR")
 	}
 
-	if ent.Type != EntityDoor {
+	if ent.Type != EntityExitDoor {
 		t.Fatalf("<-- ERROR")
 	}
 }

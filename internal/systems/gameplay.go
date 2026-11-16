@@ -68,18 +68,18 @@ func (s *GameplaySystem) RunWhenPaused() bool {
 }
 
 func (s *GameplaySystem) handleBlockCollision(world *ecs.World, collision *game.BlockCollisionEvent) {
-	if collision.Block.BlockType == game.Soil && collision.Entity.Type == game.EntityPlayer {
+	if collision.Block.Type == game.EntitySoil && collision.Entity.Type == game.EntityPlayer {
 		poistion := ecs.GetComponent[components.PositionComponent](collision.Entity)
 		step := ecs.GetComponent[components.BlockStep](collision.Entity)
 
 		s.stage.VisitBlock(poistion.CurrentBlockPosition.Add(step.Increment))
 	}
 
-	if collision.Block.BlockType == game.Soil && collision.Entity.Type == game.EntityBoulder {
+	if collision.Block.Type == game.EntitySoil && collision.Entity.Type == game.EntityBoulder {
 		s.sound.PlayFx("boulder_collision")
 	}
 
-	if collision.Block.BlockType == game.Soil && collision.Entity.Type == game.EntityDiamond {
+	if collision.Block.Type == game.EntitySoil && collision.Entity.Type == game.EntityDiamond {
 		s.sound.PlayFx("diamond_collision")
 	}
 }
@@ -135,7 +135,7 @@ func (s *GameplaySystem) handleEntityBlocks(world *ecs.World, event *game.Entity
 		newType = game.EntityBoulder
 	}
 
-	newEntity, err := game.NewGameEntity(world, s.stage, newType, outputPos)
+	newEntity, err := game.NewEntityAndHeader(newType, world, s.stage, outputPos)
 	if err == nil {
 		s.stage.SetEntity(newEntity, outputPos)
 		// Gravity will detect empty space below and start it falling naturally
@@ -283,14 +283,15 @@ func (s *GameplaySystem) CreateDiamonds(world *ecs.World, position common.BlockP
 		for x := -width; x <= width; x++ {
 			diamondPosition := position.Offset(x, y)
 			if s.stage.CheckCharacteristics(diamondPosition, characteristics.Destructable) {
-				s.stage.SetBlock(game.NewBlock(s.stage.BlockMap, s.stage.EntityMap, game.Void, diamondPosition), diamondPosition)
+				header := game.NewEntityHeader(game.EntityVoid)
+				s.stage.SetBlock(game.NewBlock(header, s.stage.BlockMap, s.stage.EntityMap, diamondPosition), diamondPosition)
 
 				doomed := s.stage.GetEntity(diamondPosition)
 				if doomed != nil {
 					world.EnqueueRemoval(doomed)
 				}
 
-				diamond, err := game.NewGameEntity(world, s.stage, game.EntityDiamond, diamondPosition)
+				diamond, err := game.NewEntityAndHeader(game.EntityDiamond, world, s.stage, diamondPosition)
 
 				if err == nil {
 					s.stage.SetEntity(diamond, diamondPosition)
@@ -305,14 +306,15 @@ func (s *GameplaySystem) CreateSquare(world *ecs.World, entityType ecs.EntityTyp
 		for x := -width; x <= width; x++ {
 			pos := center.Offset(x, y)
 			if s.stage.CheckCharacteristics(pos, characteristics.Destructable) {
-				s.stage.SetBlock(game.NewBlock(s.stage.BlockMap, s.stage.EntityMap, game.Void, pos), pos)
+				header := game.NewEntityHeader(game.EntityVoid)
+				s.stage.SetBlock(game.NewBlock(header, s.stage.BlockMap, s.stage.EntityMap, pos), pos)
 
 				doomed := s.stage.GetEntity(pos)
 				if doomed != nil {
 					world.EnqueueRemoval(doomed)
 				}
 
-				entity, err := game.NewGameEntity(world, s.stage, entityType, pos)
+				entity, err := game.NewEntityAndHeader(entityType, world, s.stage, pos)
 
 				if err == nil {
 					s.stage.SetEntity(entity, pos)

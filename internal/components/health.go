@@ -18,7 +18,7 @@ func (c *Health) WriteTo(w ecs.Writer) error {
 }
 
 func (c *Health) ReadFrom(r ecs.Reader) error {
-	r.ConsumeLine()
+	r.ConsumeLabel(ecs.ComponentName(c))
 	r.ConsumeLine()
 
 	return nil

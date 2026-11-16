@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"os"
 	"strconv"
 	"strings"
 
@@ -21,6 +22,21 @@ func NewTextReader(r io.Reader) *TextReader {
 
 func (r *TextReader) ConsumeLine() error {
 	_, err := r.readLine()
+
+	return err
+}
+
+func (r *TextReader) ConsumeLabel(expected string) error {
+	label, err := r.ReadLabel()
+
+	if err != nil {
+		panic(err)
+		//return fmt.Errorf("read label: %w", err)
+	}
+
+	if label != expected {
+		panic("invalid label: " + label)
+	}
 
 	return err
 }
@@ -59,12 +75,12 @@ func (r *TextReader) ReadEntityType() (ecs.EntityType, error) {
 	return ecs.EntityType(v), err
 }
 
-func (r *TextReader) ReadBlockType() (int, error) {
+func (r *TextReader) ReadEntityCategory() (ecs.EntityCategory, error) {
 	str, err := r.readLine()
 
 	v, err := strconv.ParseInt(str, 10, 32)
 
-	return int(v), err
+	return ecs.EntityCategory(v), err
 }
 
 func (r *TextReader) ReadVersion() (int, error) {
@@ -170,4 +186,14 @@ func (r *TextReader) ReadLabel() (string, error) {
 
 func (r *TextReader) ReadString() (string, bool, error) {
 	return r.readValue()
+}
+
+func NewTextFileReader(fileName string) (*TextReader, error) {
+	file, err := os.Open(fileName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTextReader(file), nil
 }

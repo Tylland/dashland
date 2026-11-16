@@ -12,61 +12,69 @@ import (
 	"github.com/tylland/dashland/internal/ecs"
 )
 
-var entityIdCounters map[string]int = make(map[string]int)
+type EntityCounters struct {
+	Counters map[string]int
+}
+
+func NewEntityCounters() *EntityCounters {
+	return &EntityCounters{Counters: make(map[string]int)}
+}
+
+func (ec *EntityCounters) Increment(prefix string) int {
+	ec.Counters[prefix]++
+
+	return ec.Counters[prefix]
+}
+
+func (ec *EntityCounters) Reset() {
+	ec.Counters = make(map[string]int)
+}
+
+var EntityIdCounters *EntityCounters = NewEntityCounters()
 
 func NewEntityId(prefix string) ecs.EntityID {
-	entityIdCounters[prefix]++
+	count := EntityIdCounters.Increment(prefix)
 
-	return ecs.EntityID(fmt.Sprintf("%s-%d", prefix, entityIdCounters[prefix]))
+	return ecs.EntityID(fmt.Sprintf("%s-%d", prefix, count))
 }
 
-func NewGameEntity(world *ecs.World, stage *Stage, entityType ecs.EntityType, blockPosition common.BlockPosition) (*ecs.Entity, error) {
+func NewEntityHeader(entityType ecs.EntityType) *ecs.EntityHeader {
+	prefix := EntityTypeName(entityType)
+	count := EntityIdCounters.Increment(prefix)
+
+	return ecs.NewEntityHeader(ecs.EntityID(fmt.Sprintf("%s-%d", prefix, count)), entityType, EntityCategory(entityType))
+}
+
+func NewEntity(header *ecs.EntityHeader, world *ecs.World, stage *Stage, blockPosition common.BlockPosition) (*ecs.Entity, error) {
 	position := stage.GetPosition(blockPosition)
 
-	switch entityType {
+	switch header.Type {
 	case EntityDiamond:
-		return NewDiamond(world, stage, blockPosition, position), nil
+		return NewDiamond(header, world, stage, blockPosition, position), nil
 	case EntityBoulder:
-		return NewBoulder(world, stage, blockPosition, position), nil
+		return NewBoulder(header, world, stage, blockPosition, position), nil
 	case EntityExplosion:
-		return NewExplosion(world, stage, blockPosition, position), nil
+		return NewExplosion(header, world, stage, blockPosition, position), nil
 	case EntityMagicWall:
-		return NewMagicWall(world, stage, blockPosition, position), nil
-	// case EntityDoor:
-	// 	return NewDoor(world, stage, blockPosition, position), nil
+		return NewMagicWall(header, world, stage, blockPosition, position), nil
+	case EntityExitDoor:
+		return NewExitDoor(header, world, stage, blockPosition, position, "", blockPosition), nil
 	case EntityFirefly:
-		return NewFirefly(world, stage, blockPosition, position), nil
+		return NewFirefly(header, world, stage, blockPosition, position), nil
 	case EntityButterfly:
-		return NewButterfly(world, stage, blockPosition, position), nil
+		return NewButterfly(header, world, stage, blockPosition, position), nil
 	default:
-		return nil, fmt.Errorf("%v (%d) is unknown EntityType", entityType, int(entityType))
-
+		return nil, fmt.Errorf("%q (%d) is unknown EntityType", EntityTypeName(header.Type), int(header.Type))
 	}
 }
 
-func LoadEntity(world *ecs.World, stage *Stage, reader ecs.Reader) (*ecs.Entity, error) {
-	var blockPosition common.BlockPosition
-
-	header := &ecs.EntityHeader{}
-	header.ReadFrom(reader)
-
-	entity, err := NewGameEntity(world, stage, header.Type, blockPosition)
-
-	if err != nil {
-		return nil, err
-	}
-
-	entity.EntityHeader = header
-
-	if reader != nil {
-		entity.ReadFrom(reader)
-	}
-
-	return entity, nil
+func NewEntityAndHeader(entityType ecs.EntityType, world *ecs.World, stage *Stage, blockPosition common.BlockPosition) (*ecs.Entity, error) {
+	header := NewEntityHeader(entityType)
+	return NewEntity(header, world, stage, blockPosition)
 }
 
-func NewBoulder(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
-	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("boulder"), EntityBoulder))
+func NewBoulder(header *ecs.EntityHeader, world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
+	entity := ecs.NewEntity(header)
 
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff | characteristics.Destructable))
@@ -81,8 +89,8 @@ func NewBoulder(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 	return entity
 }
 
-func NewDiamond(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
-	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("diamond"), EntityDiamond))
+func NewDiamond(header *ecs.EntityHeader, world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
+	entity := ecs.NewEntity(header)
 
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanFall | characteristics.CanHoldGravity | characteristics.GravityRollOff | characteristics.Destructable))
@@ -97,8 +105,8 @@ func NewDiamond(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 	return entity
 }
 
-func NewFirefly(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
-	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("firefly"), EntityFirefly))
+func NewFirefly(header *ecs.EntityHeader, world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
+	entity := ecs.NewEntity(header)
 
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy | characteristics.Destructable))
@@ -120,8 +128,8 @@ func NewFirefly(world *ecs.World, stage *Stage, blockPosition common.BlockPositi
 	return entity
 }
 
-func NewButterfly(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
-	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("butterfly"), EntityButterfly))
+func NewButterfly(header *ecs.EntityHeader, world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
+	entity := ecs.NewEntity(header)
 
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy | characteristics.Destructable))
@@ -143,25 +151,25 @@ func NewButterfly(world *ecs.World, stage *Stage, blockPosition common.BlockPosi
 	return entity
 }
 
-func NewDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2, targetStage string, targetPosition common.BlockPosition) *ecs.Entity {
-	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("door"), EntityDoor))
+// func NewDoor(header *ecs.EntityHeader, world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
+// 	entity := ecs.NewEntity(header)
 
-	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
-	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
-	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDoor)*stage.BlockWidth, 0, 0)))
-	entity.AddComponent(components.NewColliderComponent(collider.LayerTrigger, collider.LayerAll&(^collider.LayerPlayer|collider.LayerEnemy), collider.LayerPlayer))
-	entity.AddComponent(components.NewDoorComponent(targetStage, targetPosition, components.DoorClosed))
+// 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
+// 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
+// 	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.entityTextures, stage.BlockWidth, stage.BlockHeight, float32(EntityDoor)*stage.BlockWidth, 0, 0)))
+// 	entity.AddComponent(components.NewColliderComponent(collider.LayerTrigger, collider.LayerAll&(^collider.LayerPlayer|collider.LayerEnemy), collider.LayerPlayer))
+// 	entity.AddComponent(&components.DoorComponent{})
 
-	area := rl.NewRectangle(position.X, position.Y, stage.BlockWidth, stage.BlockHeight)
-	entity.AddComponent(components.NewParticleComponent("mist", area, 40, 0.5, 32, 64, 0.20, rl.NewColor(235, 205, 205, 255)))
+// 	area := rl.NewRectangle(position.X, position.Y, stage.BlockWidth, stage.BlockHeight)
+// 	entity.AddComponent(components.NewParticleComponent("mist", area, 40, 0.5, 32, 64, 0.20, rl.NewColor(235, 205, 205, 255)))
 
-	world.AddEntity(entity)
+// 	world.AddEntity(entity)
 
-	return entity
-}
+// 	return entity
+// }
 
-func NewMagicWall(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
-	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("magicwall"), EntityMagicWall))
+func NewMagicWall(header *ecs.EntityHeader, world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
+	entity := ecs.NewEntity(header)
 
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity | characteristics.IsMagicWall | characteristics.GravityRollOff))
@@ -183,8 +191,8 @@ func NewMagicWall(world *ecs.World, stage *Stage, blockPosition common.BlockPosi
 	return entity
 }
 
-func NewExitDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2, targetStage string, targetPosition common.BlockPosition) *ecs.Entity {
-	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("exitdoor"), EntityDoor))
+func NewExitDoor(header *ecs.EntityHeader, world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2, targetStage string, targetPosition common.BlockPosition) *ecs.Entity {
+	entity := ecs.NewEntity(header)
 
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
@@ -197,8 +205,8 @@ func NewExitDoor(world *ecs.World, stage *Stage, blockPosition common.BlockPosit
 	return entity
 }
 
-func NewExplosion(world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
-	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("explosion"), EntityExplosion))
+func NewExplosion(header *ecs.EntityHeader, world *ecs.World, stage *Stage, blockPosition common.BlockPosition, position rl.Vector2) *ecs.Entity {
+	entity := ecs.NewEntity(header)
 
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.IsEnemy))
@@ -218,7 +226,7 @@ func NewExplosion(world *ecs.World, stage *Stage, blockPosition common.BlockPosi
 }
 
 func NewFlash(world *ecs.World) *ecs.Entity {
-	entity := ecs.NewEntity(ecs.NewEntityHeader(NewEntityId("flash"), EntityFlash))
+	entity := ecs.NewEntity(NewEntityHeader(EntityFlash))
 
 	entity.AddComponent(components.NewFlashComponent())
 	entity.AddComponent(components.NewLifetime(0.1))

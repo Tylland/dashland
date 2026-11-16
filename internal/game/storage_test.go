@@ -2,6 +2,7 @@ package game
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"testing"
 
@@ -9,6 +10,8 @@ import (
 	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
+	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/specs"
 )
 
 func TestPositionComponentTextRoundtrip(t *testing.T) {
@@ -60,6 +63,30 @@ func TestCharacteristicsComponentTextRoundtrip(t *testing.T) {
 	if !target.Has(character) {
 		t.Fatalf("asdfasdas")
 	}
+
+	if err := reader.ConsumeLine(); err != io.EOF {
+		t.Fatal("Expected to reached end of file")
+	}
+}
+
+func TestBoulderTextRoundtrip(t *testing.T) {
+	var buffer bytes.Buffer
+	writer := NewTextWriter(&buffer)
+
+	blockPosition := common.NewBlockPosition(123, 456)
+
+	world := ecs.NewWorld()
+	stage := NewStage("test", NewMapSize(10, 10, 32, 32), nil, nil, nil)
+
+	source := specs.Must(NewEntityAndHeader(EntityBoulder, world, stage, blockPosition))
+	source.WriteTo(writer)
+
+	fmt.Print(buffer.String())
+
+	reader := NewTextReader(&buffer)
+
+	target := specs.Must(NewEntityAndHeader(EntityBoulder, world, stage, blockPosition))
+	target.ReadFrom(reader)
 
 	if err := reader.ConsumeLine(); err != io.EOF {
 		t.Fatal("Expected to reached end of file")

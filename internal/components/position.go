@@ -1,8 +1,6 @@
 package components
 
 import (
-	"fmt"
-
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/ecs"
@@ -82,11 +80,7 @@ func (p *PositionComponent) WriteTo(ew ecs.Writer) error {
 }
 
 func (p *PositionComponent) ReadFrom(r ecs.Reader) error {
-	name, _ := r.ReadLabel()
-
-	if name != ecs.ComponentName(p) {
-		return fmt.Errorf("expected %q found %q", ecs.ComponentName(p), name)
-	}
+	r.ConsumeLabel(ecs.ComponentName(p))
 
 	ecs.WithChangedValue(r.ReadInt, func(x int) {
 		p.CurrentBlockPosition.X = x

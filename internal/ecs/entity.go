@@ -7,21 +7,23 @@ type EntityID string
 type EntityHeader struct {
 	ID       EntityID
 	Type     EntityType
-	TypeName string
+	Category EntityCategory
 	Version  int
 }
 
-func NewEntityHeader(id EntityID, entType EntityType) *EntityHeader {
+func NewEntityHeader(id EntityID, entType EntityType, category EntityCategory) *EntityHeader {
 	return &EntityHeader{
-		ID:      id,
-		Type:    entType,
-		Version: 1,
+		ID:       id,
+		Type:     entType,
+		Category: category,
+		Version:  1,
 	}
 }
 
 func (e *EntityHeader) WriteTo(ew Writer) error {
 	ew.WriteEntityID(e.ID)
 	ew.WriteEntityType(e.Type)
+	ew.WriteEntityCategory(e.Category)
 	ew.WriteVersion(e.Version)
 
 	return nil
@@ -36,6 +38,12 @@ func (e *EntityHeader) ReadFrom(r Reader) error {
 
 	if et, err := r.ReadEntityType(); err == nil {
 		e.Type = et
+	} else {
+		return err
+	}
+
+	if category, err := r.ReadEntityCategory(); err == nil {
+		e.Category = category
 	} else {
 		return err
 	}
@@ -82,6 +90,8 @@ func (e *Entity) WriteTo(w Writer) error {
 }
 
 func (e *Entity) ReadFrom(r Reader) error {
+	//e.EntityHeader.ReadFrom(r)
+
 	for _, comp := range e.Components.Ordered() {
 		if rf, ok := comp.(ReaderFrom); ok {
 			rf.ReadFrom(r)

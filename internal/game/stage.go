@@ -3,9 +3,11 @@ package game
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"text/tabwriter"
+	"time"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/lafriks/go-tiled"
 	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
@@ -17,19 +19,19 @@ type SoundPlayer interface {
 }
 
 type Stage struct {
+	Name string
 	MapSize
 	*BlockMap
 	*EntityMap
-	Name               string
 	EnterPosition      common.BlockPosition
+	ExitPosition       common.BlockPosition
+	ExitCondition      bool
 	DiamondsRequired   int
 	DiamondPoints      int
 	DiamondBonusPoints int
 	TimeLimit          int
 	TimeRemaining      float32
 	TimeExpired        bool
-	ExitCondition      bool
-	ExitPosition       common.BlockPosition
 	MagicWallActive    bool
 	MagicWallTimer     float32
 	MagicWallDuration  float32
@@ -63,9 +65,11 @@ func (s *Stage) Render(deltaTime float32) {
 }
 
 func (s *Stage) VisitBlock(position common.BlockPosition) {
-	fmt.Printf("Block at position %d,%d changed from %s", position.X, position.Y, s.blocks[position.Y*s.Width+position.X].BlockType.String())
-	s.SetBlock(NewBlock(s.BlockMap, s.EntityMap, Void, position), position)
-	fmt.Printf(" to %s \n", s.blocks[position.Y*s.Width+position.X].BlockType.String())
+	fmt.Printf("Block at position %d,%d changed from %s", position.X, position.Y, ToBlockName(s.blocks[position.Y*s.Width+position.X].Type))
+
+	header := NewEntityHeader(EntityVoid)
+	s.SetBlock(NewBlock(header, s.BlockMap, s.EntityMap, position), position)
+	fmt.Printf(" to %s \n", ToBlockName(s.blocks[position.Y*s.Width+position.X].Type))
 }
 
 func (s *Stage) ActivateMagicWall() {
@@ -137,90 +141,11 @@ func (s *Stage) CheckBlocked(world *ecs.World, position common.BlockPosition, co
 }
 
 func (s *Stage) CheckPositionOccupied(position common.BlockPosition) bool {
-	if !s.CheckBlockAtPosition(Void, position) {
+	if !s.CheckBlockAtPosition(EntityVoid, position) {
 		return true
 	}
 
 	return s.GetEntity(position) != nil
-}
-
-func (s *Stage) InitEntities(world *ecs.World, category ecs.EntityCategory, tiles []*tiled.LayerTile) {
-	for index, tile := range tiles {
-		blockPosition := common.NewBlockPositionFromIndex(index, s.EntityMap.Width)
-
-		entity, err := NewGameEntity(world, s, ecs.EntityType(uint32(category)+tile.ID), blockPosition)
-
-		if err == nil {
-			s.EntityMap.SetEntity(entity, blockPosition)
-		}
-	}
-}
-
-func (s *Stage) InitBlocks(world *Stage, tiles []*tiled.LayerTile) {
-	s.blocks = make([]*Block, len(tiles))
-
-	for index, tile := range tiles {
-		blockPosition := common.NewBlockPositionFromIndex(index, s.BlockMap.Width)
-		s.BlockMap.SetBlock(NewBlock(s.BlockMap, s.EntityMap, BlockType(tile.ID), blockPosition), blockPosition)
-	}
-
-	s.BlockMap.PrintBlockMap()
-}
-
-// InitBlocksFromGrid populates the block map from a flat BlockType slice (used by procedural generation).
-func (s *Stage) InitBlocksFromGrid(blockTypes []BlockType) {
-	s.blocks = make([]*Block, len(blockTypes))
-
-	for i, bt := range blockTypes {
-		pos := common.NewBlockPositionFromIndex(i, s.BlockMap.Width)
-		s.BlockMap.SetBlock(NewBlock(s.BlockMap, s.EntityMap, bt, pos), pos)
-	}
-
-	s.BlockMap.PrintBlockMap()
-}
-
-// InitEmptyEntityMap allocates the entity grid without requiring Tiled layer data.
-func (s *Stage) InitEmptyEntityMap() {
-	s.EntityMap.entities = make([]*ecs.Entity, s.Width*s.Height)
-}
-
-func getString(obj *tiled.Object, name string) string {
-	value := ""
-	for _, p := range obj.Properties {
-		if p.Name == name {
-			var val any = p.Value
-			switch v := val.(type) {
-			case string:
-				value = v
-			case float64:
-				value = fmt.Sprintf("%v", v)
-			default:
-				value = fmt.Sprintf("%v", v)
-			}
-			break
-		}
-	}
-
-	return value
-}
-
-func (s *Stage) InitObjectsEntities(world *ecs.World, category ecs.EntityCategory, objectLayer *tiled.ObjectGroup) {
-	for _, obj := range objectLayer.Objects {
-		if obj.Type == "EntityExitDoor" {
-
-			blockPos := s.GetBlockPosition(rl.Vector2{X: float32(obj.X), Y: float32(obj.Y)})
-			targetStage := getString(obj, "Stage")
-			targetPosition, err := common.ParseBlockPosition(getString(obj, "Position"))
-
-			if err != nil {
-				panic(err.Error())
-			}
-
-			door := NewExitDoor(world, s, blockPos, s.GetPosition(blockPos), targetStage, targetPosition)
-			s.EntityMap.SetEntity(door, blockPos)
-			s.ExitPosition = blockPos
-		}
-	}
 }
 
 // func (s *Stage) SpawnExitDoor(world *ecs.World, blockPos common.BlockPosition, targetStage string, targetPos common.BlockPosition) *ecs.Entity {
@@ -230,19 +155,30 @@ func (s *Stage) InitObjectsEntities(world *ecs.World, category ecs.EntityCategor
 // }
 
 func (s *Stage) Save(path string) error {
+	start := time.Now()
+
+	writer, err := NewTextFileWriter(path + "/" + "stage.txt")
+
+	if err != nil {
+		return err
+	}
+
+	s.WriteTo(writer)
+
+	writer.Close()
+
 	for _, b := range s.blocks {
 		fileName := fmt.Sprintf("block_%03d_%03d.entity.txt", b.Position.Y, b.Position.X)
-		file, err := os.Create(path + "/" + fileName)
+
+		writer, err := NewTextFileWriter(path + "/" + fileName)
 
 		if err != nil {
 			return err
 		}
 
-		writer := NewTextWriter(file)
-
 		b.WriteTo(writer)
 
-		file.Close()
+		writer.Close()
 	}
 
 	for _, e := range s.entities {
@@ -250,18 +186,240 @@ func (s *Stage) Save(path string) error {
 			continue
 		}
 
-		fileName := fmt.Sprintf("entity_%s.entity.txt", e.ID)
-		file, err := os.Create(path + "/" + fileName)
+		fileName := fmt.Sprintf("%s.entity.txt", e.ID)
+		writer, err := NewTextFileWriter(path + "/" + fileName)
 
 		if err != nil {
 			return err
 		}
 
-		writer := NewTextWriter(file)
-
 		e.WriteTo(writer)
 
-		file.Close()
+		writer.Close()
+	}
+
+	fmt.Printf("\nSaving stage %q in directory %q\n", s.Name, path)
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+
+	total := 1
+
+	fmt.Fprintf(tw, "%s\t:\t%d\t\n", "stage", 1)
+
+	for name, count := range EntityIdCounters.Counters {
+		fmt.Fprintf(tw, "%s\t:\t%d\t\n", name, count)
+		total += count
+	}
+	fmt.Fprintf(tw, "%s\t:\t%d\t\n", "total", total)
+
+	tw.Flush()
+	fmt.Printf("Elapsed time %s\n\n", time.Since(start))
+
+	return nil
+}
+
+func (s *Stage) Load(world *ecs.World, path string) error {
+	start := time.Now()
+	counters := NewEntityCounters()
+
+	reader, err := NewTextFileReader(path + "/" + "stage.txt")
+
+	if err != nil {
+		return err
+	}
+
+	s.ReadFrom(reader)
+
+	//reader.Close()
+
+	fileNames, err := filepath.Glob(filepath.Join(path, "*.entity.txt"))
+
+	if err != nil {
+		return err
+	}
+
+	for _, fileName := range fileNames {
+		blockPosition := common.NewBlockPosition(0, 0)
+
+		reader, err := NewTextFileReader(fileName)
+
+		if err != nil {
+			return err
+		}
+
+		header := &ecs.EntityHeader{}
+		header.ReadFrom(reader)
+
+		if header.Category == EntityCategoryBlock {
+			block := NewBlock(header, s.BlockMap, s.EntityMap, blockPosition)
+			block.ReadFrom(reader)
+			block.EntityHeader = header
+			s.BlockMap.SetBlock(block, block.Position)
+		} else {
+			entity, err := NewEntity(header, world, s, blockPosition)
+
+			if err != nil {
+				return err
+			}
+
+			entity.ReadFrom(reader)
+			entity.EntityHeader = header
+			position := ecs.GetComponent[components.PositionComponent](entity)
+			s.EntityMap.SetEntity(entity, position.CurrentBlockPosition)
+		}
+
+		counters.Increment(EntityTypeName(header.Type))
+	}
+
+	fmt.Printf("\nLoding stage %q from directory %q\n", s.Name, path)
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+
+	total := 1
+
+	fmt.Fprintf(tw, "%s\t:\t%d\t\n", "stage", 1)
+
+	for name, count := range counters.Counters {
+		fmt.Fprintf(tw, "%s\t:\t%d\t\n", name, count)
+		total += count
+	}
+	fmt.Fprintf(tw, "%s\t:\t%d\t\n", "total", total)
+
+	tw.Flush()
+	fmt.Printf("Elapsed time %s\n\n", time.Since(start))
+
+	return nil
+}
+
+func (s *Stage) WriteTo(w ecs.Writer) error {
+	w.WriteLabel("stage")
+	w.WriteString(s.Name, false)
+
+	s.MapSize.WriteTo(w)
+
+	w.WriteLabel("enter position")
+	w.WriteInt(s.EnterPosition.X, false)
+	w.WriteInt(s.EnterPosition.Y, false)
+
+	w.WriteLabel("exit position")
+	w.WriteInt(s.ExitPosition.X, false)
+	w.WriteInt(s.ExitPosition.Y, false)
+
+	w.WriteLabel("exit condition")
+	w.WriteBool(s.ExitCondition, false)
+
+	w.WriteLabel("diamonds")
+	w.WriteInt(s.DiamondsRequired, false)
+	w.WriteInt(s.DiamondPoints, false)
+	w.WriteInt(s.DiamondBonusPoints, false)
+
+	w.WriteLabel("time")
+	w.WriteInt(s.TimeLimit, false)
+	w.WriteFloat(s.TimeRemaining, false)
+	w.WriteBool(s.TimeExpired, false)
+
+	w.WriteLabel("magic wall")
+	w.WriteBool(s.MagicWallActive, false)
+	w.WriteFloat(s.MagicWallDuration, false)
+	w.WriteFloat(s.MagicWallTimer, false)
+
+	return nil
+}
+
+func (s *Stage) ReadFrom(r ecs.Reader) error {
+	r.ConsumeLabel("stage")
+
+	if err := ecs.WithChangedValue(r.ReadString, func(name string) {
+		s.Name = name
+	}); err != nil {
+		return err
+	}
+
+	if err := s.MapSize.ReadFrom(r); err != nil {
+		return err
+	}
+
+	s.BlockMap = NewBlockMap(s.MapSize, s.blockTextures)
+	s.EntityMap = NewEntityMap(s.MapSize, s.entityTextures, s.groundCorners)
+
+	r.ConsumeLabel("enter position")
+	if err := ecs.WithChangedValue(r.ReadInt, func(x int) {
+		s.EnterPosition.X = x
+	}); err != nil {
+		return err
+	}
+	if err := ecs.WithChangedValue(r.ReadInt, func(y int) {
+		s.EnterPosition.Y = y
+	}); err != nil {
+		return err
+	}
+
+	r.ConsumeLabel("exit position")
+	if err := ecs.WithChangedValue(r.ReadInt, func(x int) {
+		s.ExitPosition.X = x
+	}); err != nil {
+		return err
+	}
+	if err := ecs.WithChangedValue(r.ReadInt, func(y int) {
+		s.ExitPosition.Y = y
+	}); err != nil {
+		return err
+	}
+
+	r.ConsumeLabel("exit condition")
+	if err := ecs.WithChangedValue(r.ReadBool, func(exitCondition bool) {
+		s.ExitCondition = exitCondition
+	}); err != nil {
+		return err
+	}
+
+	r.ConsumeLabel("diamonds")
+	if err := ecs.WithChangedValue(r.ReadInt, func(diamondsRequired int) {
+		s.DiamondsRequired = diamondsRequired
+	}); err != nil {
+		return err
+	}
+	if err := ecs.WithChangedValue(r.ReadInt, func(diamondPoints int) {
+		s.DiamondPoints = diamondPoints
+	}); err != nil {
+		return err
+	}
+	if err := ecs.WithChangedValue(r.ReadInt, func(diamondBonusPoints int) {
+		s.DiamondBonusPoints = diamondBonusPoints
+	}); err != nil {
+		return err
+	}
+
+	r.ConsumeLabel("time")
+	if err := ecs.WithChangedValue(r.ReadInt, func(timeLimit int) {
+		s.TimeLimit = timeLimit
+	}); err != nil {
+		return err
+	}
+	if err := ecs.WithChangedValue(r.ReadFloat, func(timeRemaining float32) {
+		s.TimeRemaining = timeRemaining
+	}); err != nil {
+		return err
+	}
+	if err := ecs.WithChangedValue(r.ReadBool, func(timeExpired bool) {
+		s.TimeExpired = timeExpired
+	}); err != nil {
+		return err
+	}
+
+	r.ConsumeLabel("magic wall")
+	if err := ecs.WithChangedValue(r.ReadBool, func(magicWallActive bool) {
+		s.MagicWallActive = magicWallActive
+	}); err != nil {
+		return err
+	}
+	if err := ecs.WithChangedValue(r.ReadFloat, func(magicWallDuration float32) {
+		s.MagicWallDuration = magicWallDuration
+	}); err != nil {
+		return err
+	}
+	if err := ecs.WithChangedValue(r.ReadFloat, func(magicWallTimer float32) {
+		s.MagicWallTimer = magicWallTimer
+	}); err != nil {
+		return err
 	}
 
 	return nil

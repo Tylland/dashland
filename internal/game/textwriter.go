@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -55,8 +56,8 @@ func (m *TextWriter) WriteEntityType(et ecs.EntityType) error {
 	return m.write("%d", et)
 }
 
-func (m *TextWriter) WriteBlockType(v int) error {
-	return m.write("%d", v)
+func (m *TextWriter) WriteEntityCategory(cat ecs.EntityCategory) error {
+	return m.write("%d", cat)
 }
 
 func (m *TextWriter) WriteVersion(ver int) error {
@@ -160,4 +161,15 @@ func (m *TextWriter) Close() error {
 	}
 
 	return nil
+}
+
+func NewTextFileWriter(fileName string) (*TextWriter, error) {
+	file, err := os.Create(fileName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTextWriter(file), nil
+
 }

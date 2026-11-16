@@ -16,7 +16,7 @@ type EntityMap struct {
 }
 
 func NewEntityMap(mapSize MapSize, entityTextures *rl.Texture2D, groundCorners *rl.Texture2D) *EntityMap {
-	return &EntityMap{MapSize: mapSize, entityTextures: entityTextures, groundCorners: groundCorners, entities: []*ecs.Entity{}}
+	return &EntityMap{MapSize: mapSize, entityTextures: entityTextures, groundCorners: groundCorners, entities: make([]*ecs.Entity, mapSize.Count())}
 }
 
 func (m *EntityMap) GetEnterPosition(tiles []*tiled.LayerTile) (common.BlockPosition, bool) {
