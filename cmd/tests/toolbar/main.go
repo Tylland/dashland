@@ -14,6 +14,7 @@
 //   - Floating toolbar: drag it by the grip, it snaps to window edges,
 //     double-click the grip (or press Flip) to switch horizontal/vertical
 //   - Hover/pressed button states and tooltips
+//   - Resizable / maximizable window (maximize button or F11); the UI follows the window size
 //   - Canvas view: Ctrl+wheel zooms at the cursor; hold Space, press the left
 //     button and drag to pan; Home resets the view
 //   - Modal dialogs: message (OK), confirm (Yes/No), text input (OK/Cancel)
@@ -35,11 +36,15 @@ import (
 )
 
 const (
-	screenW   = 900
-	screenH   = 600
+	initialW  = 900 // starting (and minimum) window size
+	initialH  = 600
 	maxText   = 32
 	maxPoints = 2048
 )
+
+// Current window size. Refreshed every frame so the whole UI follows
+// resizing and maximizing.
+var screenW, screenH float32 = initialW, initialH
 
 // ---------------------------------------------------------------- Theme
 
@@ -124,6 +129,12 @@ func (b *Button) UpdateDraw() bool {
 	clicked := b.Update()
 	b.Draw()
 	return clicked
+}
+
+// keepOnScreen moves r back inside the window if a resize left it outside.
+func keepOnScreen(r *rl.Rectangle) {
+	r.X = clamp(r.X, 0, screenW-r.Width)
+	r.Y = clamp(r.Y, 0, screenH-r.Height)
 }
 
 func clamp(v, lo, hi float32) float32 {
@@ -237,7 +248,7 @@ func (d *Dialog) UpdateDraw() DialogResult {
 	}
 
 	// --- backdrop + panel
-	rl.DrawRectangle(0, 0, screenW, screenH, rl.Fade(rl.Black, 0.55))
+	rl.DrawRectangle(0, 0, int32(screenW), int32(screenH), rl.Fade(rl.Black, 0.55))
 	shadow := rl.NewRectangle(d.Bounds.X+4, d.Bounds.Y+6, d.Bounds.Width, d.Bounds.Height)
 	rl.DrawRectangleRounded(shadow, 0.04, 8, rl.Fade(rl.Black, 0.35))
 	rl.DrawRectangleRounded(d.Bounds, 0.04, 8, colPanel)
@@ -480,7 +491,7 @@ func (f *FileDialog) UpdateDraw() (string, DialogResult) {
 	b := f.Bounds
 
 	// --- backdrop + panel
-	rl.DrawRectangle(0, 0, screenW, screenH, rl.Fade(rl.Black, 0.55))
+	rl.DrawRectangle(0, 0, int32(screenW), int32(screenH), rl.Fade(rl.Black, 0.55))
 	rl.DrawRectangleRounded(rl.NewRectangle(b.X+4, b.Y+6, b.Width, b.Height), 0.03, 8, rl.Fade(rl.Black, 0.35))
 	rl.DrawRectangleRounded(b, 0.03, 8, colPanel)
 	rl.DrawRectangleRounded(titleBar, 0.4, 8, colTitle)
@@ -1110,7 +1121,7 @@ func (w *Window) UpdateDrag(can bool) {
 
 func (w *Window) DrawFrame() {
 	b := w.Bounds
-	rl.DrawRectangle(0, 0, screenW, screenH, rl.Fade(rl.Black, 0.55))
+	rl.DrawRectangle(0, 0, int32(screenW), int32(screenH), rl.Fade(rl.Black, 0.55))
 	rl.DrawRectangleRounded(rl.NewRectangle(b.X+4, b.Y+6, b.Width, b.Height), 0.03, 8, rl.Fade(rl.Black, 0.35))
 	rl.DrawRectangleRounded(b, 0.03, 8, colPanel)
 	rl.DrawRectangleRounded(w.titleBar(), 0.4, 8, colTitle)
@@ -1187,15 +1198,15 @@ func (d *EntityDialog) UpdateDraw() (int, DialogResult) {
 // --------------------------------------------------------------- Floating toolbar
 
 const (
-	GripSize   = 18 // thickness of the drag handle
-	TbPad      = 8
-	TbGap      = 6
-	TbBtnW     = 96
-	TbBtnH     = 30
-	TbSepExtra = 10 // handy value for Button.GapAfter (group separator)
-	SnapDist   = 16 // magnetic distance to screen edges
-	SnapMargin = 8  // resting distance from the edge once snapped
-	StatusH    = 24 // height of the status bar at the bottom
+	gripSize   = 18 // thickness of the drag handle
+	tbPad      = 8
+	tbGap      = 6
+	tbBtnW     = 96
+	tbBtnH     = 30
+	tbSepExtra = 10 // handy value for Button.GapAfter (group separator)
+	snapDist   = 16 // magnetic distance to screen edges
+	snapMargin = 8  // resting distance from the edge once snapped
+	statusH    = 24 // height of the status bar at the bottom
 )
 
 // Toolbar is a free-floating, draggable panel that owns and lays out a list of Buttons.
@@ -1235,11 +1246,11 @@ func (t *Toolbar) size() (w, h float32) {
 		gaps = 0
 	}
 	if t.Vertical {
-		span := n*TbBtnH + gaps*TbGap + extra
-		return TbBtnW + 2*TbPad, GripSize + TbPad + span + TbPad
+		span := n*tbBtnH + gaps*tbGap + extra
+		return tbBtnW + 2*tbPad, gripSize + tbPad + span + tbPad
 	}
-	span := n*TbBtnW + gaps*TbGap + extra
-	return GripSize + TbPad + span + TbPad, TbBtnH + 2*TbPad
+	span := n*tbBtnW + gaps*tbGap + extra
+	return gripSize + tbPad + span + tbPad, tbBtnH + 2*tbPad
 }
 
 func (t *Toolbar) Bounds() rl.Rectangle {
@@ -1250,32 +1261,32 @@ func (t *Toolbar) Bounds() rl.Rectangle {
 func (t *Toolbar) gripRect() rl.Rectangle {
 	w, h := t.size()
 	if t.Vertical {
-		return rl.NewRectangle(t.Pos.X, t.Pos.Y, w, GripSize)
+		return rl.NewRectangle(t.Pos.X, t.Pos.Y, w, gripSize)
 	}
-	return rl.NewRectangle(t.Pos.X, t.Pos.Y, GripSize, h)
+	return rl.NewRectangle(t.Pos.X, t.Pos.Y, gripSize, h)
 }
 
 // clampToScreen keeps the whole toolbar inside the window (above the status bar).
 func (t *Toolbar) clampToScreen() {
 	w, h := t.size()
 	t.Pos.X = clamp(t.Pos.X, 0, screenW-w)
-	t.Pos.Y = clamp(t.Pos.Y, 0, screenH-StatusH-h)
+	t.Pos.Y = clamp(t.Pos.Y, 0, screenH-statusH-h)
 }
 
 // snap pulls the toolbar to a screen edge when it is close to one.
 func (t *Toolbar) snap() {
 	w, h := t.size()
-	if t.Pos.X < SnapDist {
-		t.Pos.X = SnapMargin
+	if t.Pos.X < snapDist {
+		t.Pos.X = snapMargin
 	}
-	if t.Pos.X+w > screenW-SnapDist {
-		t.Pos.X = screenW - w - SnapMargin
+	if t.Pos.X+w > screenW-snapDist {
+		t.Pos.X = screenW - w - snapMargin
 	}
-	if t.Pos.Y < SnapDist {
-		t.Pos.Y = SnapMargin
+	if t.Pos.Y < snapDist {
+		t.Pos.Y = snapMargin
 	}
-	if t.Pos.Y+h > screenH-StatusH-SnapDist {
-		t.Pos.Y = screenH - StatusH - h - SnapMargin
+	if t.Pos.Y+h > screenH-statusH-snapDist {
+		t.Pos.Y = screenH - statusH - h - snapMargin
 	}
 }
 
@@ -1328,33 +1339,33 @@ func (t *Toolbar) UpdateDraw(enabled bool) {
 	}
 	for i := -1; i <= 1; i++ {
 		if t.Vertical {
-			rl.DrawCircle(int32(b.X+b.Width/2)+int32(i*8), int32(b.Y+GripSize/2), 2, dotCol)
+			rl.DrawCircle(int32(b.X+b.Width/2)+int32(i*8), int32(b.Y+gripSize/2), 2, dotCol)
 		} else {
-			rl.DrawCircle(int32(b.X+GripSize/2), int32(b.Y+b.Height/2)+int32(i*8), 2, dotCol)
+			rl.DrawCircle(int32(b.X+gripSize/2), int32(b.Y+b.Height/2)+int32(i*8), 2, dotCol)
 		}
 	}
 
 	// --- buttons: the toolbar only positions them, each Button handles itself
 	vertical := t.Vertical // a button callback may flip the layout mid-loop
-	x, y := b.X+TbPad, b.Y+TbPad
+	x, y := b.X+tbPad, b.Y+tbPad
 	if vertical {
-		y += GripSize
+		y += gripSize
 	} else {
-		x += GripSize
+		x += gripSize
 	}
 
 	var hovered *Button
 	for _, btn := range t.Buttons {
-		btn.Bounds = rl.NewRectangle(x, y, TbBtnW, TbBtnH)
+		btn.Bounds = rl.NewRectangle(x, y, tbBtnW, tbBtnH)
 		btn.Enabled = enabled && !t.dragging
 		btn.UpdateDraw()
 		if btn.Hovered() {
 			hovered = btn
 		}
 		if vertical {
-			y += TbBtnH + TbGap + btn.GapAfter
+			y += tbBtnH + tbGap + btn.GapAfter
 		} else {
-			x += TbBtnW + TbGap + btn.GapAfter
+			x += tbBtnW + tbGap + btn.GapAfter
 		}
 	}
 
@@ -1384,10 +1395,12 @@ type Dot struct {
 }
 
 func main() {
-	rl.InitWindow(screenW, screenH, "raylib-go - toolbar & dialogs")
+	rl.SetConfigFlags(rl.FlagWindowResizable) // enables the maximize button and edge resizing
+	rl.InitWindow(initialW, initialH, "raylib-go - toolbar & dialogs")
 	defer rl.CloseWindow()
 	rl.SetTargetFPS(60)
-	rl.SetExitKey(rl.KeyNull) // Esc closes dialogs instead of the app
+	rl.SetWindowMinSize(initialW, initialH) // the layout is designed for at least this size
+	rl.SetExitKey(rl.KeyNull)               // Esc closes dialogs instead of the app
 
 	// Entities are textures; they must be created after the window exists.
 	entities := DefaultEntities()
@@ -1430,7 +1443,7 @@ func main() {
 	colorBtn := toolbar.Add(NewButton("Color", "Cycle the dot color", func() {
 		colorIdx = (colorIdx + 1) % len(palette)
 	}))
-	colorBtn.GapAfter = TbSepExtra
+	colorBtn.GapAfter = tbSepExtra
 	colorBtn.Decorate = func(b *Button) { // color swatch on the button
 		sw := rl.NewRectangle(b.Bounds.X+b.Bounds.Width-22, b.Bounds.Y+7, 16, 16)
 		rl.DrawRectangleRounded(sw, 0.3, 4, palette[colorIdx])
@@ -1444,13 +1457,29 @@ func main() {
 
 	for !rl.WindowShouldClose() {
 		frame++
+
+		// follow window resizing / maximizing
+		screenW, screenH = float32(rl.GetScreenWidth()), float32(rl.GetScreenHeight())
+		if rl.IsWindowResized() {
+			toolbar.clampToScreen()
+			keepOnScreen(&dlg.Bounds)
+			keepOnScreen(&fd.Bounds)
+			keepOnScreen(&ed.Bounds)
+		}
+		if rl.IsKeyPressed(rl.KeyF11) { // toggle maximized
+			if rl.IsWindowMaximized() {
+				rl.RestoreWindow()
+			} else {
+				rl.MaximizeWindow()
+			}
+		}
 		modal := dlg.Kind != DlgNone || fd.Active || ed.Active
 
 		// canvas input (blocked while a dialog is open or when over the toolbar)
 		m := rl.GetMousePosition()
 		overToolbar := rl.CheckCollisionPointRec(m, toolbar.Bounds())
 		view.Update(!modal, overToolbar)
-		if !modal && !view.Grab && !view.Panning && !overToolbar && m.Y < screenH-StatusH &&
+		if !modal && !view.Grab && !view.Panning && !overToolbar && m.Y < screenH-statusH &&
 			rl.IsMouseButtonPressed(rl.MouseButtonLeft) && len(dots) < maxPoints {
 			// dots live in world coordinates, so zoom/pan do not move them
 			dots = append(dots, Dot{Pos: view.ScreenToWorld(m), Color: palette[colorIdx], Entity: selectedEntity})
@@ -1479,16 +1508,16 @@ func main() {
 		}
 
 		if len(dots) == 0 && openedPath == "" {
-			rl.DrawText("Click anywhere to place the selected entity", screenW/2-200, screenH/2, 20, colTextDim)
+			rl.DrawText("Click anywhere to place the selected entity", int32(screenW)/2-200, int32(screenH)/2, 20, colTextDim)
 		}
 
 		// status bar
-		rl.DrawRectangle(0, screenH-StatusH, screenW, StatusH, colToolbar)
+		rl.DrawRectangle(0, int32(screenH)-statusH, int32(screenW), statusH, colToolbar)
 		status := fmt.Sprintf("%s  |  %d placed  |  entity: %s  |  zoom %d%%",
 			docName, len(dots), entities[selectedEntity].Name, int(view.Camera.Zoom*100+0.5))
-		rl.DrawText(status, 10, screenH-20, 16, colTextDim)
+		rl.DrawText(status, 10, int32(screenH)-20, 16, colTextDim)
 		help := "Ctrl+wheel: zoom  |  Space+drag: pan  |  Home: reset"
-		rl.DrawText(help, screenW-rl.MeasureText(help, 16)-10, screenH-20, 16, colTextDim)
+		rl.DrawText(help, int32(screenW)-rl.MeasureText(help, 16)-10, int32(screenH)-20, 16, colTextDim)
 
 		// toolbar (its buttons run their own OnClick handlers)
 		toolbar.UpdateDraw(!modal)

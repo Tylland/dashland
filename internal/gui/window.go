@@ -27,8 +27,8 @@ func (w *Window) UpdateDrag(can bool) {
 	}
 	if w.dragging {
 		if rl.IsMouseButtonDown(rl.MouseButtonLeft) {
-			w.Bounds.X = clamp(m.X-w.dragOffset.X, 0, ScreenW-w.Bounds.Width)
-			w.Bounds.Y = clamp(m.Y-w.dragOffset.Y, 0, ScreenH-w.Bounds.Height)
+			w.Bounds.X = Clamp(m.X-w.dragOffset.X, 0, ScreenW-w.Bounds.Width)
+			w.Bounds.Y = Clamp(m.Y-w.dragOffset.Y, 0, ScreenH-w.Bounds.Height)
 		} else {
 			w.dragging = false
 		}
@@ -37,7 +37,7 @@ func (w *Window) UpdateDrag(can bool) {
 
 func (w *Window) DrawFrame() {
 	b := w.Bounds
-	rl.DrawRectangle(0, 0, ScreenW, ScreenH, rl.Fade(rl.Black, 0.55))
+	rl.DrawRectangle(0, 0, int32(ScreenW), int32(ScreenH), rl.Fade(rl.Black, 0.55))
 	rl.DrawRectangleRounded(rl.NewRectangle(b.X+4, b.Y+6, b.Width, b.Height), 0.03, 8, rl.Fade(rl.Black, 0.35))
 	rl.DrawRectangleRounded(b, 0.03, 8, ColPanel)
 	rl.DrawRectangleRounded(w.titleBar(), 0.4, 8, ColTitle)

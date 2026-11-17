@@ -73,7 +73,7 @@ func (v *View) Update(enabled, overUI bool) {
 			v.Camera.Target = world
 
 			z := v.Camera.Zoom * float32(math.Pow(zoomStep, float64(wheel)))
-			v.Camera.Zoom = clamp(z, minZoom, maxZoom)
+			v.Camera.Zoom = Clamp(z, minZoom, maxZoom)
 		}
 	}
 }

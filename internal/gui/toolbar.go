@@ -37,7 +37,7 @@ func (t *Toolbar) Add(b *Button) *Button {
 // Flip switches between horizontal and vertical layout.
 func (t *Toolbar) Flip() {
 	t.Vertical = !t.Vertical
-	t.clampToScreen()
+	t.ClampToScreen()
 }
 
 func (t *Toolbar) size() (w, h float32) {
@@ -72,10 +72,10 @@ func (t *Toolbar) gripRect() rl.Rectangle {
 }
 
 // clampToScreen keeps the whole toolbar inside the window (above the status bar).
-func (t *Toolbar) clampToScreen() {
+func (t *Toolbar) ClampToScreen() {
 	w, h := t.size()
-	t.Pos.X = clamp(t.Pos.X, 0, ScreenW-w)
-	t.Pos.Y = clamp(t.Pos.Y, 0, ScreenH-StatusH-h)
+	t.Pos.X = Clamp(t.Pos.X, 0, ScreenW-w)
+	t.Pos.Y = Clamp(t.Pos.Y, 0, ScreenH-StatusH-h)
 }
 
 // snap pulls the toolbar to a screen edge when it is close to one.
@@ -119,7 +119,7 @@ func (t *Toolbar) UpdateDraw(enabled bool) {
 	if t.dragging {
 		if rl.IsMouseButtonDown(rl.MouseButtonLeft) {
 			t.Pos = rl.NewVector2(m.X-t.dragOffset.X, m.Y-t.dragOffset.Y)
-			t.clampToScreen()
+			t.ClampToScreen()
 			t.snap()
 		} else {
 			t.dragging = false
@@ -184,8 +184,8 @@ func (t *Toolbar) UpdateDraw(enabled bool) {
 	if hovered != nil && hovered.Tooltip != "" && t.hoverTimer > 0.5 {
 		tw := float32(rl.MeasureText(hovered.Tooltip, 16))
 		tr := rl.NewRectangle(m.X+12, m.Y+22, tw+16, 26)
-		tr.X = clamp(tr.X, 4, ScreenW-tr.Width-4)
-		tr.Y = clamp(tr.Y, 4, ScreenH-tr.Height-4)
+		tr.X = Clamp(tr.X, 4, ScreenW-tr.Width-4)
+		tr.Y = Clamp(tr.Y, 4, ScreenH-tr.Height-4)
 		rl.DrawRectangleRounded(tr, 0.3, 6, rl.NewColor(20, 20, 26, 240))
 		rl.DrawText(hovered.Tooltip, int32(tr.X)+8, int32(tr.Y)+5, 16, ColText)
 	}

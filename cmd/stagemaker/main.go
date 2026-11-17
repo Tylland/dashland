@@ -31,6 +31,17 @@ import (
 	"github.com/tylland/dashland/internal/gui"
 )
 
+// const (
+// 	initialW  = 900 // starting (and minimum) window size
+// 	initialH  = 600
+// 	maxText   = 32
+// 	maxPoints = 2048
+// )
+
+// // Current window size. Refreshed every frame so the whole UI follows
+// // resizing and maximizing.
+// var screenW, screenH float32 = initialW, initialH
+
 type Dot struct {
 	Pos    rl.Vector2
 	Color  rl.Color
@@ -38,10 +49,10 @@ type Dot struct {
 }
 
 func main() {
-	rl.InitWindow(gui.ScreenW, gui.ScreenH, "raylib-go - toolbar & dialogs")
+	rl.SetConfigFlags(rl.FlagWindowResizable) // enables the maximize button and edge resizing
+	rl.InitWindow(int32(gui.ScreenW), int32(gui.ScreenH), "dashland - stage maker")
 	defer rl.CloseWindow()
-	rl.SetTargetFPS(60)
-	rl.SetExitKey(rl.KeyNull) // Esc closes dialogs instead of the app
+	rl.SetWindowMinSize(int(gui.ScreenW), int(gui.ScreenH)) // the layout is designed for at least this size
 
 	// Entities are textures; they must be created after the window exists.
 	entities := gui.DefaultEntities()
@@ -98,6 +109,22 @@ func main() {
 
 	for !rl.WindowShouldClose() {
 		gui.Frame++
+
+		// follow window resizing / maximizing
+		gui.ScreenW, gui.ScreenH = float32(rl.GetScreenWidth()), float32(rl.GetScreenHeight())
+		if rl.IsWindowResized() {
+			toolbar.ClampToScreen()
+			gui.KeepOnScreen(&dlg.Bounds)
+			gui.KeepOnScreen(&fd.Bounds)
+			gui.KeepOnScreen(&ed.Bounds)
+		}
+		if rl.IsKeyPressed(rl.KeyF11) { // toggle maximized
+			if rl.IsWindowMaximized() {
+				rl.RestoreWindow()
+			} else {
+				rl.MaximizeWindow()
+			}
+		}
 		modal := dlg.Kind != gui.DlgNone || fd.Active || ed.Active
 
 		// canvas input (blocked while a dialog is open or when over the toolbar)
@@ -133,16 +160,16 @@ func main() {
 		}
 
 		if len(dots) == 0 && openedPath == "" {
-			rl.DrawText("Click anywhere to place the selected entity", gui.ScreenW/2-200, gui.ScreenH/2, 20, gui.ColTextDim)
+			rl.DrawText("Click anywhere to place the selected entity", int32(gui.ScreenW/2-200), int32(gui.ScreenH/2), 20, gui.ColTextDim)
 		}
 
 		// status bar
-		rl.DrawRectangle(0, gui.ScreenH-gui.StatusH, gui.ScreenW, gui.StatusH, gui.ColToolbar)
+		rl.DrawRectangle(0, int32(gui.ScreenH-gui.StatusH), int32(gui.ScreenW), gui.StatusH, gui.ColToolbar)
 		status := fmt.Sprintf("%s  |  %d placed  |  entity: %s  |  zoom %d%%",
 			docName, len(dots), entities[selectedEntity].Name, int(view.Camera.Zoom*100+0.5))
-		rl.DrawText(status, 10, gui.ScreenH-20, 16, gui.ColTextDim)
+		rl.DrawText(status, 10, int32(gui.ScreenH-20), 16, gui.ColTextDim)
 		help := "Ctrl+wheel: zoom  |  Space+drag: pan  |  Home: reset"
-		rl.DrawText(help, gui.ScreenW-rl.MeasureText(help, 16)-10, gui.ScreenH-20, 16, gui.ColTextDim)
+		rl.DrawText(help, int32(gui.ScreenW)-rl.MeasureText(help, 16)-10, int32(gui.ScreenH)-20, 16, gui.ColTextDim)
 
 		// toolbar (its buttons run their own OnClick handlers)
 		toolbar.UpdateDraw(!modal)

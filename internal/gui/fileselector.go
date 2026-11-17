@@ -164,8 +164,8 @@ func (f *FileDialog) UpdateDraw() (string, DialogResult) {
 	}
 	if f.dragging {
 		if rl.IsMouseButtonDown(rl.MouseButtonLeft) {
-			f.Bounds.X = clamp(m.X-f.dragOffset.X, 0, ScreenW-f.Bounds.Width)
-			f.Bounds.Y = clamp(m.Y-f.dragOffset.Y, 0, ScreenH-f.Bounds.Height)
+			f.Bounds.X = Clamp(m.X-f.dragOffset.X, 0, ScreenW-f.Bounds.Width)
+			f.Bounds.Y = Clamp(m.Y-f.dragOffset.Y, 0, ScreenH-f.Bounds.Height)
 		} else {
 			f.dragging = false
 		}
@@ -173,7 +173,7 @@ func (f *FileDialog) UpdateDraw() (string, DialogResult) {
 	b := f.Bounds
 
 	// --- backdrop + panel
-	rl.DrawRectangle(0, 0, ScreenW, ScreenH, rl.Fade(rl.Black, 0.55))
+	rl.DrawRectangle(0, 0, int32(ScreenW), int32(ScreenH), rl.Fade(rl.Black, 0.55))
 	rl.DrawRectangleRounded(rl.NewRectangle(b.X+4, b.Y+6, b.Width, b.Height), 0.03, 8, rl.Fade(rl.Black, 0.35))
 	rl.DrawRectangleRounded(b, 0.03, 8, ColPanel)
 	rl.DrawRectangleRounded(titleBar, 0.4, 8, ColTitle)

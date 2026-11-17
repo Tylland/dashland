@@ -93,15 +93,15 @@ func (d *Dialog) UpdateDraw() DialogResult {
 	}
 	if d.dragging {
 		if rl.IsMouseButtonDown(rl.MouseButtonLeft) {
-			d.Bounds.X = clamp(m.X-d.dragOffset.X, 0, ScreenW-d.Bounds.Width)
-			d.Bounds.Y = clamp(m.Y-d.dragOffset.Y, 0, ScreenH-d.Bounds.Height)
+			d.Bounds.X = Clamp(m.X-d.dragOffset.X, 0, ScreenW-d.Bounds.Width)
+			d.Bounds.Y = Clamp(m.Y-d.dragOffset.Y, 0, ScreenH-d.Bounds.Height)
 		} else {
 			d.dragging = false
 		}
 	}
 
 	// --- backdrop + panel
-	rl.DrawRectangle(0, 0, ScreenW, ScreenH, rl.Fade(rl.Black, 0.55))
+	rl.DrawRectangle(0, 0, int32(ScreenW), int32(ScreenH), rl.Fade(rl.Black, 0.55))
 	shadow := rl.NewRectangle(d.Bounds.X+4, d.Bounds.Y+6, d.Bounds.Width, d.Bounds.Height)
 	rl.DrawRectangleRounded(shadow, 0.04, 8, rl.Fade(rl.Black, 0.35))
 	rl.DrawRectangleRounded(d.Bounds, 0.04, 8, ColPanel)

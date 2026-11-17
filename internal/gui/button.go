@@ -68,13 +68,3 @@ func (b *Button) UpdateDraw() bool {
 	b.Draw()
 	return clicked
 }
-
-func clamp(v, lo, hi float32) float32 {
-	if v < lo {
-		return lo
-	}
-	if v > hi {
-		return hi
-	}
-	return v
-}
