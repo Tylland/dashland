@@ -44,17 +44,17 @@ const (
 // ---------------------------------------------------------------- Theme
 
 var (
-	ColBG       = rl.NewColor(36, 38, 46, 255)
-	ColToolbar  = rl.NewColor(52, 55, 66, 255)
-	ColBtn      = rl.NewColor(70, 74, 90, 255)
-	ColBtnHover = rl.NewColor(92, 98, 122, 255)
-	ColBtnDown  = rl.NewColor(56, 60, 76, 255)
-	ColBtnOff   = rl.NewColor(60, 62, 70, 255)
-	ColAccent   = rl.NewColor(90, 150, 255, 255)
-	ColPanel    = rl.NewColor(58, 61, 74, 255)
-	ColTitle    = rl.NewColor(44, 47, 58, 255)
-	ColText     = rl.NewColor(235, 237, 245, 255)
-	ColTextDim  = rl.NewColor(140, 145, 160, 255)
+	colBG       = rl.NewColor(36, 38, 46, 255)
+	colToolbar  = rl.NewColor(52, 55, 66, 255)
+	colBtn      = rl.NewColor(70, 74, 90, 255)
+	colBtnHover = rl.NewColor(92, 98, 122, 255)
+	colBtnDown  = rl.NewColor(56, 60, 76, 255)
+	colBtnOff   = rl.NewColor(60, 62, 70, 255)
+	colAccent   = rl.NewColor(90, 150, 255, 255)
+	colPanel    = rl.NewColor(58, 61, 74, 255)
+	colTitle    = rl.NewColor(44, 47, 58, 255)
+	colText     = rl.NewColor(235, 237, 245, 255)
+	colTextDim  = rl.NewColor(140, 145, 160, 255)
 )
 
 // -------------------------------------------------------------- Widgets
@@ -95,20 +95,20 @@ func (b *Button) Update() bool {
 }
 
 func (b *Button) Draw() {
-	bg := ColBtn
+	bg := colBtn
 	switch {
 	case !b.Enabled:
-		bg = ColBtnOff
+		bg = colBtnOff
 	case b.pressed:
-		bg = ColBtnDown
+		bg = colBtnDown
 	case b.hovered:
-		bg = ColBtnHover
+		bg = colBtnHover
 	}
 	rl.DrawRectangleRounded(b.Bounds, 0.25, 6, bg)
 
-	fg := ColText
+	fg := colText
 	if !b.Enabled {
-		fg = ColTextDim
+		fg = colTextDim
 	}
 	tw := rl.MeasureText(b.Label, 18)
 	rl.DrawText(b.Label,
@@ -240,21 +240,21 @@ func (d *Dialog) UpdateDraw() DialogResult {
 	rl.DrawRectangle(0, 0, screenW, screenH, rl.Fade(rl.Black, 0.55))
 	shadow := rl.NewRectangle(d.Bounds.X+4, d.Bounds.Y+6, d.Bounds.Width, d.Bounds.Height)
 	rl.DrawRectangleRounded(shadow, 0.04, 8, rl.Fade(rl.Black, 0.35))
-	rl.DrawRectangleRounded(d.Bounds, 0.04, 8, ColPanel)
-	rl.DrawRectangleRounded(titleBar, 0.4, 8, ColTitle)
-	rl.DrawRectangle(int32(d.Bounds.X), int32(d.Bounds.Y)+18, int32(d.Bounds.Width), 12, ColTitle)
-	rl.DrawText(d.Title, int32(d.Bounds.X)+12, int32(d.Bounds.Y)+6, 18, ColText)
+	rl.DrawRectangleRounded(d.Bounds, 0.04, 8, colPanel)
+	rl.DrawRectangleRounded(titleBar, 0.4, 8, colTitle)
+	rl.DrawRectangle(int32(d.Bounds.X), int32(d.Bounds.Y)+18, int32(d.Bounds.Width), 12, colTitle)
+	rl.DrawText(d.Title, int32(d.Bounds.X)+12, int32(d.Bounds.Y)+6, 18, colText)
 
 	// --- message
-	rl.DrawText(d.Message, int32(d.Bounds.X)+20, int32(d.Bounds.Y)+46, 18, ColText)
+	rl.DrawText(d.Message, int32(d.Bounds.X)+20, int32(d.Bounds.Y)+46, 18, colText)
 
 	// --- text input field
 	if d.Kind == DlgInput {
 		box := rl.NewRectangle(d.Bounds.X+20, d.Bounds.Y+82, d.Bounds.Width-40, 34)
 		border := rl.NewRectangle(box.X-1, box.Y-1, box.Width+2, box.Height+2)
-		rl.DrawRectangleRounded(border, 0.2, 6, ColAccent)
-		rl.DrawRectangleRounded(box, 0.2, 6, ColTitle)
-		rl.DrawText(string(d.Input), int32(box.X)+10, int32(box.Y)+8, 18, ColText)
+		rl.DrawRectangleRounded(border, 0.2, 6, colAccent)
+		rl.DrawRectangleRounded(box, 0.2, 6, colTitle)
+		rl.DrawText(string(d.Input), int32(box.X)+10, int32(box.Y)+8, 18, colText)
 
 		if canInteract {
 			for {
@@ -282,7 +282,7 @@ func (d *Dialog) UpdateDraw() DialogResult {
 		}
 		if int(rl.GetTime()*2)%2 == 0 { // blinking caret
 			cx := int32(box.X) + 10 + rl.MeasureText(string(d.Input), 18) + 2
-			rl.DrawRectangle(cx, int32(box.Y)+7, 2, 20, ColText)
+			rl.DrawRectangle(cx, int32(box.Y)+7, 2, 20, colText)
 		}
 	}
 
@@ -482,16 +482,16 @@ func (f *FileDialog) UpdateDraw() (string, DialogResult) {
 	// --- backdrop + panel
 	rl.DrawRectangle(0, 0, screenW, screenH, rl.Fade(rl.Black, 0.55))
 	rl.DrawRectangleRounded(rl.NewRectangle(b.X+4, b.Y+6, b.Width, b.Height), 0.03, 8, rl.Fade(rl.Black, 0.35))
-	rl.DrawRectangleRounded(b, 0.03, 8, ColPanel)
-	rl.DrawRectangleRounded(titleBar, 0.4, 8, ColTitle)
-	rl.DrawRectangle(int32(b.X), int32(b.Y)+18, int32(b.Width), 12, ColTitle)
-	rl.DrawText("Open file", int32(b.X)+12, int32(b.Y)+6, 18, ColText)
+	rl.DrawRectangleRounded(b, 0.03, 8, colPanel)
+	rl.DrawRectangleRounded(titleBar, 0.4, 8, colTitle)
+	rl.DrawRectangle(int32(b.X), int32(b.Y)+18, int32(b.Width), 12, colTitle)
+	rl.DrawText("Open file", int32(b.X)+12, int32(b.Y)+6, 18, colText)
 
 	// --- path bar + Up button
 	pathRect := rl.NewRectangle(b.X+16, b.Y+40, b.Width-32-60, 28)
 	upRect := rl.NewRectangle(pathRect.X+pathRect.Width+8, b.Y+40, 52, 28)
-	rl.DrawRectangleRounded(pathRect, 0.2, 6, ColTitle)
-	rl.DrawText(fitText(f.Dir, int32(pathRect.Width)-16, 16), int32(pathRect.X)+8, int32(pathRect.Y)+6, 16, ColTextDim)
+	rl.DrawRectangleRounded(pathRect, 0.2, 6, colTitle)
+	rl.DrawText(fitText(f.Dir, int32(pathRect.Width)-16, 16), int32(pathRect.X)+8, int32(pathRect.Y)+6, 16, colTextDim)
 	f.upBtn.Bounds, f.upBtn.Enabled = upRect, can
 	f.upBtn.UpdateDraw()
 
@@ -551,14 +551,14 @@ func (f *FileDialog) UpdateDraw() (string, DialogResult) {
 	}
 
 	// --- list drawing (clipped)
-	rl.DrawRectangleRounded(list, 0.02, 4, ColTitle)
+	rl.DrawRectangleRounded(list, 0.02, 4, colTitle)
 	rl.BeginScissorMode(int32(list.X), int32(list.Y), int32(list.Width), int32(list.Height))
 	for i := f.Scroll; i < len(f.Entries) && i < f.Scroll+visible+1; i++ {
 		e := f.Entries[i]
 		row := rl.NewRectangle(list.X, list.Y+float32((i-f.Scroll)*fdRowH), list.Width, fdRowH)
 		switch {
 		case i == f.Selected:
-			rl.DrawRectangleRec(row, rl.Fade(ColAccent, 0.45))
+			rl.DrawRectangleRec(row, rl.Fade(colAccent, 0.45))
 		case can && rl.CheckCollisionPointRec(m, row) && rl.CheckCollisionPointRec(m, list):
 			rl.DrawRectangleRec(row, rl.Fade(rl.White, 0.08))
 		}
@@ -566,22 +566,22 @@ func (f *FileDialog) UpdateDraw() (string, DialogResult) {
 		// icon: folder = accent tab+body, file = gray page
 		ix, iy := int32(row.X)+8, int32(row.Y)+5
 		if e.IsDir {
-			rl.DrawRectangle(ix, iy, 8, 4, ColAccent)
-			rl.DrawRectangle(ix, iy+3, 16, 11, ColAccent)
+			rl.DrawRectangle(ix, iy, 8, 4, colAccent)
+			rl.DrawRectangle(ix, iy+3, 16, 11, colAccent)
 		} else {
-			rl.DrawRectangle(ix+2, iy, 12, 14, ColTextDim)
+			rl.DrawRectangle(ix+2, iy, 12, 14, colTextDim)
 		}
 
-		rl.DrawText(e.Name, int32(row.X)+32, int32(row.Y)+4, 16, ColText)
+		rl.DrawText(e.Name, int32(row.X)+32, int32(row.Y)+4, 16, colText)
 		if !e.IsDir {
 			sz := humanSize(e.Size)
-			rl.DrawText(sz, int32(row.X+row.Width)-rl.MeasureText(sz, 14)-16, int32(row.Y)+5, 14, ColTextDim)
+			rl.DrawText(sz, int32(row.X+row.Width)-rl.MeasureText(sz, 14)-16, int32(row.Y)+5, 14, colTextDim)
 		}
 	}
 	if f.Err != "" {
 		rl.DrawText(fitText("Cannot read folder: "+f.Err, int32(list.Width)-24, 14), int32(list.X)+12, int32(list.Y)+fdRowH+8, 14, rl.NewColor(255, 120, 120, 255))
 	} else if len(f.Entries) == 0 || (len(f.Entries) == 1 && f.Entries[0].Name == "..") {
-		rl.DrawText("(empty folder)", int32(list.X)+32, int32(list.Y)+fdRowH+6, 14, ColTextDim)
+		rl.DrawText("(empty folder)", int32(list.X)+32, int32(list.Y)+fdRowH+6, 14, colTextDim)
 	}
 	rl.EndScissorMode()
 
@@ -599,7 +599,7 @@ func (f *FileDialog) UpdateDraw() (string, DialogResult) {
 	if f.Selected >= 0 && f.Selected < len(f.Entries) {
 		label = f.Entries[f.Selected].Name
 	}
-	rl.DrawText(fitText(label, int32(b.Width)-32-2*bw-30, 16), int32(b.X)+16, int32(by)+9, 16, ColTextDim)
+	rl.DrawText(fitText(label, int32(b.Width)-32-2*bw-30, 16), int32(b.X)+16, int32(by)+9, 16, colTextDim)
 
 	rightX := b.X + b.Width - 16
 	f.pick, f.result = "", ResNone
@@ -748,7 +748,7 @@ func (v *View) DrawGrid() {
 	br := v.ScreenToWorld(rl.NewVector2(screenW, screenH))
 	thick := 1 / z // constant 1px on screen
 	line := rl.Fade(rl.White, 0.07)
-	axis := rl.Fade(ColAccent, 0.55)
+	axis := rl.Fade(colAccent, 0.55)
 
 	for x := float32(math.Floor(float64(tl.X/spacing))) * spacing; x <= br.X; x += spacing {
 		c := line
@@ -1034,7 +1034,7 @@ func (g *ItemGrid) UpdateDraw(enabled bool) {
 	}
 
 	// --- drawing (clipped to the grid)
-	rl.DrawRectangleRounded(g.Bounds, 0.02, 4, ColTitle)
+	rl.DrawRectangleRounded(g.Bounds, 0.02, 4, colTitle)
 	rl.BeginScissorMode(int32(g.Bounds.X), int32(g.Bounds.Y), int32(g.Bounds.Width), int32(g.Bounds.Height))
 	for row := 0; row < visRows; row++ {
 		for col := 0; col < cols; col++ {
@@ -1045,15 +1045,15 @@ func (g *ItemGrid) UpdateDraw(enabled bool) {
 			r := g.cellRect(row, col, ox)
 
 			if i == g.Selected {
-				rl.DrawRectangleRounded(rl.NewRectangle(r.X-2, r.Y-2, r.Width+4, r.Height+4), 0.12, 6, ColAccent)
+				rl.DrawRectangleRounded(rl.NewRectangle(r.X-2, r.Y-2, r.Width+4, r.Height+4), 0.12, 6, colAccent)
 			}
-			bg := ColBtn
+			bg := colBtn
 			if i == hovered {
-				bg = ColBtnHover
+				bg = colBtnHover
 			}
 			rl.DrawRectangleRounded(r, 0.12, 6, bg)
 			if i == g.Selected {
-				rl.DrawRectangleRounded(r, 0.12, 6, rl.Fade(ColAccent, 0.35))
+				rl.DrawRectangleRounded(r, 0.12, 6, rl.Fade(colAccent, 0.35))
 			}
 
 			icon := rl.NewRectangle(r.X+(r.Width-gridIcon)/2, r.Y+8, gridIcon, gridIcon)
@@ -1061,7 +1061,7 @@ func (g *ItemGrid) UpdateDraw(enabled bool) {
 
 			name := g.Items[i].Name
 			tw := rl.MeasureText(name, 14)
-			rl.DrawText(name, int32(r.X)+(int32(r.Width)-tw)/2, int32(r.Y)+gridIcon+16, 14, ColText)
+			rl.DrawText(name, int32(r.X)+(int32(r.Width)-tw)/2, int32(r.Y)+gridIcon+16, 14, colText)
 		}
 	}
 	rl.EndScissorMode()
@@ -1112,10 +1112,10 @@ func (w *Window) DrawFrame() {
 	b := w.Bounds
 	rl.DrawRectangle(0, 0, screenW, screenH, rl.Fade(rl.Black, 0.55))
 	rl.DrawRectangleRounded(rl.NewRectangle(b.X+4, b.Y+6, b.Width, b.Height), 0.03, 8, rl.Fade(rl.Black, 0.35))
-	rl.DrawRectangleRounded(b, 0.03, 8, ColPanel)
-	rl.DrawRectangleRounded(w.titleBar(), 0.4, 8, ColTitle)
-	rl.DrawRectangle(int32(b.X), int32(b.Y)+18, int32(b.Width), 12, ColTitle)
-	rl.DrawText(w.Title, int32(b.X)+12, int32(b.Y)+6, 18, ColText)
+	rl.DrawRectangleRounded(b, 0.03, 8, colPanel)
+	rl.DrawRectangleRounded(w.titleBar(), 0.4, 8, colTitle)
+	rl.DrawRectangle(int32(b.X), int32(b.Y)+18, int32(b.Width), 12, colTitle)
+	rl.DrawText(w.Title, int32(b.X)+12, int32(b.Y)+6, 18, colText)
 }
 
 // EntityDialog is a modal window that hosts an ItemGrid for choosing an entity.
@@ -1160,7 +1160,7 @@ func (d *EntityDialog) UpdateDraw() (int, DialogResult) {
 	if sel := d.Grid.Selected; sel >= 0 && sel < len(d.Grid.Items) {
 		label = d.Grid.Items[sel].Name
 	}
-	rl.DrawText(fitText(label, int32(b.Width)-32-2*bw-30, 16), int32(b.X)+16, int32(by)+9, 16, ColTextDim)
+	rl.DrawText(fitText(label, int32(b.Width)-32-2*bw-30, 16), int32(b.X)+16, int32(by)+9, 16, colTextDim)
 
 	rightX := b.X + b.Width - 16
 	d.okBtn.Bounds = rl.NewRectangle(rightX-bw, by, bw, bh)
@@ -1319,12 +1319,12 @@ func (t *Toolbar) UpdateDraw(enabled bool) {
 	b := t.Bounds()
 	rl.DrawRectangleRounded(rl.NewRectangle(b.X+3, b.Y+5, b.Width, b.Height), 0.25, 8, rl.Fade(rl.Black, 0.40))
 	rl.DrawRectangleRounded(rl.NewRectangle(b.X-1, b.Y-1, b.Width+2, b.Height+2), 0.25, 8, rl.Fade(rl.White, 0.12))
-	rl.DrawRectangleRounded(b, 0.25, 8, ColToolbar)
+	rl.DrawRectangleRounded(b, 0.25, 8, colToolbar)
 
 	// grip dots
-	dotCol := ColTextDim
+	dotCol := colTextDim
 	if t.dragging || overGrip {
-		dotCol = ColAccent
+		dotCol = colAccent
 	}
 	for i := -1; i <= 1; i++ {
 		if t.Vertical {
@@ -1371,7 +1371,7 @@ func (t *Toolbar) UpdateDraw(enabled bool) {
 		tr.X = clamp(tr.X, 4, screenW-tr.Width-4)
 		tr.Y = clamp(tr.Y, 4, screenH-tr.Height-4)
 		rl.DrawRectangleRounded(tr, 0.3, 6, rl.NewColor(20, 20, 26, 240))
-		rl.DrawText(hovered.Tooltip, int32(tr.X)+8, int32(tr.Y)+5, 16, ColText)
+		rl.DrawText(hovered.Tooltip, int32(tr.X)+8, int32(tr.Y)+5, 16, colText)
 	}
 }
 
@@ -1457,7 +1457,7 @@ func main() {
 		}
 
 		rl.BeginDrawing()
-		rl.ClearBackground(ColBG)
+		rl.ClearBackground(colBG)
 
 		// world: grid + placed entities, seen through the pan/zoom camera
 		view.Begin()
@@ -1471,24 +1471,24 @@ func main() {
 		if openedPath != "" {
 			px, py := float32(screenW-460), float32(130)
 			ph := float32(len(preview)*18 + 44)
-			rl.DrawRectangleRounded(rl.NewRectangle(px, py, 440, ph), 0.04, 6, ColPanel)
-			rl.DrawText(fitText(openedPath, 400, 16), int32(px)+14, int32(py)+10, 16, ColText)
+			rl.DrawRectangleRounded(rl.NewRectangle(px, py, 440, ph), 0.04, 6, colPanel)
+			rl.DrawText(fitText(openedPath, 400, 16), int32(px)+14, int32(py)+10, 16, colText)
 			for i, l := range preview {
-				rl.DrawText(l, int32(px)+14, int32(py)+36+int32(i*18), 14, ColTextDim)
+				rl.DrawText(l, int32(px)+14, int32(py)+36+int32(i*18), 14, colTextDim)
 			}
 		}
 
 		if len(dots) == 0 && openedPath == "" {
-			rl.DrawText("Click anywhere to place the selected entity", screenW/2-200, screenH/2, 20, ColTextDim)
+			rl.DrawText("Click anywhere to place the selected entity", screenW/2-200, screenH/2, 20, colTextDim)
 		}
 
 		// status bar
-		rl.DrawRectangle(0, screenH-StatusH, screenW, StatusH, ColToolbar)
+		rl.DrawRectangle(0, screenH-StatusH, screenW, StatusH, colToolbar)
 		status := fmt.Sprintf("%s  |  %d placed  |  entity: %s  |  zoom %d%%",
 			docName, len(dots), entities[selectedEntity].Name, int(view.Camera.Zoom*100+0.5))
-		rl.DrawText(status, 10, screenH-20, 16, ColTextDim)
+		rl.DrawText(status, 10, screenH-20, 16, colTextDim)
 		help := "Ctrl+wheel: zoom  |  Space+drag: pan  |  Home: reset"
-		rl.DrawText(help, screenW-rl.MeasureText(help, 16)-10, screenH-20, 16, ColTextDim)
+		rl.DrawText(help, screenW-rl.MeasureText(help, 16)-10, screenH-20, 16, colTextDim)
 
 		// toolbar (its buttons run their own OnClick handlers)
 		toolbar.UpdateDraw(!modal)
