@@ -34,6 +34,7 @@ import (
 	"github.com/tylland/dashland/internal/ecs"
 	"github.com/tylland/dashland/internal/game"
 	"github.com/tylland/dashland/internal/gui"
+	"github.com/tylland/dashland/internal/systems"
 )
 
 // const (
@@ -66,8 +67,7 @@ func main() {
 	var dlg gui.Dialog
 	var fd gui.FileDialog
 	var ed gui.EntityDialog
-	var lastDir, openedPath string
-	var preview []string
+	var lastDir string
 
 	// Build the toolbar: each button carries its own label, tooltip and click handler.
 	var workspace tool.ToolbarWorkspace = ws
@@ -75,6 +75,11 @@ func main() {
 	toolbar.Add(gui.NewButton("Open", "Browse for a file to open", func() {
 		fd.Open(lastDir, "stage.txt")
 	}))
+
+	toolbar.Add(gui.NewButton("Save", "Save stage", func() {
+		ws.stage.Save(ws.stagePath)
+	}))
+
 	entityBtn := toolbar.Add(gui.NewButton("Entity", "Choose which entity gets placed on the canvas", func() {
 		ed.Open(ws.entities, ws.selectedEntity, palette[colorIdx])
 	}))
@@ -88,6 +93,10 @@ func main() {
 	}
 
 	toolbar.Add(gui.NewButton("Rect", "Grid tool: drag a rectangle to fill it with the entity (R)", toggleRect))
+
+	toolbar.Add(gui.NewButton("Inspect", "Grid tool: drag a rectangle to fill it with the entity (R)", func() {
+		toolbar.ActivateTool(tool.NewDefaultTool())
+	}))
 
 	toolbar.Add(gui.NewButton("Clear", "Remove all placed entities (asks for confirmation)", func() {
 		dlg.Open(gui.DlgConfirm, gui.ActClear, "Clear canvas", "Remove all entities? This cannot be undone.", "")
@@ -109,6 +118,7 @@ func main() {
 	toolbar.Add(gui.NewButton("Flip", "Switch horizontal / vertical (or double-click the grip)", toolbar.Flip))
 
 	ws.view = gui.NewView()
+	ws.world.AddSystem(systems.NewRenderSystem(ws.stage, &ViewCamera{view: ws.view}))
 
 	for !rl.WindowShouldClose() {
 		gui.Frame++
@@ -142,8 +152,9 @@ func main() {
 		ws.view.Begin()
 
 		if ws.stage != nil {
-			ws.stage.Update(0)
-			ws.stage.Render(0)
+			ws.world.Update(0)
+			// ws.stage.Update(0)
+			// ws.stage.Render(0)
 		}
 
 		ws.view.DrawGrid()
@@ -155,6 +166,9 @@ func main() {
 			if tracker, ok := toolbar.ActiveTool.(gui.WorldMouseDownTracker); ok {
 				if canDraw && rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
 					tracker.WorldMouseDown(world, rl.MouseButtonLeft)
+				}
+				if canDraw && rl.IsMouseButtonPressed(rl.MouseButtonRight) {
+					tracker.WorldMouseDown(world, rl.MouseButtonRight)
 				}
 			}
 
@@ -180,12 +194,12 @@ func main() {
 		}
 
 		// file preview panel
-		if openedPath != "" {
+		if ws.inspect != nil && ws.inspect.Openpath != "" {
 			px, py := float32(gui.ScreenW-460), float32(130)
-			ph := float32(len(preview)*18 + 44)
+			ph := float32(len(ws.inspect.Info)*18 + 44)
 			rl.DrawRectangleRounded(rl.NewRectangle(px, py, 440, ph), 0.04, 6, gui.ColPanel)
-			rl.DrawText(gui.FitText(openedPath, 400, 16), int32(px)+14, int32(py)+10, 16, gui.ColText)
-			for i, l := range preview {
+			rl.DrawText(gui.FitText(ws.inspect.Openpath, 400, 16), int32(px)+14, int32(py)+10, 16, gui.ColText)
+			for i, l := range ws.inspect.Info {
 				rl.DrawText(l, int32(px)+14, int32(py)+36+int32(i*18), 14, gui.ColTextDim)
 			}
 		}
@@ -226,19 +240,22 @@ func main() {
 		if path, res := fd.UpdateDraw(); res != gui.ResNone {
 			lastDir = fd.Dir
 			if res == gui.ResOK {
-				openedPath = path
 				docName = filepath.Base(path)
-				preview = gui.LoadPreview(path)
+				info := gui.LoadPreview(path)
 
-				dir := strings.TrimSuffix(path, docName)
+				ws.SetInspection(&gui.EntityInspect{Openpath: path, Info: info})
+				ws.world.Clear()
 
-				st, err := openStage(ws.world, dir)
+				stagePath := strings.TrimSuffix(path, docName)
+				st, err := openStage(ws.world, stagePath)
 
 				if err != nil {
 					panic(err)
 				}
 
 				ws.stage = st
+				ws.stagePath = stagePath
+				ws.world.AddSystem(systems.NewRenderSystem(ws.stage, NewViewCamera(ws.view)))
 			}
 		}
 
@@ -283,17 +300,38 @@ type StageMakerWorkspace struct {
 	world          *ecs.World
 	view           *gui.View
 	stage          *game.Stage
+	stagePath      string
 	entities       []*gui.EntityItem
 	selectedEntity int
+	inspect        *gui.EntityInspect
 }
 
-func (ws *StageMakerWorkspace) World() *ecs.World           { return ws.world }
-func (ws *StageMakerWorkspace) View() *gui.View             { return ws.view }
-func (ws *StageMakerWorkspace) Stage() *game.Stage          { return ws.stage }
-func (ws *StageMakerWorkspace) Entities() []*gui.EntityItem { return ws.entities }
+func (ws *StageMakerWorkspace) World() *ecs.World                     { return ws.world }
+func (ws *StageMakerWorkspace) View() *gui.View                       { return ws.view }
+func (ws *StageMakerWorkspace) Stage() *game.Stage                    { return ws.stage }
+func (ws *StageMakerWorkspace) StagePath() string                     { return ws.stagePath }
+func (ws *StageMakerWorkspace) Inspection() *gui.EntityInspect        { return ws.inspect }
+func (ws *StageMakerWorkspace) SetInspection(insp *gui.EntityInspect) { ws.inspect = insp }
+func (ws *StageMakerWorkspace) Entities() []*gui.EntityItem           { return ws.entities }
 func (ws *StageMakerWorkspace) SelectEntity(idx int) {
 	ws.selectedEntity = idx
 }
 func (ws *StageMakerWorkspace) SelectedEntity() *gui.EntityItem {
 	return ws.entities[ws.selectedEntity]
+}
+
+type ViewCamera struct {
+	view *gui.View
+}
+
+func NewViewCamera(view *gui.View) *ViewCamera {
+	return &ViewCamera{view: view}
+}
+
+func (c *ViewCamera) GetCamera() rl.Camera2D {
+	return c.view.Camera
+}
+
+func (c *ViewCamera) Update(deltaTime float32) {
+
 }

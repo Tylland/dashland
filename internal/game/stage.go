@@ -168,7 +168,7 @@ func (s *Stage) Save(path string) error {
 	writer.Close()
 
 	for _, b := range s.blocks {
-		fileName := fmt.Sprintf("block_%03d_%03d.entity.txt", b.Position.Y, b.Position.X)
+		fileName := BlockFileName(b)
 
 		writer, err := NewTextFileWriter(path + "/" + fileName)
 
@@ -186,7 +186,7 @@ func (s *Stage) Save(path string) error {
 			continue
 		}
 
-		fileName := fmt.Sprintf("%s.entity.txt", e.ID)
+		fileName := EntityFileName(e)
 		writer, err := NewTextFileWriter(path + "/" + fileName)
 
 		if err != nil {

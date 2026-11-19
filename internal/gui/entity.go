@@ -8,12 +8,6 @@ import (
 
 const entityTexSize = 64
 
-type Dot struct {
-	Pos    rl.Vector2
-	Color  rl.Color
-	Entity int // index into the entities slice
-}
-
 // EntityItem is one selectable item. Its look is a rl.Texture2D, which is either
 // rendered procedurally (NewEntity) or loaded from an image file (LoadEntity).
 type EntityItem struct {
@@ -131,3 +125,8 @@ func tri(a, b, c rl.Vector2, col rl.Color) {
 // 		}),
 // 	}
 // }
+
+type EntityInspect struct {
+	Openpath string
+	Info     []string
+}

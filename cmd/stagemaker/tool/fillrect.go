@@ -15,8 +15,11 @@ type ToolbarWorkspace interface {
 	World() *ecs.World
 	View() *gui.View
 	Stage() *game.Stage
+	StagePath() string
 	Entities() []*gui.EntityItem
 	SelectedEntity() *gui.EntityItem
+	Inspection() *gui.EntityInspect
+	SetInspection(inspect *gui.EntityInspect)
 }
 
 // ------------------------------------------------------------------ Rectangle grid tool
@@ -94,16 +97,6 @@ func cellOf(world rl.Vector2) (int, int) {
 	return int(math.Floor(float64(world.X / cellSize))), int(math.Floor(float64(world.Y / cellSize)))
 }
 
-func (t *FillRectTool) Dragging() bool { return t.dragging }
-
-func (t *FillRectTool) Begin(world rl.Vector2) {
-	t.dragging = true
-	t.startX, t.startY = cellOf(world)
-	t.endX, t.endY = t.startX, t.startY
-}
-
-func (t *FillRectTool) Drag(world rl.Vector2) { t.endX, t.endY = cellOf(world) }
-
 // Cells returns the dragged range as inclusive, normalized cell coordinates.
 func (t *FillRectTool) Cells() (x0, y0, x1, y1 int) {
 	x0, x1 = t.startX, t.endX
@@ -162,6 +155,10 @@ func (t *FillRectTool) CreateEntities() {
 			pos := common.NewBlockPosition(cx, cy)
 
 			entity := game.Must(game.NewEntityAndHeader(t.ws.SelectedEntity().Type, t.ws.World(), t.ws.Stage(), pos))
+
+			if existing, ok := t.ws.Stage().GetEntityAtPosition(pos); ok {
+				t.ws.World().RemoveEntity(existing)
+			}
 
 			t.ws.Stage().SetEntity(entity, pos)
 		}

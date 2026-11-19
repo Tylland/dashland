@@ -173,3 +173,15 @@ func NewTextFileWriter(fileName string) (*TextWriter, error) {
 	return NewTextWriter(file), nil
 
 }
+
+func EntityFileName(entity *ecs.Entity) string {
+	return fmt.Sprintf("%s.entity.txt", entity.ID)
+}
+
+func BlockFileName(block *Block) string {
+	return fmt.Sprintf("%s.entity.txt", block.ID)
+}
+
+func StageFileName(stage *Stage) string {
+	return "stage.txt"
+}
