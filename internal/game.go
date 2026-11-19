@@ -19,10 +19,10 @@ import (
 )
 
 const (
-	StageRootPath = `assets\stages`
+	StageRootPath = `..\..\assets\stages`
 )
 
-const assetsBase = "assets"
+const assetsBase = `..\..\assets`
 
 type DashlandGame struct {
 	game.Screen

@@ -83,6 +83,7 @@ func NewBoulder(header *ecs.EntityHeader, world *ecs.World, stage *Stage, blockP
 	entity.AddComponent(components.NewColliderComponent(collider.LayerItem, collider.LayerAll, collider.LayerPlayer|collider.LayerEnemy))
 	entity.AddComponent(components.NewPushableComponent(1))
 	entity.AddComponent(components.NewDamage(1))
+	entity.AddComponent(components.NewIconComponent(stage.entityTextures, rl.NewRectangle(float32(EntityBoulder)*stage.BlockWidth, 0, stage.BlockWidth, stage.BlockHeight)))
 
 	world.AddEntity(entity)
 
@@ -99,6 +100,7 @@ func NewDiamond(header *ecs.EntityHeader, world *ecs.World, stage *Stage, blockP
 	entity.AddComponent(components.NewColliderComponent(collider.LayerCollectable, collider.LayerAll&(^collider.LayerPlayer|collider.LayerEnemy), collider.LayerPlayer|collider.LayerGround|collider.LayerEnemy))
 	entity.AddComponent(components.NewCollectableComponent("diamond", 1))
 	entity.AddComponent(components.NewDamage(1))
+	entity.AddComponent(components.NewIconComponent(stage.entityTextures, rl.NewRectangle(float32(EntityDiamond)*stage.BlockWidth, 0, stage.BlockWidth, stage.BlockHeight)))
 
 	world.AddEntity(entity)
 

@@ -1,6 +1,8 @@
 package gui
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+import (
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
 
 const (
 	gridCellW = 96
@@ -12,7 +14,7 @@ const (
 // ItemGrid is a scrollable grid of entities; the user selects one cell.
 type ItemGrid struct {
 	Bounds     rl.Rectangle
-	Items      []Entity
+	Items      []*EntityItem
 	Selected   int // -1 = nothing selected
 	Scroll     int // first visible row
 	Tint       rl.Color
@@ -23,7 +25,7 @@ type ItemGrid struct {
 	lastClickTime float64
 }
 
-func NewItemGrid(items []Entity) *ItemGrid {
+func NewItemGrid(items []*EntityItem) *ItemGrid {
 	return &ItemGrid{Items: items, Selected: -1, Tint: rl.White, lastClickIdx: -1}
 }
 
@@ -164,8 +166,8 @@ func (g *ItemGrid) UpdateDraw(enabled bool) {
 				rl.DrawRectangleRounded(r, 0.12, 6, rl.Fade(ColAccent, 0.35))
 			}
 
-			icon := rl.NewRectangle(r.X+(r.Width-gridIcon)/2, r.Y+8, gridIcon, gridIcon)
-			g.Items[i].Draw(icon, g.Tint)
+			dest := rl.NewRectangle(r.X+(r.Width-gridIcon)/2, r.Y+8, gridIcon, gridIcon)
+			g.Items[i].Draw(dest, g.Tint)
 
 			name := g.Items[i].Name
 			tw := rl.MeasureText(name, 14)

@@ -25,9 +25,14 @@ package main
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 
+	"github.com/tylland/dashland/cmd/stagemaker/tool"
+	"github.com/tylland/dashland/internal/assets"
+	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game"
 	"github.com/tylland/dashland/internal/gui"
 )
 
@@ -42,31 +47,20 @@ import (
 // // resizing and maximizing.
 // var screenW, screenH float32 = initialW, initialH
 
-type Dot struct {
-	Pos    rl.Vector2
-	Color  rl.Color
-	Entity int // index into the entities slice
-}
-
 func main() {
 	rl.SetConfigFlags(rl.FlagWindowResizable) // enables the maximize button and edge resizing
-	rl.InitWindow(int32(gui.ScreenW), int32(gui.ScreenH), "dashland - stage maker")
+	rl.InitWindow(int32(gui.ScreenW), int32(gui.ScreenH), "Dashland - stage maker")
 	defer rl.CloseWindow()
 	rl.SetWindowMinSize(int(gui.ScreenW), int(gui.ScreenH)) // the layout is designed for at least this size
 
-	// Entities are textures; they must be created after the window exists.
-	entities := gui.DefaultEntities()
-	defer func() {
-		for i := range entities {
-			entities[i].Unload()
-		}
-	}()
-	selectedEntity := 0
+	ws := &StageMakerWorkspace{
+		world:    ecs.NewWorld(),
+		entities: CreateEntityItems(),
+	}
 
 	palette := []rl.Color{rl.SkyBlue, rl.Orange, rl.Lime, rl.Pink, rl.Gold, rl.Violet}
 	colorIdx := 0
 
-	dots := make([]Dot, 0, gui.MaxPoints)
 	docName := "Untitled"
 
 	var dlg gui.Dialog
@@ -74,18 +68,27 @@ func main() {
 	var ed gui.EntityDialog
 	var lastDir, openedPath string
 	var preview []string
+
 	// Build the toolbar: each button carries its own label, tooltip and click handler.
-	toolbar := gui.NewToolbar(rl.NewVector2(40, 40))
+	var workspace tool.ToolbarWorkspace = ws
+	toolbar := gui.NewToolbar(rl.NewVector2(40, 40), workspace)
 	toolbar.Add(gui.NewButton("Open", "Browse for a file to open", func() {
-		fd.Open(lastDir)
+		fd.Open(lastDir, "stage.txt")
 	}))
 	entityBtn := toolbar.Add(gui.NewButton("Entity", "Choose which entity gets placed on the canvas", func() {
-		ed.Open(entities, selectedEntity, palette[colorIdx])
+		ed.Open(ws.entities, ws.selectedEntity, palette[colorIdx])
 	}))
 	entityBtn.Decorate = func(b *gui.Button) { // thumbnail of the current entity
 		thumb := rl.NewRectangle(b.Bounds.X+b.Bounds.Width-30, b.Bounds.Y+5, 20, 20)
-		entities[selectedEntity].Draw(thumb, palette[colorIdx])
+		ws.entities[ws.selectedEntity].Draw(thumb, palette[colorIdx])
 	}
+
+	toggleRect := func() {
+		toolbar.ActivateTool(tool.NewFillRectTool(ws.stage))
+	}
+
+	toolbar.Add(gui.NewButton("Rect", "Grid tool: drag a rectangle to fill it with the entity (R)", toggleRect))
+
 	toolbar.Add(gui.NewButton("Clear", "Remove all placed entities (asks for confirmation)", func() {
 		dlg.Open(gui.DlgConfirm, gui.ActClear, "Clear canvas", "Remove all entities? This cannot be undone.", "")
 	}))
@@ -105,7 +108,7 @@ func main() {
 	}))
 	toolbar.Add(gui.NewButton("Flip", "Switch horizontal / vertical (or double-click the grip)", toolbar.Flip))
 
-	view := gui.NewView()
+	ws.view = gui.NewView()
 
 	for !rl.WindowShouldClose() {
 		gui.Frame++
@@ -130,23 +133,51 @@ func main() {
 		// canvas input (blocked while a dialog is open or when over the toolbar)
 		m := rl.GetMousePosition()
 		overToolbar := rl.CheckCollisionPointRec(m, toolbar.Bounds())
-		view.Update(!modal, overToolbar)
-		if !modal && !view.Grab && !view.Panning && !overToolbar && m.Y < gui.ScreenH-gui.StatusH &&
-			rl.IsMouseButtonPressed(rl.MouseButtonLeft) && len(dots) < gui.MaxPoints {
-			// dots live in world coordinates, so zoom/pan do not move them
-			dots = append(dots, Dot{Pos: view.ScreenToWorld(m), Color: palette[colorIdx], Entity: selectedEntity})
-		}
+		ws.view.Update(!modal, overToolbar)
 
 		rl.BeginDrawing()
 		rl.ClearBackground(gui.ColBG)
 
 		// world: grid + placed entities, seen through the pan/zoom camera
-		view.Begin()
-		view.DrawGrid()
-		for _, d := range dots {
-			entities[d.Entity].Draw(rl.NewRectangle(d.Pos.X-20, d.Pos.Y-20, 40, 40), d.Color)
+		ws.view.Begin()
+
+		if ws.stage != nil {
+			ws.stage.Update(0)
+			ws.stage.Render(0)
 		}
-		view.End()
+
+		ws.view.DrawGrid()
+
+		canDraw := !modal && !ws.view.Grab && !ws.view.Panning && !overToolbar && m.Y < gui.ScreenH-gui.StatusH
+		world := ws.view.ScreenToWorld(m) // dots live in world coordinates, so zoom/pan do not move them
+
+		if toolbar.ActiveTool != nil && toolbar.ActiveTool.IsActive() {
+			if tracker, ok := toolbar.ActiveTool.(gui.WorldMouseDownTracker); ok {
+				if canDraw && rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
+					tracker.WorldMouseDown(world, rl.MouseButtonLeft)
+				}
+			}
+
+			if tracker, ok := toolbar.ActiveTool.(gui.WorldMouseMoveTracker); ok {
+				tracker.WorldMouseMove(world)
+			}
+
+			if tracker, ok := toolbar.ActiveTool.(gui.WorldMouseUpTracker); ok {
+				if rl.IsMouseButtonReleased(rl.MouseButtonLeft) {
+					tracker.WorldMouseUp(world, rl.MouseButtonLeft)
+				}
+			}
+
+			if modal || rl.IsKeyPressed(rl.KeyEscape) || rl.IsMouseButtonPressed(rl.MouseButtonRight) {
+				toolbar.ActiveTool.Cancel()
+			}
+		}
+
+		ws.view.End()
+
+		if tracker, ok := toolbar.ActiveTool.(gui.ScreenWorldMouseMoveTracker); ok {
+			tracker.ScreenMouseMove(m)
+		}
 
 		// file preview panel
 		if openedPath != "" {
@@ -159,14 +190,10 @@ func main() {
 			}
 		}
 
-		if len(dots) == 0 && openedPath == "" {
-			rl.DrawText("Click anywhere to place the selected entity", int32(gui.ScreenW/2-200), int32(gui.ScreenH/2), 20, gui.ColTextDim)
-		}
-
 		// status bar
 		rl.DrawRectangle(0, int32(gui.ScreenH-gui.StatusH), int32(gui.ScreenW), gui.StatusH, gui.ColToolbar)
 		status := fmt.Sprintf("%s  |  %d placed  |  entity: %s  |  zoom %d%%",
-			docName, len(dots), entities[selectedEntity].Name, int(view.Camera.Zoom*100+0.5))
+			docName, len(ws.entities), ws.entities[ws.selectedEntity].Name, int(ws.view.Camera.Zoom*100+0.5))
 		rl.DrawText(status, 10, int32(gui.ScreenH-20), 16, gui.ColTextDim)
 		help := "Ctrl+wheel: zoom  |  Space+drag: pan  |  Home: reset"
 		rl.DrawText(help, int32(gui.ScreenW)-rl.MeasureText(help, 16)-10, int32(gui.ScreenH)-20, 16, gui.ColTextDim)
@@ -174,9 +201,9 @@ func main() {
 		// toolbar (its buttons run their own OnClick handlers)
 		toolbar.UpdateDraw(!modal)
 		// the toolbar resets the cursor each frame, so set the grab cursors after it
-		if view.Panning {
+		if ws.view.Panning {
 			rl.SetMouseCursor(rl.MouseCursorResizeAll)
-		} else if view.Grab && !overToolbar {
+		} else if ws.view.Grab && !overToolbar {
 			rl.SetMouseCursor(rl.MouseCursorPointingHand)
 		}
 
@@ -185,7 +212,7 @@ func main() {
 			if res == gui.ResOK {
 				switch dlg.Action {
 				case gui.ActClear:
-					dots = dots[:0]
+					//					dots = dots[:0]
 				case gui.ActRename:
 					if len(dlg.Input) > 0 {
 						docName = string(dlg.Input)
@@ -202,14 +229,71 @@ func main() {
 				openedPath = path
 				docName = filepath.Base(path)
 				preview = gui.LoadPreview(path)
+
+				dir := strings.TrimSuffix(path, docName)
+
+				st, err := openStage(ws.world, dir)
+
+				if err != nil {
+					panic(err)
+				}
+
+				ws.stage = st
 			}
 		}
 
 		// entity selector (modal, drawn on top)
 		if idx, res := ed.UpdateDraw(); res == gui.ResOK && idx >= 0 {
-			selectedEntity = idx
+			ws.selectedEntity = idx
 		}
 
 		rl.EndDrawing()
 	}
+}
+
+func openStage(world *ecs.World, path string) (*game.Stage, error) {
+
+	blockTexture := assets.LoadTexture("blocks")
+	entityTextures := assets.LoadTexture("entities")
+	groundCorners := assets.LoadTexture("ground_corners")
+
+	mapSize := game.MapSize{}
+	stage := game.NewStage("generated", mapSize, blockTexture, entityTextures, groundCorners)
+
+	err := stage.Load(world, path)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return stage, nil
+}
+
+func entitySource(entityType ecs.EntityType) rl.Rectangle {
+	return rl.NewRectangle(float32(entityType)*32, 0, 32, 32)
+}
+
+func CreateEntityItems() []*gui.EntityItem {
+	return []*gui.EntityItem{
+		gui.NewEntityItem(game.EntityBoulder, assets.LoadTexture("entities"), entitySource(game.EntityBoulder)),
+	}
+}
+
+type StageMakerWorkspace struct {
+	world          *ecs.World
+	view           *gui.View
+	stage          *game.Stage
+	entities       []*gui.EntityItem
+	selectedEntity int
+}
+
+func (ws *StageMakerWorkspace) World() *ecs.World           { return ws.world }
+func (ws *StageMakerWorkspace) View() *gui.View             { return ws.view }
+func (ws *StageMakerWorkspace) Stage() *game.Stage          { return ws.stage }
+func (ws *StageMakerWorkspace) Entities() []*gui.EntityItem { return ws.entities }
+func (ws *StageMakerWorkspace) SelectEntity(idx int) {
+	ws.selectedEntity = idx
+}
+func (ws *StageMakerWorkspace) SelectedEntity() *gui.EntityItem {
+	return ws.entities[ws.selectedEntity]
 }

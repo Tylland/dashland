@@ -17,8 +17,13 @@ func main() {
 	rl.InitAudioDevice()
 
 	game := internal.NewGame(screenWidth, screenHeight)
-	game.LoadStage("start", common.NewBlockPosition(0, 0))
 	defer game.Unload()
+
+	err := game.LoadStage("start", common.NewBlockPosition(0, 0))
+
+	if err != nil {
+		panic(err)
+	}
 
 	rl.SetTargetFPS(60)
 

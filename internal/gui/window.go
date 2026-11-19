@@ -1,6 +1,9 @@
 package gui
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+import (
+	rl "github.com/gen2brain/raylib-go/raylib"
+	"github.com/tylland/dashland/internal/game"
+)
 
 // Window is a reusable draggable modal frame: dimmed backdrop, shadow, panel and title bar.
 type Window struct {
@@ -56,7 +59,7 @@ type EntityDialog struct {
 	openedFrame uint64
 }
 
-func (d *EntityDialog) Open(items []Entity, selected int, tint rl.Color) {
+func (d *EntityDialog) Open(items []*EntityItem, selected int, tint rl.Color) {
 	*d = EntityDialog{Window: NewWindow("Select entity", 500, 470), Active: true, openedFrame: Frame}
 	d.Grid = NewItemGrid(items)
 	d.Grid.Selected = selected
@@ -85,7 +88,7 @@ func (d *EntityDialog) UpdateDraw() (int, DialogResult) {
 	by := b.Y + b.Height - bh - 16
 	label := "Nothing selected"
 	if sel := d.Grid.Selected; sel >= 0 && sel < len(d.Grid.Items) {
-		label = d.Grid.Items[sel].Name
+		label = game.EntityTypeName(d.Grid.Items[sel].Type)
 	}
 	rl.DrawText(FitText(label, int32(b.Width)-32-2*bw-30, 16), int32(b.X)+16, int32(by)+9, 16, ColTextDim)
 

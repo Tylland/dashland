@@ -9,6 +9,7 @@ type Button struct {
 	Tooltip  string
 	Bounds   rl.Rectangle
 	Enabled  bool
+	Active   bool            // toggled-on look (e.g. the selected tool)
 	GapAfter float32         // extra layout space after this button (used by Toolbar)
 	OnClick  func()          // called when the button is clicked
 	Decorate func(b *Button) // optional hook to draw extra content (icons, swatches...)
@@ -48,6 +49,10 @@ func (b *Button) Draw() {
 		bg = ColBtnHover
 	}
 	rl.DrawRectangleRounded(b.Bounds, 0.25, 6, bg)
+
+	if b.Active {
+		rl.DrawRectangleRounded(b.Bounds, 0.25, 6, rl.Fade(ColAccent, 0.55))
+	}
 
 	fg := ColText
 	if !b.Enabled {

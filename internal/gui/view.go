@@ -81,7 +81,8 @@ func (v *View) Update(enabled, overUI bool) {
 // DrawGrid draws an adaptive background grid (call between Begin and End).
 func (v *View) DrawGrid() {
 	z := v.Camera.Zoom
-	spacing := float32(100)
+	spacing := float32(32)
+
 	for spacing*z < 28 {
 		spacing *= 2
 	}

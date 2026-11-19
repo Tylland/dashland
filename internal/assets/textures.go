@@ -8,7 +8,7 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-const assetbase string = "assets"
+const assetbase string = "../../assets"
 const textureDir string = "images"
 
 var textures map[string]*rl.Texture2D = make(map[string]*rl.Texture2D)

@@ -11,6 +11,28 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
+// matchPattern reports whether a file name matches a wildcard pattern such as "*.entity.txt".
+// '*' matches any run of characters and '?' a single one; matching ignores case.
+// Several patterns can be given separated by ';' or ',' (e.g. "*.png;*.jpg").
+// An empty pattern matches everything.
+func matchPattern(pattern, name string) bool {
+	pattern = strings.TrimSpace(pattern)
+	if pattern == "" {
+		return true
+	}
+	name = strings.ToLower(name)
+	for _, p := range strings.FieldsFunc(pattern, func(r rune) bool { return r == ';' || r == ',' }) {
+		p = strings.ToLower(strings.TrimSpace(p))
+		if p == "" {
+			continue
+		}
+		if ok, err := filepath.Match(p, name); err == nil && ok {
+			return true
+		}
+	}
+	return false
+}
+
 type FileEntry struct {
 	Name  string
 	IsDir bool
@@ -31,6 +53,8 @@ type FileDialog struct {
 	openedFrame   uint64
 	lastClickIdx  int
 	lastClickTime float64
+
+	Pattern string // wildcard filter for file names, e.g. "*.entity.txt"; empty = all files
 
 	upBtn     *Button
 	openBtn   *Button
@@ -69,7 +93,9 @@ func FitText(s string, maxW, fontSize int32) string {
 	return "..." + string(r)
 }
 
-func (f *FileDialog) Open(startDir string) {
+// Open shows the dialog. pattern restricts the listed files with wildcards
+// (see matchPattern), e.g. "*.entity.txt"; pass "" to list every file.
+func (f *FileDialog) Open(startDir, pattern string) {
 	if startDir == "" {
 		if wd, err := os.Getwd(); err == nil {
 			startDir = wd
@@ -78,6 +104,7 @@ func (f *FileDialog) Open(startDir string) {
 		}
 	}
 	*f = FileDialog{Active: true, openedFrame: Frame, lastClickIdx: -1}
+	f.Pattern = pattern
 	w, h := float32(560), float32(430)
 	f.Bounds = rl.NewRectangle((ScreenW-w)/2, (ScreenH-h)/2, w, h)
 	f.upBtn = NewButton("Up", "", f.goUp)
@@ -115,7 +142,7 @@ func (f *FileDialog) loadDir(dir string) {
 		}
 		if e.IsDir {
 			dirs = append(dirs, e)
-		} else {
+		} else if matchPattern(f.Pattern, e.Name) {
 			files = append(files, e)
 		}
 	}
@@ -180,11 +207,21 @@ func (f *FileDialog) UpdateDraw() (string, DialogResult) {
 	rl.DrawRectangle(int32(b.X), int32(b.Y)+18, int32(b.Width), 12, ColTitle)
 	rl.DrawText("Open file", int32(b.X)+12, int32(b.Y)+6, 18, ColText)
 
-	// --- path bar + Up button
-	pathRect := rl.NewRectangle(b.X+16, b.Y+40, b.Width-32-60, 28)
-	upRect := rl.NewRectangle(pathRect.X+pathRect.Width+8, b.Y+40, 52, 28)
+	// --- path bar + [active filter chip] + Up button
+	chipText, chipW := "", float32(0)
+	if strings.TrimSpace(f.Pattern) != "" {
+		chipText = FitText(f.Pattern, 140, 14)
+		chipW = float32(rl.MeasureText(chipText, 14)) + 20 + 8
+	}
+	pathRect := rl.NewRectangle(b.X+16, b.Y+40, b.Width-32-60-chipW, 28)
+	chipRect := rl.NewRectangle(pathRect.X+pathRect.Width+8, b.Y+40, chipW-8, 28)
+	upRect := rl.NewRectangle(b.X+b.Width-16-52, b.Y+40, 52, 28)
 	rl.DrawRectangleRounded(pathRect, 0.2, 6, ColTitle)
 	rl.DrawText(FitText(f.Dir, int32(pathRect.Width)-16, 16), int32(pathRect.X)+8, int32(pathRect.Y)+6, 16, ColTextDim)
+	if chipText != "" {
+		rl.DrawRectangleRounded(chipRect, 0.3, 6, rl.Fade(ColAccent, 0.35))
+		rl.DrawText(chipText, int32(chipRect.X)+10, int32(chipRect.Y)+7, 14, ColText)
+	}
 	f.upBtn.Bounds, f.upBtn.Enabled = upRect, can
 	f.upBtn.UpdateDraw()
 
@@ -274,7 +311,11 @@ func (f *FileDialog) UpdateDraw() (string, DialogResult) {
 	if f.Err != "" {
 		rl.DrawText(FitText("Cannot read folder: "+f.Err, int32(list.Width)-24, 14), int32(list.X)+12, int32(list.Y)+fdRowH+8, 14, rl.NewColor(255, 120, 120, 255))
 	} else if len(f.Entries) == 0 || (len(f.Entries) == 1 && f.Entries[0].Name == "..") {
-		rl.DrawText("(empty folder)", int32(list.X)+32, int32(list.Y)+fdRowH+6, 14, ColTextDim)
+		msg := "(empty folder)"
+		if strings.TrimSpace(f.Pattern) != "" {
+			msg = "(no matching files)"
+		}
+		rl.DrawText(msg, int32(list.X)+32, int32(list.Y)+fdRowH+6, 14, ColTextDim)
 	}
 	rl.EndScissorMode()
 

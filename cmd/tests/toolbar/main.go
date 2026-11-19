@@ -17,6 +17,8 @@
 //   - Resizable / maximizable window (maximize button or F11); the UI follows the window size
 //   - Canvas view: Ctrl+wheel zooms at the cursor; hold Space, press the left
 //     button and drag to pan; Home resets the view
+//   - Rect tool (toolbar button or R): drag a rectangle to fill its grid cells
+//     with the selected entity; Esc or right-click cancels
 //   - Modal dialogs: message (OK), confirm (Yes/No), text input (OK/Cancel)
 //   - Dialogs are draggable by their title bar, dim the background,
 //     and block toolbar/canvas input while open
@@ -71,6 +73,7 @@ type Button struct {
 	Tooltip  string
 	Bounds   rl.Rectangle
 	Enabled  bool
+	Active   bool            // toggled-on look (e.g. the selected tool)
 	GapAfter float32         // extra layout space after this button (used by Toolbar)
 	OnClick  func()          // called when the button is clicked
 	Decorate func(b *Button) // optional hook to draw extra content (icons, swatches...)
@@ -110,6 +113,9 @@ func (b *Button) Draw() {
 		bg = colBtnHover
 	}
 	rl.DrawRectangleRounded(b.Bounds, 0.25, 6, bg)
+	if b.Active {
+		rl.DrawRectangleRounded(b.Bounds, 0.25, 6, rl.Fade(colAccent, 0.55))
+	}
 
 	fg := colText
 	if !b.Enabled {
@@ -329,6 +335,28 @@ func (d *Dialog) UpdateDraw() DialogResult {
 
 // ----------------------------------------------------------- File selector
 
+// matchPattern reports whether a file name matches a wildcard pattern such as "*.entity.txt".
+// '*' matches any run of characters and '?' a single one; matching ignores case.
+// Several patterns can be given separated by ';' or ',' (e.g. "*.png;*.jpg").
+// An empty pattern matches everything.
+func matchPattern(pattern, name string) bool {
+	pattern = strings.TrimSpace(pattern)
+	if pattern == "" {
+		return true
+	}
+	name = strings.ToLower(name)
+	for _, p := range strings.FieldsFunc(pattern, func(r rune) bool { return r == ';' || r == ',' }) {
+		p = strings.ToLower(strings.TrimSpace(p))
+		if p == "" {
+			continue
+		}
+		if ok, err := filepath.Match(p, name); err == nil && ok {
+			return true
+		}
+	}
+	return false
+}
+
 type FileEntry struct {
 	Name  string
 	IsDir bool
@@ -349,6 +377,8 @@ type FileDialog struct {
 	openedFrame   uint64
 	lastClickIdx  int
 	lastClickTime float64
+
+	Pattern string // wildcard filter for file names, e.g. "*.entity.txt"; empty = all files
 
 	upBtn     *Button
 	openBtn   *Button
@@ -387,7 +417,9 @@ func fitText(s string, maxW, fontSize int32) string {
 	return "..." + string(r)
 }
 
-func (f *FileDialog) Open(startDir string) {
+// Open shows the dialog. pattern restricts the listed files with wildcards
+// (see matchPattern), e.g. "*.entity.txt"; pass "" to list every file.
+func (f *FileDialog) Open(startDir, pattern string) {
 	if startDir == "" {
 		if wd, err := os.Getwd(); err == nil {
 			startDir = wd
@@ -396,6 +428,7 @@ func (f *FileDialog) Open(startDir string) {
 		}
 	}
 	*f = FileDialog{Active: true, openedFrame: frame, lastClickIdx: -1}
+	f.Pattern = pattern
 	w, h := float32(560), float32(430)
 	f.Bounds = rl.NewRectangle((screenW-w)/2, (screenH-h)/2, w, h)
 	f.upBtn = NewButton("Up", "", f.goUp)
@@ -433,7 +466,7 @@ func (f *FileDialog) loadDir(dir string) {
 		}
 		if e.IsDir {
 			dirs = append(dirs, e)
-		} else {
+		} else if matchPattern(f.Pattern, e.Name) {
 			files = append(files, e)
 		}
 	}
@@ -498,11 +531,21 @@ func (f *FileDialog) UpdateDraw() (string, DialogResult) {
 	rl.DrawRectangle(int32(b.X), int32(b.Y)+18, int32(b.Width), 12, colTitle)
 	rl.DrawText("Open file", int32(b.X)+12, int32(b.Y)+6, 18, colText)
 
-	// --- path bar + Up button
-	pathRect := rl.NewRectangle(b.X+16, b.Y+40, b.Width-32-60, 28)
-	upRect := rl.NewRectangle(pathRect.X+pathRect.Width+8, b.Y+40, 52, 28)
+	// --- path bar + [active filter chip] + Up button
+	chipText, chipW := "", float32(0)
+	if strings.TrimSpace(f.Pattern) != "" {
+		chipText = fitText(f.Pattern, 140, 14)
+		chipW = float32(rl.MeasureText(chipText, 14)) + 20 + 8
+	}
+	pathRect := rl.NewRectangle(b.X+16, b.Y+40, b.Width-32-60-chipW, 28)
+	chipRect := rl.NewRectangle(pathRect.X+pathRect.Width+8, b.Y+40, chipW-8, 28)
+	upRect := rl.NewRectangle(b.X+b.Width-16-52, b.Y+40, 52, 28)
 	rl.DrawRectangleRounded(pathRect, 0.2, 6, colTitle)
 	rl.DrawText(fitText(f.Dir, int32(pathRect.Width)-16, 16), int32(pathRect.X)+8, int32(pathRect.Y)+6, 16, colTextDim)
+	if chipText != "" {
+		rl.DrawRectangleRounded(chipRect, 0.3, 6, rl.Fade(colAccent, 0.35))
+		rl.DrawText(chipText, int32(chipRect.X)+10, int32(chipRect.Y)+7, 14, colText)
+	}
 	f.upBtn.Bounds, f.upBtn.Enabled = upRect, can
 	f.upBtn.UpdateDraw()
 
@@ -592,7 +635,11 @@ func (f *FileDialog) UpdateDraw() (string, DialogResult) {
 	if f.Err != "" {
 		rl.DrawText(fitText("Cannot read folder: "+f.Err, int32(list.Width)-24, 14), int32(list.X)+12, int32(list.Y)+fdRowH+8, 14, rl.NewColor(255, 120, 120, 255))
 	} else if len(f.Entries) == 0 || (len(f.Entries) == 1 && f.Entries[0].Name == "..") {
-		rl.DrawText("(empty folder)", int32(list.X)+32, int32(list.Y)+fdRowH+6, 14, colTextDim)
+		msg := "(empty folder)"
+		if strings.TrimSpace(f.Pattern) != "" {
+			msg = "(no matching files)"
+		}
+		rl.DrawText(msg, int32(list.X)+32, int32(list.Y)+fdRowH+6, 14, colTextDim)
 	}
 	rl.EndScissorMode()
 
@@ -668,6 +715,114 @@ func loadPreview(path string) []string {
 		lines[i] = l
 	}
 	return lines
+}
+
+// ------------------------------------------------------------------ Rectangle grid tool
+
+const cellSize = 40 // world units per grid cell; entities are drawn cellSize x cellSize
+
+// RectTool fills a dragged rectangle of grid cells with the selected entity.
+// Cells are aligned to the world grid, so repeated fills line up exactly.
+type RectTool struct {
+	Active     bool // tool is selected
+	dragging   bool
+	startX     int // cell coordinates where the drag began
+	startY     int
+	endX, endY int // cell under the mouse
+}
+
+// cellOf returns the grid cell containing a world position.
+func cellOf(world rl.Vector2) (int, int) {
+	return int(math.Floor(float64(world.X / cellSize))), int(math.Floor(float64(world.Y / cellSize)))
+}
+
+func (t *RectTool) Dragging() bool { return t.dragging }
+
+func (t *RectTool) Begin(world rl.Vector2) {
+	t.dragging = true
+	t.startX, t.startY = cellOf(world)
+	t.endX, t.endY = t.startX, t.startY
+}
+
+func (t *RectTool) Drag(world rl.Vector2) { t.endX, t.endY = cellOf(world) }
+func (t *RectTool) Cancel()               { t.dragging = false }
+
+// Cells returns the dragged range as inclusive, normalized cell coordinates.
+func (t *RectTool) Cells() (x0, y0, x1, y1 int) {
+	x0, x1 = t.startX, t.endX
+	y0, y1 = t.startY, t.endY
+	if x0 > x1 {
+		x0, x1 = x1, x0
+	}
+	if y0 > y1 {
+		y0, y1 = y1, y0
+	}
+	return
+}
+
+// DrawPreview draws the selection and ghost entities (call in world space).
+func (t *RectTool) DrawPreview(e *Entity, tint rl.Color, zoom float32) {
+	if !t.dragging {
+		return
+	}
+	x0, y0, x1, y1 := t.Cells()
+	area := rl.NewRectangle(float32(x0)*cellSize, float32(y0)*cellSize,
+		float32(x1-x0+1)*cellSize, float32(y1-y0+1)*cellSize)
+	rl.DrawRectangleRec(area, rl.Fade(colAccent, 0.12))
+
+	ghost := rl.Fade(tint, 0.55)
+	drawn := 0
+	for cy := y0; cy <= y1 && drawn < maxPoints; cy++ {
+		for cx := x0; cx <= x1 && drawn < maxPoints; cx++ {
+			e.Draw(rl.NewRectangle(float32(cx)*cellSize, float32(cy)*cellSize, cellSize, cellSize), ghost)
+			drawn++
+		}
+	}
+	rl.DrawRectangleLinesEx(area, 2/zoom, colAccent)
+}
+
+// DrawLabel shows "W x H = N" next to the mouse (call in screen space).
+func (t *RectTool) DrawLabel(mouse rl.Vector2, existing int) {
+	if !t.dragging {
+		return
+	}
+	x0, y0, x1, y1 := t.Cells()
+	w, h := x1-x0+1, y1-y0+1
+	txt := fmt.Sprintf("%d x %d = %d", w, h, w*h)
+	col := colText
+	if existing+w*h > maxPoints {
+		txt += "  (limit reached)"
+		col = rl.NewColor(255, 120, 120, 255)
+	}
+	r := rl.NewRectangle(mouse.X+16, mouse.Y+16, float32(rl.MeasureText(txt, 16))+16, 26)
+	r.X = clamp(r.X, 4, screenW-r.Width-4)
+	r.Y = clamp(r.Y, 4, screenH-r.Height-4)
+	rl.DrawRectangleRounded(r, 0.3, 6, rl.NewColor(20, 20, 26, 230))
+	rl.DrawText(txt, int32(r.X)+8, int32(r.Y)+5, 16, col)
+}
+
+// FillCellRect places one entity in every cell of the inclusive range. Cells that
+// already hold an entity at that exact spot are replaced. Stops at maxPoints.
+func FillCellRect(dots []Dot, x0, y0, x1, y1, entity int, col rl.Color) []Dot {
+	index := make(map[rl.Vector2]int, len(dots))
+	for i, d := range dots {
+		index[d.Pos] = i
+	}
+	for cy := y0; cy <= y1; cy++ {
+		for cx := x0; cx <= x1; cx++ {
+			pos := rl.NewVector2((float32(cx)+0.5)*cellSize, (float32(cy)+0.5)*cellSize)
+			d := Dot{Pos: pos, Color: col, Entity: entity}
+			if i, ok := index[pos]; ok {
+				dots[i] = d
+				continue
+			}
+			if len(dots) >= maxPoints {
+				return dots
+			}
+			dots = append(dots, d)
+		}
+	}
+	return dots
 }
 
 // ------------------------------------------------------------------ View (zoom + pan)
@@ -1420,12 +1575,17 @@ func main() {
 	var dlg Dialog
 	var fd FileDialog
 	var ed EntityDialog
+	var rectTool RectTool
+	var rectBtn *Button
 	var lastDir, openedPath string
+	// Wildcard filter for the Open dialog. Use "" for all files, or several
+	// patterns separated by ';', e.g. "*.entity.txt;*.png".
+	const filePattern = "*.entity.txt"
 	var preview []string
 	// Build the toolbar: each button carries its own label, tooltip and click handler.
 	toolbar := NewToolbar(rl.NewVector2(40, 40))
 	toolbar.Add(NewButton("Open", "Browse for a file to open", func() {
-		fd.Open(lastDir)
+		fd.Open(lastDir, filePattern)
 	}))
 	entityBtn := toolbar.Add(NewButton("Entity", "Choose which entity gets placed on the canvas", func() {
 		ed.Open(entities, selectedEntity, palette[colorIdx])
@@ -1434,6 +1594,12 @@ func main() {
 		thumb := rl.NewRectangle(b.Bounds.X+b.Bounds.Width-30, b.Bounds.Y+5, 20, 20)
 		entities[selectedEntity].Draw(thumb, palette[colorIdx])
 	}
+	toggleRect := func() {
+		rectTool.Active = !rectTool.Active
+		rectBtn.Active = rectTool.Active
+		rectTool.Cancel()
+	}
+	rectBtn = toolbar.Add(NewButton("Rect", "Grid tool: drag a rectangle to fill it with the entity (R)", toggleRect))
 	toolbar.Add(NewButton("Clear", "Remove all placed entities (asks for confirmation)", func() {
 		dlg.Open(DlgConfirm, ActClear, "Clear canvas", "Remove all entities? This cannot be undone.", "")
 	}))
@@ -1479,10 +1645,30 @@ func main() {
 		m := rl.GetMousePosition()
 		overToolbar := rl.CheckCollisionPointRec(m, toolbar.Bounds())
 		view.Update(!modal, overToolbar)
-		if !modal && !view.Grab && !view.Panning && !overToolbar && m.Y < screenH-statusH &&
-			rl.IsMouseButtonPressed(rl.MouseButtonLeft) && len(dots) < maxPoints {
-			// dots live in world coordinates, so zoom/pan do not move them
-			dots = append(dots, Dot{Pos: view.ScreenToWorld(m), Color: palette[colorIdx], Entity: selectedEntity})
+		if !modal && rl.IsKeyPressed(rl.KeyR) {
+			toggleRect()
+		}
+
+		canDraw := !modal && !view.Grab && !view.Panning && !overToolbar && m.Y < screenH-statusH
+		world := view.ScreenToWorld(m) // dots live in world coordinates, so zoom/pan do not move them
+		switch {
+		case rectTool.Active:
+			if canDraw && rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
+				rectTool.Begin(world)
+			}
+			if rectTool.Dragging() {
+				rectTool.Drag(world)
+				switch {
+				case modal || rl.IsKeyPressed(rl.KeyEscape) || rl.IsMouseButtonPressed(rl.MouseButtonRight):
+					rectTool.Cancel()
+				case rl.IsMouseButtonReleased(rl.MouseButtonLeft):
+					x0, y0, x1, y1 := rectTool.Cells()
+					dots = FillCellRect(dots, x0, y0, x1, y1, selectedEntity, palette[colorIdx])
+					rectTool.Cancel()
+				}
+			}
+		case canDraw && rl.IsMouseButtonPressed(rl.MouseButtonLeft) && len(dots) < maxPoints:
+			dots = append(dots, Dot{Pos: world, Color: palette[colorIdx], Entity: selectedEntity})
 		}
 
 		rl.BeginDrawing()
@@ -1494,7 +1680,9 @@ func main() {
 		for _, d := range dots {
 			entities[d.Entity].Draw(rl.NewRectangle(d.Pos.X-20, d.Pos.Y-20, 40, 40), d.Color)
 		}
+		rectTool.DrawPreview(&entities[selectedEntity], palette[colorIdx], view.Camera.Zoom)
 		view.End()
+		rectTool.DrawLabel(m, len(dots))
 
 		// file preview panel
 		if openedPath != "" {
@@ -1526,6 +1714,8 @@ func main() {
 			rl.SetMouseCursor(rl.MouseCursorResizeAll)
 		} else if view.Grab && !overToolbar {
 			rl.SetMouseCursor(rl.MouseCursorPointingHand)
+		} else if rectTool.Active && !modal && !overToolbar {
+			rl.SetMouseCursor(rl.MouseCursorCrosshair)
 		}
 
 		// dialog (drawn last so it sits on top)

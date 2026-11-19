@@ -1,6 +1,10 @@
 package gui
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+import (
+	"sync"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
 
 const (
 	GripSize   = 18 // thickness of the drag handle
@@ -24,9 +28,30 @@ type Toolbar struct {
 	lastClick  float64
 	lastHover  *Button
 	hoverTimer float32
+	ActiveTool Tool
+	workspace  any
+	mutex      sync.Mutex
 }
 
-func NewToolbar(pos rl.Vector2) *Toolbar { return &Toolbar{Pos: pos} }
+func NewToolbar(pos rl.Vector2, workspace any) *Toolbar {
+	return &Toolbar{Pos: pos, workspace: workspace, mutex: sync.Mutex{}}
+}
+
+func (t *Toolbar) ActivateTool(tool Tool) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
+	for _, b := range t.Buttons {
+		b.Active = false
+	}
+
+	t.ActiveTool = tool
+	tool.Activate(t)
+}
+
+func (t *Toolbar) Workspace() any {
+	return t.workspace
+}
 
 // Add appends a button and returns it so callers can tweak it further.
 func (t *Toolbar) Add(b *Button) *Button {
