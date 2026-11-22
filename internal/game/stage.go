@@ -258,7 +258,7 @@ func (s *Stage) Load(world *ecs.World, path string) error {
 			entity, err := NewEntity(header, world, s, blockPosition)
 
 			if err != nil {
-				return err
+				return fmt.Errorf("reading %q from %q: %w", EntityTypeName(header.Type), fileName, err)
 			}
 
 			entity.ReadFrom(reader)

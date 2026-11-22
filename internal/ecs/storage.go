@@ -1,10 +1,6 @@
 package ecs
 
 type Writer interface {
-	WriteEntityID(id EntityID) error
-	WriteEntityType(et EntityType) error
-	WriteEntityCategory(c EntityCategory) error
-	WriteVersion(ver int) error
 	StartSection(lbl string) error
 	WriteBool(name string, v bool, d bool) error
 	WriteEnum(name string, v any, d bool, c string) error
@@ -20,10 +16,6 @@ type WriterTo interface {
 type Reader interface {
 	ConsumeLine() error
 	ConsumeLabel(lbl string) error
-	ReadEntityID() (EntityID, error)
-	ReadEntityType() (EntityType, error)
-	ReadEntityCategory() (EntityCategory, error)
-	ReadVersion() (int, error)
 	ReadBool() (bool, bool, error)
 	ReadEnum() (uint32, bool, error)
 	ReadFloat() (float32, bool, error)

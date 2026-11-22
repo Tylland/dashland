@@ -22,35 +22,37 @@ func NewEntityHeader(id EntityID, entType EntityType, category EntityCategory) *
 
 func (e *EntityHeader) WriteTo(ew Writer) error {
 	ew.StartSection("header")
-	ew.WriteEntityID(e.ID)
-	ew.WriteEntityType(e.Type)
-	ew.WriteEntityCategory(e.Category)
-	ew.WriteVersion(e.Version)
+	ew.WriteString("ID", string(e.ID), true)
+	ew.WriteEnum("Type", e.Type, true, "")
+	ew.WriteEnum("Category", e.Category, true, "")
+	ew.WriteInt("Version", e.Version, true)
 
 	return nil
 }
 
 func (e *EntityHeader) ReadFrom(r Reader) error {
-	if id, err := r.ReadEntityID(); err == nil {
-		e.ID = id
+	r.ConsumeLabel("header")
+
+	if value, _, err := r.ReadString(); err == nil {
+		e.ID = EntityID(value)
 	} else {
 		return err
 	}
 
-	if et, err := r.ReadEntityType(); err == nil {
-		e.Type = et
+	if value, _, err := r.ReadEnum(); err == nil {
+		e.Type = EntityType(value)
 	} else {
 		return err
 	}
 
-	if category, err := r.ReadEntityCategory(); err == nil {
-		e.Category = category
+	if value, _, err := r.ReadEnum(); err == nil {
+		e.Category = EntityCategory(value)
 	} else {
 		return err
 	}
 
-	if ver, err := r.ReadVersion(); err == nil {
-		e.Version = ver
+	if value, _, err := r.ReadInt(); err == nil {
+		e.Version = value
 	} else {
 		return err
 	}
