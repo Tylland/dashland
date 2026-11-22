@@ -18,12 +18,13 @@ const (
 )
 
 type Value struct {
-	Kind   ValueKind
-	Edited bool
-	Name   string
-	Text   string // text, "true"/"false", or the decimal part of a number
-	Hex    string // numbers only: 8 hex digits of the float32 bits
-	Float  bool
+	Kind    ValueKind
+	Edited  bool
+	Name    string
+	Text    string // text, "true"/"false", or the decimal part of a number; enums use decimal integers
+	Display string // optional user-facing label, used by enums
+	Hex     string // numbers only: 8 hex digits of the float32 bits
+	Float   bool
 }
 
 // Section is a "# label" followed by its values.

@@ -69,7 +69,7 @@ func main() {
 	var ed gui.EntityDialog
 	var vd gui.ValuesDialog
 
-	var lastDir string
+	var lastDir string = "C:\\src\\dashland\\assets\\stages\\start"
 
 	// Build the toolbar: each button carries its own label, tooltip and click handler.
 	var workspace tool.ToolbarWorkspace = ws

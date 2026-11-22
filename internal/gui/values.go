@@ -217,6 +217,12 @@ func (d *ValuesDialog) drawRow(r *valueRow, list rl.Rectangle, y float32, can bo
 		}
 	case KindText:
 		clicked = d.drawField(r.field1, v.Text, rl.NewRectangle(fx, y+3, 340, 26), list, can)
+	case KindEnum:
+		display := v.Display
+		if display == "" {
+			display = v.Text
+		}
+		rl.DrawText(FitText(display, 340, 16), int32(fx), int32(y)+7, 16, ColText)
 	case KindInt, KindFloat:
 		c1 := d.drawField(r.field1, v.Text, rl.NewRectangle(fx, y+3, 190, 26), list, can)
 		rl.DrawText(":", int32(fx)+198, int32(y)+6, 18, ColTextDim)

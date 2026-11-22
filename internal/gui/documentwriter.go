@@ -74,28 +74,35 @@ func (w *DocumentWriter) WriteBool(name string, v bool, d bool) error {
 }
 
 func (w *DocumentWriter) WriteEnum(name string, enum any, d bool, c string) error {
-	var vint uint32
-
 	v := reflect.ValueOf(enum)
 
+	var vint uint64
 	switch v.Kind() {
 	case reflect.Uint16:
-		vint = uint32(v.Int())
+		vint = v.Uint()
 	case reflect.Uint32:
-		vint = uint32(v.Uint())
+		vint = v.Uint()
 	default:
 		return fmt.Errorf("unsupported enum type: %T", enum)
 	}
+
+	display := ""
+	if stringer, ok := enum.(fmt.Stringer); ok {
+		display = stringer.String()
+	}
+
 	w.addValue(&Value{
-		Name: name,
-		Kind: KindEnum,
-		Text: strconv.Itoa(int(vint))})
+		Name:    name,
+		Kind:    KindEnum,
+		Text:    strconv.FormatUint(vint, 10),
+		Display: display,
+	})
 
 	return nil
 }
 
 func (w *DocumentWriter) WriteFloat(name string, v float32, d bool) error {
-	bits := math.Float32bits(float32(v))
+	bits := math.Float32bits(v)
 
 	w.addValue(&Value{
 		Name:  name,
