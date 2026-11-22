@@ -7,6 +7,7 @@ import (
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game"
 )
 
 // ------------------------------------------------------------------ ValuesDialog
@@ -36,9 +37,9 @@ type fieldRef struct {
 type ValuesDialog struct {
 	Window
 	Active      bool
-	Path        string
+	path        string
 	entity      *ecs.Entity
-	Doc         *Document
+	document    *Document
 	rows        []*valueRow
 	fields      []fieldRef
 	contentH    float32
@@ -46,6 +47,7 @@ type ValuesDialog struct {
 	scroll      float32
 	focus       *TextField
 	saveBtn     *Button
+	updateBtn   *Button
 	cancelBtn   *Button
 	result      DialogResult
 	err         string
@@ -57,13 +59,14 @@ func (d *ValuesDialog) Open(entity *ecs.Entity, doc *Document, path string) erro
 	*d = ValuesDialog{
 		Window:      NewWindow(title, 580, 540),
 		Active:      true,
-		Path:        path,
+		path:        path,
 		entity:      entity,
-		Doc:         doc,
+		document:    doc,
 		openedFrame: Frame,
 	}
 	d.buildRows()
 	d.saveBtn = NewButton("Save", "", func() { d.save() })
+	d.updateBtn = NewButton("Update", "", func() { d.update() })
 	d.cancelBtn = NewButton("Cancel", "", func() { d.result = ResCancel })
 	return nil
 }
@@ -76,7 +79,7 @@ func (d *ValuesDialog) buildRows() {
 	printable := func(r rune) bool { return r >= 32 && r != 127 }
 
 	y := float32(8)
-	for _, sec := range d.Doc.Sections {
+	for _, sec := range d.document.Sections {
 		if sec.Label != "" {
 			d.rows = append(d.rows, &valueRow{header: sec.Label, y: y, h: vdHeaderH})
 			y += vdHeaderH
@@ -134,7 +137,38 @@ func (d *ValuesDialog) buildRows() {
 	d.contentH = y + 8
 }
 
+// Saves values to file
 func (d *ValuesDialog) save() {
+	d.update()
+
+	if d.entity != nil && d.document != nil {
+		//fileName := filepath.Join(t.ws.StagePath(), game.EntityFileName(entity))
+
+		writer := game.Must(game.NewTextFileWriter(d.path))
+
+		d.entity.WriteTo(writer)
+
+		writer.Close()
+	}
+
+	d.result = ResOK
+}
+
+// Update entity by saveing back values
+func (d *ValuesDialog) update() {
+	if d.entity != nil && d.document != nil {
+		reader := NewDocumentReader(d.document)
+		if d.entity.EntityHeader != nil && len(d.document.Sections) > 0 && d.document.Sections[0] != nil && d.document.Sections[0].Label == "header" {
+			if err := d.entity.EntityHeader.ReadFrom(reader); err != nil {
+				d.err = err.Error()
+				return
+			}
+		}
+		if err := d.entity.ReadFrom(reader); err != nil {
+			d.err = err.Error()
+			return
+		}
+	}
 	d.result = ResOK
 }
 
@@ -327,7 +361,7 @@ func (d *ValuesDialog) UpdateDraw() (string, DialogResult) {
 	const bw, bh = 96, 34
 	by := b.Y + b.Height - bh - 16
 	if d.err != "" {
-		rl.DrawText(FitText("Save failed: "+d.err, int32(b.Width)-32-2*bw-30, 14), int32(b.X)+16, int32(by)+10, 14, rl.NewColor(255, 120, 120, 255))
+		rl.DrawText(FitText("Save failed: "+d.err, int32(b.Width)-32-3*bw-40, 14), int32(b.X)+16, int32(by)+10, 14, rl.NewColor(255, 120, 120, 255))
 	} else {
 		rl.DrawText("* = edited (not default)", int32(b.X)+16, int32(by)+10, 14, ColTextDim)
 	}
@@ -335,12 +369,17 @@ func (d *ValuesDialog) UpdateDraw() (string, DialogResult) {
 	d.saveBtn.Bounds = rl.NewRectangle(rightX-bw, by, bw, bh)
 	d.saveBtn.Enabled = can
 	d.saveBtn.UpdateDraw()
-	d.cancelBtn.Bounds = rl.NewRectangle(rightX-2*bw-10, by, bw, bh)
+
+	d.updateBtn.Bounds = rl.NewRectangle(rightX-2*bw-10, by, bw, bh)
+	d.updateBtn.Enabled = can
+	d.updateBtn.UpdateDraw()
+
+	d.cancelBtn.Bounds = rl.NewRectangle(rightX-3*bw-20, by, bw, bh)
 	d.cancelBtn.Enabled = can
 	d.cancelBtn.UpdateDraw()
 
 	if d.result != ResNone {
 		d.Active = false
 	}
-	return d.Path, d.result
+	return d.path, d.result
 }

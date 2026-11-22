@@ -30,7 +30,10 @@ func (c *CollectableComponent) WriteTo(w ecs.Writer) error {
 func (c *CollectableComponent) ReadFrom(r ecs.Reader) error {
 	r.ConsumeLabel(ecs.ComponentName(c))
 	r.ConsumeLine()
-	r.ConsumeLine()
+
+	ecs.WithChangedValue(r.ReadInt, func(amount int) {
+		c.Amount = amount
+	})
 
 	return nil
 }

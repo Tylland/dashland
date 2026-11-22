@@ -132,6 +132,7 @@ func main() {
 			gui.KeepOnScreen(&dlg.Bounds)
 			gui.KeepOnScreen(&fd.Bounds)
 			gui.KeepOnScreen(&ed.Bounds)
+			gui.KeepOnScreen(&vd.Bounds)
 		}
 		if rl.IsKeyPressed(rl.KeyF11) { // toggle maximized
 			if rl.IsWindowMaximized() {
@@ -140,7 +141,7 @@ func main() {
 				rl.MaximizeWindow()
 			}
 		}
-		modal := dlg.Kind != gui.DlgNone || fd.Active || ed.Active
+		modal := dlg.Kind != gui.DlgNone || fd.Active || ed.Active || vd.Active
 
 		// canvas input (blocked while a dialog is open or when over the toolbar)
 		m := rl.GetMousePosition()
