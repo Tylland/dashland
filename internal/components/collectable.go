@@ -20,9 +20,9 @@ func NewCollectableComponent(name string, amount int) *CollectableComponent {
 }
 
 func (c *CollectableComponent) WriteTo(w ecs.Writer) error {
-	w.WriteLabel(ecs.ComponentName(c))
-	w.WriteString(c.Name, false)
-	w.WriteInt(c.Amount, false)
+	w.StartSection(ecs.ComponentName(c))
+	w.WriteString("Name", c.Name, false)
+	w.WriteInt("Amount", c.Amount, false)
 
 	return nil
 }

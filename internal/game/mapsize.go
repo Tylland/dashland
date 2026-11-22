@@ -18,11 +18,11 @@ func (s *MapSize) Count() int {
 }
 
 func (s *MapSize) WriteTo(w ecs.Writer) error {
-	w.WriteLabel("size")
-	w.WriteInt(s.Width, false)
-	w.WriteInt(s.Height, false)
-	w.WriteFloat(s.BlockWidth, false)
-	w.WriteFloat(s.BlockHeight, false)
+	w.StartSection("size")
+	w.WriteInt("Width", s.Width, false)
+	w.WriteInt("Height", s.Height, false)
+	w.WriteFloat("BlockWidth", s.BlockWidth, false)
+	w.WriteFloat("BlockHeight", s.BlockHeight, false)
 
 	return nil
 }

@@ -18,8 +18,8 @@ type ToolbarWorkspace interface {
 	StagePath() string
 	Entities() []*gui.EntityItem
 	SelectedEntity() *gui.EntityItem
-	Inspection() *gui.EntityInspect
-	SetInspection(inspect *gui.EntityInspect)
+	Inspection() *gui.EntityInspection
+	Inspect(inspect *gui.EntityInspection)
 }
 
 // ------------------------------------------------------------------ Rectangle grid tool

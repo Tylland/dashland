@@ -126,7 +126,10 @@ func tri(a, b, c rl.Vector2, col rl.Color) {
 // 	}
 // }
 
-type EntityInspect struct {
+type EntityInspection struct {
+	Entity   *ecs.Entity
+	Block    *game.Block
+	Document *Document
 	Openpath string
 	Info     []string
 }

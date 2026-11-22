@@ -14,9 +14,9 @@ func NewSpriteComponent(sprite *common.Sprite) *SpriteComponent {
 }
 
 func (c *SpriteComponent) WriteTo(w ecs.Writer) error {
-	w.WriteLabel(ecs.ComponentName(c))
-	w.WriteFloat(c.Width, true)
-	w.WriteFloat(c.Height, true)
+	w.StartSection(ecs.ComponentName(c))
+	w.WriteFloat("Width", c.Width, true)
+	w.WriteFloat("Height", c.Height, true)
 	//w.WriteInt(int(c.Texture.ID), true)
 
 	return nil

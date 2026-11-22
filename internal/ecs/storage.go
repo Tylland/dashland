@@ -5,12 +5,12 @@ type Writer interface {
 	WriteEntityType(et EntityType) error
 	WriteEntityCategory(c EntityCategory) error
 	WriteVersion(ver int) error
-	WriteLabel(lbl string) error
-	WriteBool(v bool, d bool) error
-	WriteEnum(v any, d bool, c string) error
-	WriteFloat(v float32, d bool) error
-	WriteInt(v int, d bool) error
-	WriteString(v string, d bool) error
+	StartSection(lbl string) error
+	WriteBool(name string, v bool, d bool) error
+	WriteEnum(name string, v any, d bool, c string) error
+	WriteFloat(name string, v float32, d bool) error
+	WriteInt(name string, v int, d bool) error
+	WriteString(name string, v string, d bool) error
 }
 
 type WriterTo interface {

@@ -21,6 +21,7 @@ func NewEntityHeader(id EntityID, entType EntityType, category EntityCategory) *
 }
 
 func (e *EntityHeader) WriteTo(ew Writer) error {
+	ew.StartSection("header")
 	ew.WriteEntityID(e.ID)
 	ew.WriteEntityType(e.Type)
 	ew.WriteEntityCategory(e.Category)

@@ -37,11 +37,11 @@ func NewDoorComponent(stage string, pos common.BlockPosition, state DoorState) *
 }
 
 func (c *DoorComponent) WriteTo(w ecs.Writer) error {
-	w.WriteLabel(ecs.ComponentName(c))
-	w.WriteString(c.Stage, false)
-	w.WriteInt(c.Position.X, false)
-	w.WriteInt(c.Position.Y, false)
-	w.WriteEnum(c.State, false, "state")
+	w.StartSection(ecs.ComponentName(c))
+	w.WriteString("Stage", c.Stage, false)
+	w.WriteInt("X", c.Position.X, false)
+	w.WriteInt("Y", c.Position.Y, false)
+	w.WriteEnum("State", c.State, false, "state")
 
 	return nil
 }

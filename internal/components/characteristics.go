@@ -30,8 +30,8 @@ func (c *CharacteristicComponent) Remove(characteristic characteristics.Characte
 }
 
 func (c *CharacteristicComponent) WriteTo(w ecs.Writer) error {
-	w.WriteLabel(ecs.ComponentName(c))
-	w.WriteEnum(c.characteristics, false, "")
+	w.StartSection(ecs.ComponentName(c))
+	w.WriteEnum("Characteristics", c.characteristics, false, "")
 
 	return nil
 }

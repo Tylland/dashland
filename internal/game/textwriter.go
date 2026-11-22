@@ -64,7 +64,7 @@ func (m *TextWriter) WriteVersion(ver int) error {
 	return m.write("%d", ver)
 }
 
-func (m *TextWriter) WriteLabel(lbl string) error {
+func (m *TextWriter) StartSection(lbl string) error {
 	return m.write("%s %s", TokenLabel, lbl)
 }
 
@@ -73,7 +73,7 @@ func (m *TextWriter) WriteLabel(lbl string) error {
 // 	return m.write("%s %s@%d", TokenLabel, name, version)
 // }
 
-func (m *TextWriter) WriteString(str string, d bool) error {
+func (m *TextWriter) WriteString(name, str string, d bool) error {
 	changed := TokenChanged
 
 	if d {
@@ -83,11 +83,11 @@ func (m *TextWriter) WriteString(str string, d bool) error {
 	return m.write("%s%s %s", TokenIndent, changed, str)
 }
 
-func (m *TextWriter) WriteBool(v bool, d bool) error {
-	return m.WriteString(strconv.FormatBool(v), d)
+func (m *TextWriter) WriteBool(name string, v bool, d bool) error {
+	return m.WriteString(name, strconv.FormatBool(v), d)
 }
 
-func (m *TextWriter) WriteInt(v int, d bool) error {
+func (m *TextWriter) WriteInt(name string, v int, d bool) error {
 	bits := math.Float32bits(float32(v))
 
 	dirty := TokenChanged
@@ -99,7 +99,7 @@ func (m *TextWriter) WriteInt(v int, d bool) error {
 	return m.write("%s%s %d%s%08x", TokenIndent, dirty, v, TokenSeparator, bits)
 }
 
-func (m *TextWriter) WriteFloat(v float32, d bool) error {
+func (m *TextWriter) WriteFloat(name string, v float32, d bool) error {
 	bits := math.Float32bits(v) // Get IEEE 754 binary representation
 
 	dirty := TokenChanged
@@ -111,7 +111,7 @@ func (m *TextWriter) WriteFloat(v float32, d bool) error {
 	return m.write("%s%s %6f%s%08x", TokenIndent, dirty, v, TokenSeparator, bits)
 }
 
-func (m *TextWriter) WriteEnum(enum any, d bool, c string) error {
+func (m *TextWriter) WriteEnum(name string, enum any, d bool, c string) error {
 	var vint uint32
 
 	v := reflect.ValueOf(enum)

@@ -290,36 +290,36 @@ func (s *Stage) Load(world *ecs.World, path string) error {
 }
 
 func (s *Stage) WriteTo(w ecs.Writer) error {
-	w.WriteLabel("stage")
-	w.WriteString(s.Name, false)
+	w.StartSection("stage")
+	w.WriteString("Name", s.Name, false)
 
 	s.MapSize.WriteTo(w)
 
-	w.WriteLabel("enter position")
-	w.WriteInt(s.EnterPosition.X, false)
-	w.WriteInt(s.EnterPosition.Y, false)
+	w.StartSection("enter position")
+	w.WriteInt("X", s.EnterPosition.X, false)
+	w.WriteInt("Y", s.EnterPosition.Y, false)
 
-	w.WriteLabel("exit position")
-	w.WriteInt(s.ExitPosition.X, false)
-	w.WriteInt(s.ExitPosition.Y, false)
+	w.StartSection("exit position")
+	w.WriteInt("X", s.ExitPosition.X, false)
+	w.WriteInt("Y", s.ExitPosition.Y, false)
 
-	w.WriteLabel("exit condition")
-	w.WriteBool(s.ExitCondition, false)
+	w.StartSection("exit condition")
+	w.WriteBool("Condition", s.ExitCondition, false)
 
-	w.WriteLabel("diamonds")
-	w.WriteInt(s.DiamondsRequired, false)
-	w.WriteInt(s.DiamondPoints, false)
-	w.WriteInt(s.DiamondBonusPoints, false)
+	w.StartSection("diamonds")
+	w.WriteInt("Required", s.DiamondsRequired, false)
+	w.WriteInt("Points", s.DiamondPoints, false)
+	w.WriteInt("Bonus Points", s.DiamondBonusPoints, false)
 
-	w.WriteLabel("time")
-	w.WriteInt(s.TimeLimit, false)
-	w.WriteFloat(s.TimeRemaining, false)
-	w.WriteBool(s.TimeExpired, false)
+	w.StartSection("time")
+	w.WriteInt("Limit", s.TimeLimit, false)
+	w.WriteFloat("Remaining", s.TimeRemaining, false)
+	w.WriteBool("Expired", s.TimeExpired, false)
 
-	w.WriteLabel("magic wall")
-	w.WriteBool(s.MagicWallActive, false)
-	w.WriteFloat(s.MagicWallDuration, false)
-	w.WriteFloat(s.MagicWallTimer, false)
+	w.StartSection("magic wall")
+	w.WriteBool("Active", s.MagicWallActive, false)
+	w.WriteFloat("Diration", s.MagicWallDuration, false)
+	w.WriteFloat("Timer", s.MagicWallTimer, false)
 
 	return nil
 }

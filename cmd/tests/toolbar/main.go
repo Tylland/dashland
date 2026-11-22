@@ -17,6 +17,8 @@
 //   - Resizable / maximizable window (maximize button or F11); the UI follows the window size
 //   - Canvas view: Ctrl+wheel zooms at the cursor; hold Space, press the left
 //     button and drag to pan; Home resets the view
+//   - Values dialog: shows and edits a file in the "# label" / " * value" format
+//     (numbers as "decimal : float32-hex", booleans, text); saves back to the file
 //   - Rect tool (toolbar button or R): drag a rectangle to fill its grid cells
 //     with the selected entity; Esc or right-click cancels
 //   - Modal dialogs: message (OK), confirm (Yes/No), text input (OK/Cancel)
@@ -31,10 +33,13 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"github.com/tylland/dashland/internal/ecs"
 )
 
 const (
@@ -74,6 +79,7 @@ type Button struct {
 	Bounds   rl.Rectangle
 	Enabled  bool
 	Active   bool            // toggled-on look (e.g. the selected tool)
+	Width    float32         // width inside a toolbar (0 = default tbBtnW)
 	GapAfter float32         // extra layout space after this button (used by Toolbar)
 	OnClick  func()          // called when the button is clicked
 	Decorate func(b *Button) // optional hook to draw extra content (icons, swatches...)
@@ -717,6 +723,665 @@ func loadPreview(path string) []string {
 	return lines
 }
 
+// ------------------------------------------------------------------ Value document (display + edit)
+
+type ValueKind int
+
+const (
+	KindText ValueKind = iota
+	KindBool
+	KindNumber
+)
+
+// Value is one line below a "# label". Line formats:
+//
+//	" * 30 : 41f00000"   edited value (a leading '*' means "not default")
+//	"   30 : 41f00000"   default value (its original prefix is preserved)
+//
+// Numbers hold a decimal text plus the hex of the float32 bit pattern.
+type Value struct {
+	Kind   ValueKind
+	Edited bool
+	Prefix string // text before the body on default lines, so untouched lines round-trip
+	Name   string
+	Text   string // text, "true"/"false", or the decimal part of a number
+	Hex    string // numbers only: 8 hex digits of the float32 bits
+	Float  bool   // numbers only: written with decimals ("32.000000") instead of as an integer
+}
+
+func (v *Value) body() string {
+	if v.Kind == KindNumber {
+		return v.Text + " : " + v.Hex
+	}
+	return v.Text
+}
+
+// Line renders the value the way it is stored in the file.
+func (v *Value) Line() string {
+	if v.Edited {
+		return " * " + v.body()
+	}
+	return v.Prefix + v.body()
+}
+
+// formatNumber renders f as "30" (integer style) or "30.000000" (float style).
+// It also reports whether float style had to be used.
+func formatNumber(f float64, floatStyle bool) (string, bool) {
+	if !floatStyle && f == math.Trunc(f) && math.Abs(f) < 1e15 {
+		return strconv.FormatInt(int64(f), 10), false
+	}
+	return fmt.Sprintf("%f", f), true
+}
+
+// SetDecimal parses a decimal text and updates both the text and the hex.
+// ok is false when text is not a number; changed tells whether the value differs.
+func (v *Value) SetDecimal(text string) (ok, changed bool) {
+	text = strings.TrimSpace(text)
+	f, err := strconv.ParseFloat(text, 64)
+	if err != nil || math.IsNaN(f) || math.IsInf(f, 0) {
+		return false, false
+	}
+	style := v.Float || strings.ContainsAny(text, ".eE")
+	newText, style := formatNumber(f, style)
+	newHex := fmt.Sprintf("%08x", math.Float32bits(float32(f)))
+	changed = newText != v.Text || newHex != v.Hex
+	v.Text, v.Hex, v.Float = newText, newHex, style
+	return true, changed
+}
+
+// SetHex parses a hex bit pattern and updates both the hex and the decimal text.
+func (v *Value) SetHex(text string) (ok, changed bool) {
+	u, err := strconv.ParseUint(strings.TrimSpace(text), 16, 32)
+	if err != nil {
+		return false, false
+	}
+	f := float64(math.Float32frombits(uint32(u)))
+	if math.IsNaN(f) || math.IsInf(f, 0) {
+		return false, false
+	}
+	newText, style := formatNumber(f, v.Float)
+	newHex := fmt.Sprintf("%08x", u)
+	changed = newText != v.Text || newHex != v.Hex
+	v.Text, v.Hex, v.Float = newText, newHex, style
+	return true, changed
+}
+
+// Section is a "# label" followed by its values.
+type Section struct {
+	Label  string
+	Values []*Value
+}
+
+type Document struct{ Sections []*Section }
+
+func parseValue(line string) *Value {
+	trimmed := strings.TrimSpace(line)
+	indent := line[:len(line)-len(strings.TrimLeft(line, " \t"))]
+	v := &Value{Prefix: indent}
+	body := trimmed
+	switch {
+	case strings.HasPrefix(trimmed, "*"):
+		v.Edited = true
+		body = strings.TrimSpace(trimmed[1:])
+	case strings.HasPrefix(trimmed, "- "):
+		v.Prefix = indent + "- "
+		body = strings.TrimSpace(trimmed[2:])
+	}
+
+	if i := strings.Index(body, ":"); i >= 0 { // "30 : 41f00000"
+		dec, hex := strings.TrimSpace(body[:i]), strings.TrimSpace(body[i+1:])
+		if _, err := strconv.ParseFloat(dec, 64); err == nil {
+			if _, err := strconv.ParseUint(hex, 16, 32); err == nil {
+				v.Kind, v.Text, v.Hex = KindNumber, dec, strings.ToLower(hex)
+				v.Float = strings.ContainsAny(dec, ".eE")
+				return v
+			}
+		}
+	}
+	v.Text = body
+	if body == "true" || body == "false" {
+		v.Kind = KindBool
+	}
+	return v
+}
+
+// DocumentFromEntity reflects the exported component fields of an entity into
+// one section per component. Structs and collections are expanded recursively.
+func DocumentFromEntity(entity *ecs.Entity) *Document {
+	doc := &Document{}
+	if entity == nil || entity.Components == nil {
+		return doc
+	}
+
+	for _, component := range entity.Components.Ordered() {
+		section := &Section{Label: ecs.ComponentName(component)}
+		appendReflectedValues(section, "", reflect.ValueOf(component))
+		doc.Sections = append(doc.Sections, section)
+	}
+	return doc
+}
+
+func appendReflectedValues(section *Section, name string, value reflect.Value) {
+	if !value.IsValid() {
+		return
+	}
+	for value.Kind() == reflect.Interface || value.Kind() == reflect.Pointer {
+		if value.IsNil() {
+			return
+		}
+		value = value.Elem()
+	}
+
+	switch value.Kind() {
+	case reflect.Struct:
+		for i := 0; i < value.NumField(); i++ {
+			field := value.Type().Field(i)
+			if !field.IsExported() {
+				continue
+			}
+			fieldName := field.Name
+			if name != "" {
+				fieldName = name + "." + fieldName
+			}
+			appendReflectedValues(section, fieldName, value.Field(i))
+		}
+	case reflect.Array, reflect.Slice:
+		for i := 0; i < value.Len(); i++ {
+			appendReflectedValues(section, fmt.Sprintf("%s[%d]", name, i), value.Index(i))
+		}
+	case reflect.Map:
+		keys := value.MapKeys()
+		sort.Slice(keys, func(i, j int) bool {
+			left, leftOK := reflectedScalarText(keys[i])
+			right, rightOK := reflectedScalarText(keys[j])
+			return leftOK && rightOK && left < right
+		})
+		for _, key := range keys {
+			keyText, ok := reflectedScalarText(key)
+			if !ok {
+				continue
+			}
+			appendReflectedValues(section, fmt.Sprintf("%s[%s]", name, keyText), value.MapIndex(key))
+		}
+	case reflect.Bool:
+		text := strconv.FormatBool(value.Bool())
+		section.Values = append(section.Values, &Value{Name: name, Kind: KindBool, Text: text})
+	case reflect.String:
+		section.Values = append(section.Values, &Value{Name: name, Kind: KindText, Text: value.String()})
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		section.Values = append(section.Values, &Value{Name: name, Kind: KindText, Text: strconv.FormatInt(value.Int(), 10)})
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		section.Values = append(section.Values, &Value{Name: name, Kind: KindText, Text: strconv.FormatUint(value.Uint(), 10)})
+	case reflect.Float32:
+		f := float32(value.Float())
+		section.Values = append(section.Values, &Value{
+			Name: name, Kind: KindNumber,
+			Text: strconv.FormatFloat(float64(f), 'f', -1, 32),
+			Hex:  fmt.Sprintf("%08x", math.Float32bits(f)),
+			Float: true,
+		})
+	case reflect.Float64:
+		section.Values = append(section.Values, &Value{
+			Name: name, Kind: KindText,
+			Text: strconv.FormatFloat(value.Float(), 'g', -1, 64),
+		})
+	}
+}
+
+func reflectedScalarText(value reflect.Value) (string, bool) {
+	switch value.Kind() {
+	case reflect.Bool:
+		return strconv.FormatBool(value.Bool()), true
+	case reflect.String:
+		return value.String(), true
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return strconv.FormatInt(value.Int(), 10), true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return strconv.FormatUint(value.Uint(), 10), true
+	case reflect.Float32:
+		return strconv.FormatFloat(value.Float(), 'g', -1, 32), true
+	case reflect.Float64:
+		return strconv.FormatFloat(value.Float(), 'g', -1, 64), true
+	default:
+		return "", false
+	}
+}
+
+// ParseDocument reads the "# label" / " * value" format. Blank lines are ignored.
+func ParseDocument(text string) *Document {
+	doc := &Document{}
+	var cur *Section
+	for _, raw := range strings.Split(text, "\n") {
+		line := strings.TrimRight(raw, "\r")
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+		if strings.HasPrefix(trimmed, "#") {
+			cur = &Section{Label: strings.TrimSpace(trimmed[1:])}
+			doc.Sections = append(doc.Sections, cur)
+			continue
+		}
+		if cur == nil { // values before the first label
+			cur = &Section{}
+			doc.Sections = append(doc.Sections, cur)
+		}
+		cur.Values = append(cur.Values, parseValue(line))
+	}
+	return doc
+}
+
+func (d *Document) String() string {
+	var sb strings.Builder
+	for _, sec := range d.Sections {
+		if sec.Label != "" {
+			sb.WriteString("# " + sec.Label + "\n")
+		}
+		for _, v := range sec.Values {
+			sb.WriteString(v.Line() + "\n")
+		}
+	}
+	return sb.String()
+}
+
+// ------------------------------------------------------------------ TextField
+
+// TextField is a single-line text box. The owner decides which field has focus.
+type TextField struct {
+	Text     string
+	Bounds   rl.Rectangle
+	MaxLen   int
+	Allow    func(r rune) bool      // which characters may be typed (nil = all)
+	OnChange func(text string) bool // called after every edit; false = text is not valid
+	Invalid  bool
+
+	backHold float32 // backspace auto-repeat timer
+}
+
+// UpdateDraw handles typing (when focused) and draws the field. It reports a click on it.
+// clip is the visible area the field lives in (clicks outside it are ignored).
+func (f *TextField) UpdateDraw(enabled, focused bool, clip rl.Rectangle) (clicked bool) {
+	m := rl.GetMousePosition()
+	hover := enabled && rl.CheckCollisionPointRec(m, f.Bounds) && rl.CheckCollisionPointRec(m, clip)
+	clicked = hover && rl.IsMouseButtonPressed(rl.MouseButtonLeft)
+
+	if focused && enabled {
+		changed := false
+		for {
+			ch := rl.GetCharPressed()
+			if ch <= 0 {
+				break
+			}
+			r := rune(ch)
+			if (f.Allow == nil || f.Allow(r)) && len([]rune(f.Text)) < f.MaxLen {
+				f.Text += string(r)
+				changed = true
+			}
+		}
+		del := false
+		if rl.IsKeyPressed(rl.KeyBackspace) {
+			f.backHold, del = 0, true
+		} else if rl.IsKeyDown(rl.KeyBackspace) {
+			f.backHold += rl.GetFrameTime()
+			if f.backHold > 0.4 {
+				f.backHold, del = 0.36, true
+			}
+		}
+		if del {
+			if r := []rune(f.Text); len(r) > 0 {
+				f.Text = string(r[:len(r)-1])
+				changed = true
+			}
+		}
+		if changed && f.OnChange != nil {
+			f.Invalid = !f.OnChange(f.Text)
+		}
+	}
+
+	border := colBtn
+	switch {
+	case f.Invalid:
+		border = rl.NewColor(230, 90, 90, 255)
+	case focused:
+		border = colAccent
+	case hover:
+		border = colBtnHover
+	}
+	b := f.Bounds
+	rl.DrawRectangleRounded(rl.NewRectangle(b.X-1, b.Y-1, b.Width+2, b.Height+2), 0.2, 4, border)
+	rl.DrawRectangleRounded(b, 0.2, 4, rl.NewColor(30, 32, 40, 255))
+	txt := fitText(f.Text, int32(b.Width)-16, 16)
+	rl.DrawText(txt, int32(b.X)+8, int32(b.Y)+5, 16, colText)
+	if focused && int(rl.GetTime()*2)%2 == 0 { // blinking caret
+		rl.DrawRectangle(int32(b.X)+8+rl.MeasureText(txt, 16)+1, int32(b.Y)+4, 2, 18, colText)
+	}
+	return clicked
+}
+
+// ------------------------------------------------------------------ ValuesDialog
+
+const (
+	vdRowH    = 32
+	vdHeaderH = 40
+)
+
+type valueRow struct {
+	header         string // non-empty for a "# label" row
+	val            *Value
+	index          int // 1-based position inside the section
+	y, h           float32
+	field1, field2 *TextField // text / decimal field, hex field
+}
+
+type fieldRef struct {
+	field *TextField
+	row   *valueRow
+}
+
+// ValuesDialog is a modal editor for a Document loaded from a file.
+//   - click a field to edit it; Tab / Shift+Tab / Enter move between fields
+//   - numbers have a decimal and a hex field that stay in sync
+//   - editing a value marks it with '*' (not default)
+//   - Save writes the file, Esc / Cancel discards the changes
+type ValuesDialog struct {
+	Window
+	Active      bool
+	Path        string
+	Doc         *Document
+	rows        []*valueRow
+	fields      []fieldRef
+	contentH    float32
+	listH       float32
+	scroll      float32
+	focus       *TextField
+	saveBtn     *Button
+	cancelBtn   *Button
+	result      DialogResult
+	err         string
+	openedFrame uint64
+}
+
+// Open loads and parses the file. It fails if the file cannot be read.
+func (d *ValuesDialog) Open(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	title := "Edit values: " + fitText(filepath.Base(path), 360, 18)
+	*d = ValuesDialog{
+		Window:      NewWindow(title, 580, 540),
+		Active:      true,
+		Path:        path,
+		Doc:         ParseDocument(string(data)),
+		openedFrame: frame,
+	}
+	d.buildRows()
+	d.saveBtn = NewButton("Save", "", func() { d.save() })
+	d.cancelBtn = NewButton("Cancel", "", func() { d.result = ResCancel })
+	return nil
+}
+
+func (d *ValuesDialog) buildRows() {
+	decimal := func(r rune) bool { return (r >= '0' && r <= '9') || strings.ContainsRune(".-+eE", r) }
+	hexDigit := func(r rune) bool {
+		return (r >= '0' && r <= '9') || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')
+	}
+	printable := func(r rune) bool { return r >= 32 && r != 127 }
+
+	y := float32(8)
+	for _, sec := range d.Doc.Sections {
+		if sec.Label != "" {
+			d.rows = append(d.rows, &valueRow{header: sec.Label, y: y, h: vdHeaderH})
+			y += vdHeaderH
+		}
+		for i, v := range sec.Values {
+			v := v // own copy for the closures below
+			row := &valueRow{val: v, index: i + 1, y: y, h: vdRowH}
+			switch v.Kind {
+			case KindText:
+				row.field1 = &TextField{MaxLen: 60, Allow: printable, OnChange: func(t string) bool {
+					if nt := strings.TrimSpace(t); nt != v.Text {
+						v.Text, v.Edited = nt, true
+					}
+					return true
+				}}
+			case KindNumber:
+				row.field1 = &TextField{MaxLen: 24, Allow: decimal, OnChange: func(t string) bool {
+					ok, changed := v.SetDecimal(t)
+					if changed {
+						v.Edited = true
+					}
+					return ok
+				}}
+				row.field2 = &TextField{MaxLen: 8, Allow: hexDigit, OnChange: func(t string) bool {
+					ok, changed := v.SetHex(t)
+					if changed {
+						v.Edited = true
+					}
+					return ok
+				}}
+			}
+			for _, f := range []*TextField{row.field1, row.field2} {
+				if f != nil {
+					d.fields = append(d.fields, fieldRef{f, row})
+				}
+			}
+			d.rows = append(d.rows, row)
+			y += vdRowH
+		}
+	}
+	d.contentH = y + 8
+}
+
+func (d *ValuesDialog) save() {
+	if err := os.WriteFile(d.Path, []byte(d.Doc.String()), 0o644); err != nil {
+		d.err = err.Error()
+		return
+	}
+	d.result = ResOK
+}
+
+// setFocus focuses a field and scrolls its row into view.
+func (d *ValuesDialog) setFocus(fr fieldRef) {
+	d.focus = fr.field
+	if fr.row.y < d.scroll {
+		d.scroll = fr.row.y - 8
+	}
+	if fr.row.y+fr.row.h > d.scroll+d.listH {
+		d.scroll = fr.row.y + fr.row.h - d.listH + 8
+	}
+}
+
+func (d *ValuesDialog) focusIndex() int {
+	for i, fr := range d.fields {
+		if fr.field == d.focus {
+			return i
+		}
+	}
+	return -1
+}
+
+// focusMove moves the focus to the next (+1) or previous (-1) field, wrapping around.
+func (d *ValuesDialog) focusMove(delta int) {
+	n := len(d.fields)
+	if n == 0 {
+		return
+	}
+	idx := d.focusIndex()
+	switch {
+	case idx < 0 && delta > 0:
+		idx = 0
+	case idx < 0:
+		idx = n - 1
+	default:
+		idx = (idx + delta + n) % n
+	}
+	d.setFocus(d.fields[idx])
+}
+
+// drawField syncs an unfocused field with its model value, then draws it.
+func (d *ValuesDialog) drawField(f *TextField, model string, bounds, list rl.Rectangle, can bool) bool {
+	f.Bounds = bounds
+	if d.focus != f {
+		f.Text, f.Invalid = model, false // also reverts half-typed invalid text
+	}
+	if f.UpdateDraw(can, d.focus == f, list) {
+		d.focus = f
+		return true
+	}
+	return false
+}
+
+// drawRow draws one row at screen y and reports whether it consumed a click.
+func (d *ValuesDialog) drawRow(r *valueRow, list rl.Rectangle, y float32, can bool) (clicked bool) {
+	x := list.X
+	if r.header != "" {
+		rl.DrawText(r.header, int32(x)+12, int32(y)+14, 18, colAccent)
+		rl.DrawRectangle(int32(x)+12, int32(y+r.h)-5, int32(list.Width)-24, 1, rl.Fade(rl.White, 0.12))
+		return false
+	}
+
+	v := r.val
+	if v.Edited { // '*' = edited (not default)
+		rl.DrawText("*", int32(x)+14, int32(y)+8, 22, colAccent)
+	}
+	rl.DrawText(fmt.Sprintf("%d", r.index), int32(x)+36, int32(y)+8, 16, colTextDim)
+	fx := x + 66
+
+	switch v.Kind {
+	case KindBool:
+		m := rl.GetMousePosition()
+		area := rl.NewRectangle(fx, y+2, 130, 28)
+		hover := can && rl.CheckCollisionPointRec(m, area) && rl.CheckCollisionPointRec(m, list)
+		box := rl.NewRectangle(fx, y+4, 24, 24)
+		bg := colBtn
+		if hover {
+			bg = colBtnHover
+		}
+		rl.DrawRectangleRounded(box, 0.25, 4, bg)
+		if v.Text == "true" {
+			rl.DrawRectangleRounded(rl.NewRectangle(box.X+5, box.Y+5, 14, 14), 0.25, 4, colAccent)
+		}
+		rl.DrawText(v.Text, int32(fx)+34, int32(y)+7, 18, colText)
+		if hover && rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
+			if v.Text == "true" {
+				v.Text = "false"
+			} else {
+				v.Text = "true"
+			}
+			v.Edited = true
+			clicked = true
+		}
+	case KindText:
+		clicked = d.drawField(r.field1, v.Text, rl.NewRectangle(fx, y+3, 340, 26), list, can)
+	case KindNumber:
+		c1 := d.drawField(r.field1, v.Text, rl.NewRectangle(fx, y+3, 190, 26), list, can)
+		rl.DrawText(":", int32(fx)+198, int32(y)+6, 18, colTextDim)
+		c2 := d.drawField(r.field2, v.Hex, rl.NewRectangle(fx+214, y+3, 118, 26), list, can)
+		clicked = c1 || c2
+	}
+	return clicked
+}
+
+// UpdateDraw returns the saved path and ResOK once the file was written (or ResCancel).
+func (d *ValuesDialog) UpdateDraw() (string, DialogResult) {
+	if !d.Active {
+		return "", ResNone
+	}
+	can := d.openedFrame != frame // ignore the click that opened it
+	d.UpdateDrag(can)
+	d.DrawFrame()
+
+	b := d.Bounds
+	m := rl.GetMousePosition()
+	d.result = ResNone
+
+	list := rl.NewRectangle(b.X+16, b.Y+44, b.Width-32, b.Height-44-70)
+	d.listH = list.Height
+	maxScroll := d.contentH - list.Height
+	if maxScroll < 0 {
+		maxScroll = 0
+	}
+	inList := rl.CheckCollisionPointRec(m, list)
+
+	// --- keyboard / wheel
+	if can {
+		if inList {
+			d.scroll -= rl.GetMouseWheelMove() * 48
+		}
+		if rl.IsKeyPressed(rl.KeyTab) {
+			if rl.IsKeyDown(rl.KeyLeftShift) || rl.IsKeyDown(rl.KeyRightShift) {
+				d.focusMove(-1)
+			} else {
+				d.focusMove(1)
+			}
+		}
+		if rl.IsKeyPressed(rl.KeyEnter) {
+			switch idx := d.focusIndex(); {
+			case d.focus == nil:
+				d.save()
+			case idx == len(d.fields)-1:
+				d.focus = nil
+			default:
+				d.focusMove(1)
+			}
+		}
+		if rl.IsKeyPressed(rl.KeyEscape) {
+			if d.focus != nil {
+				d.focus = nil
+			} else {
+				d.result = ResCancel
+			}
+		}
+	}
+	d.scroll = clamp(d.scroll, 0, maxScroll)
+
+	// --- rows (clipped to the list)
+	rl.DrawRectangleRounded(list, 0.02, 4, colTitle)
+	rl.BeginScissorMode(int32(list.X), int32(list.Y), int32(list.Width), int32(list.Height))
+	clickedWidget := false
+	for _, r := range d.rows {
+		y := list.Y + r.y - d.scroll
+		if y+r.h < list.Y || y > list.Y+list.Height {
+			continue
+		}
+		if d.drawRow(r, list, y, can) {
+			clickedWidget = true
+		}
+	}
+	rl.EndScissorMode()
+	if can && inList && !clickedWidget && rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
+		d.focus = nil // clicked empty space
+	}
+
+	if maxScroll > 0 { // scrollbar
+		thumbH := list.Height * list.Height / d.contentH
+		thumbY := list.Y + (list.Height-thumbH)*d.scroll/maxScroll
+		rl.DrawRectangleRounded(rl.NewRectangle(list.X+list.Width-7, thumbY, 4, thumbH), 1, 4, rl.Fade(rl.White, 0.3))
+	}
+
+	// --- footer
+	const bw, bh = 96, 34
+	by := b.Y + b.Height - bh - 16
+	if d.err != "" {
+		rl.DrawText(fitText("Save failed: "+d.err, int32(b.Width)-32-2*bw-30, 14), int32(b.X)+16, int32(by)+10, 14, rl.NewColor(255, 120, 120, 255))
+	} else {
+		rl.DrawText("* = edited (not default)", int32(b.X)+16, int32(by)+10, 14, colTextDim)
+	}
+	rightX := b.X + b.Width - 16
+	d.saveBtn.Bounds = rl.NewRectangle(rightX-bw, by, bw, bh)
+	d.saveBtn.Enabled = can
+	d.saveBtn.UpdateDraw()
+	d.cancelBtn.Bounds = rl.NewRectangle(rightX-2*bw-10, by, bw, bh)
+	d.cancelBtn.Enabled = can
+	d.cancelBtn.UpdateDraw()
+
+	if d.result != ResNone {
+		d.Active = false
+	}
+	return d.Path, d.result
+}
+
 // ------------------------------------------------------------------ Rectangle grid tool
 
 const cellSize = 40 // world units per grid cell; entities are drawn cellSize x cellSize
@@ -1356,7 +2021,7 @@ const (
 	gripSize   = 18 // thickness of the drag handle
 	tbPad      = 8
 	tbGap      = 6
-	tbBtnW     = 96
+	tbBtnW     = 76
 	tbBtnH     = 30
 	tbSepExtra = 10 // handy value for Button.GapAfter (group separator)
 	snapDist   = 16 // magnetic distance to screen edges
@@ -1390,11 +2055,31 @@ func (t *Toolbar) Flip() {
 	t.clampToScreen()
 }
 
+// btnWidth is a button's width in a horizontal toolbar.
+func btnWidth(b *Button) float32 {
+	if b.Width > 0 {
+		return b.Width
+	}
+	return tbBtnW
+}
+
+// maxBtnWidth is the common button width in a vertical toolbar.
+func (t *Toolbar) maxBtnWidth() float32 {
+	w := float32(tbBtnW)
+	for _, b := range t.Buttons {
+		if bw := btnWidth(b); bw > w {
+			w = bw
+		}
+	}
+	return w
+}
+
 func (t *Toolbar) size() (w, h float32) {
 	n := float32(len(t.Buttons))
-	var extra float32
+	var extra, widths float32
 	for _, b := range t.Buttons {
 		extra += b.GapAfter
+		widths += btnWidth(b)
 	}
 	gaps := n - 1
 	if gaps < 0 {
@@ -1402,9 +2087,9 @@ func (t *Toolbar) size() (w, h float32) {
 	}
 	if t.Vertical {
 		span := n*tbBtnH + gaps*tbGap + extra
-		return tbBtnW + 2*tbPad, gripSize + tbPad + span + tbPad
+		return t.maxBtnWidth() + 2*tbPad, gripSize + tbPad + span + tbPad
 	}
-	span := n*tbBtnW + gaps*tbGap + extra
+	span := widths + gaps*tbGap + extra
 	return gripSize + tbPad + span + tbPad, tbBtnH + 2*tbPad
 }
 
@@ -1509,9 +2194,14 @@ func (t *Toolbar) UpdateDraw(enabled bool) {
 		x += gripSize
 	}
 
+	colW := t.maxBtnWidth()
 	var hovered *Button
 	for _, btn := range t.Buttons {
-		btn.Bounds = rl.NewRectangle(x, y, tbBtnW, tbBtnH)
+		bw := btnWidth(btn)
+		if vertical {
+			bw = colW
+		}
+		btn.Bounds = rl.NewRectangle(x, y, bw, tbBtnH)
 		btn.Enabled = enabled && !t.dragging
 		btn.UpdateDraw()
 		if btn.Hovered() {
@@ -1520,7 +2210,7 @@ func (t *Toolbar) UpdateDraw(enabled bool) {
 		if vertical {
 			y += tbBtnH + tbGap + btn.GapAfter
 		} else {
-			x += tbBtnW + tbGap + btn.GapAfter
+			x += bw + tbGap + btn.GapAfter
 		}
 	}
 
@@ -1576,20 +2266,29 @@ func main() {
 	var fd FileDialog
 	var ed EntityDialog
 	var rectTool RectTool
+	var vd ValuesDialog
 	var rectBtn *Button
 	var lastDir, openedPath string
 	// Wildcard filter for the Open dialog. Use "" for all files, or several
 	// patterns separated by ';', e.g. "*.entity.txt;*.png".
-	const filePattern = "*.entity.txt"
+	const filePattern = "stage.txt"
 	var preview []string
 	// Build the toolbar: each button carries its own label, tooltip and click handler.
 	toolbar := NewToolbar(rl.NewVector2(40, 40))
 	toolbar.Add(NewButton("Open", "Browse for a file to open", func() {
 		fd.Open(lastDir, filePattern)
 	}))
+	toolbar.Add(NewButton("Values", "Display and edit the values stored in the opened file", func() {
+		if openedPath == "" {
+			dlg.Open(DlgMessage, ActNone, "Edit values", "Open a file first (Open button).", "")
+		} else if err := vd.Open(openedPath); err != nil {
+			dlg.Open(DlgMessage, ActNone, "Edit values", fitText("Cannot read file: "+err.Error(), 370, 18), "")
+		}
+	}))
 	entityBtn := toolbar.Add(NewButton("Entity", "Choose which entity gets placed on the canvas", func() {
 		ed.Open(entities, selectedEntity, palette[colorIdx])
 	}))
+	entityBtn.Width = 96                   // wide enough for label + thumbnail
 	entityBtn.Decorate = func(b *Button) { // thumbnail of the current entity
 		thumb := rl.NewRectangle(b.Bounds.X+b.Bounds.Width-30, b.Bounds.Y+5, 20, 20)
 		entities[selectedEntity].Draw(thumb, palette[colorIdx])
@@ -1610,6 +2309,7 @@ func main() {
 		colorIdx = (colorIdx + 1) % len(palette)
 	}))
 	colorBtn.GapAfter = tbSepExtra
+	colorBtn.Width = 96                   // wide enough for label + swatch
 	colorBtn.Decorate = func(b *Button) { // color swatch on the button
 		sw := rl.NewRectangle(b.Bounds.X+b.Bounds.Width-22, b.Bounds.Y+7, 16, 16)
 		rl.DrawRectangleRounded(sw, 0.3, 4, palette[colorIdx])
@@ -1631,6 +2331,7 @@ func main() {
 			keepOnScreen(&dlg.Bounds)
 			keepOnScreen(&fd.Bounds)
 			keepOnScreen(&ed.Bounds)
+			keepOnScreen(&vd.Bounds)
 		}
 		if rl.IsKeyPressed(rl.KeyF11) { // toggle maximized
 			if rl.IsWindowMaximized() {
@@ -1639,7 +2340,7 @@ func main() {
 				rl.MaximizeWindow()
 			}
 		}
-		modal := dlg.Kind != DlgNone || fd.Active || ed.Active
+		modal := dlg.Kind != DlgNone || fd.Active || ed.Active || vd.Active
 
 		// canvas input (blocked while a dialog is open or when over the toolbar)
 		m := rl.GetMousePosition()
@@ -1746,6 +2447,11 @@ func main() {
 		// entity selector (modal, drawn on top)
 		if idx, res := ed.UpdateDraw(); res == ResOK && idx >= 0 {
 			selectedEntity = idx
+		}
+
+		// value editor (modal, drawn on top)
+		if path, res := vd.UpdateDraw(); res == ResOK {
+			preview = loadPreview(path) // the file was saved: refresh its preview
 		}
 
 		rl.EndDrawing()

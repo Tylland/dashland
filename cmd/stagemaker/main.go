@@ -67,6 +67,8 @@ func main() {
 	var dlg gui.Dialog
 	var fd gui.FileDialog
 	var ed gui.EntityDialog
+	var vd gui.ValuesDialog
+
 	var lastDir string
 
 	// Build the toolbar: each button carries its own label, tooltip and click handler.
@@ -194,14 +196,19 @@ func main() {
 		}
 
 		// file preview panel
-		if ws.inspect != nil && ws.inspect.Openpath != "" {
+		if ws.inspection != nil && ws.inspection.Openpath != "" {
 			px, py := float32(gui.ScreenW-460), float32(130)
-			ph := float32(len(ws.inspect.Info)*18 + 44)
+			ph := float32(len(ws.inspection.Info)*18 + 44)
 			rl.DrawRectangleRounded(rl.NewRectangle(px, py, 440, ph), 0.04, 6, gui.ColPanel)
-			rl.DrawText(gui.FitText(ws.inspect.Openpath, 400, 16), int32(px)+14, int32(py)+10, 16, gui.ColText)
-			for i, l := range ws.inspect.Info {
+			rl.DrawText(gui.FitText(ws.inspection.Openpath, 400, 16), int32(px)+14, int32(py)+10, 16, gui.ColText)
+			for i, l := range ws.inspection.Info {
 				rl.DrawText(l, int32(px)+14, int32(py)+36+int32(i*18), 14, gui.ColTextDim)
 			}
+		}
+
+		if ws.inspection != nil && !ws.inspectionHandled && ws.inspection.Entity != nil && ws.inspection.Document != nil {
+			vd.Open(ws.inspection.Entity, ws.inspection.Document, ws.inspection.Openpath)
+			ws.inspectionHandled = true
 		}
 
 		// status bar
@@ -220,6 +227,8 @@ func main() {
 		} else if ws.view.Grab && !overToolbar {
 			rl.SetMouseCursor(rl.MouseCursorPointingHand)
 		}
+
+		vd.UpdateDraw()
 
 		// dialog (drawn last so it sits on top)
 		if res := dlg.UpdateDraw(); res != gui.ResNone {
@@ -243,7 +252,7 @@ func main() {
 				docName = filepath.Base(path)
 				info := gui.LoadPreview(path)
 
-				ws.SetInspection(&gui.EntityInspect{Openpath: path, Info: info})
+				ws.Inspect(&gui.EntityInspection{Openpath: path, Info: info})
 				ws.world.Clear()
 
 				stagePath := strings.TrimSuffix(path, docName)
@@ -297,22 +306,26 @@ func CreateEntityItems() []*gui.EntityItem {
 }
 
 type StageMakerWorkspace struct {
-	world          *ecs.World
-	view           *gui.View
-	stage          *game.Stage
-	stagePath      string
-	entities       []*gui.EntityItem
-	selectedEntity int
-	inspect        *gui.EntityInspect
+	world             *ecs.World
+	view              *gui.View
+	stage             *game.Stage
+	stagePath         string
+	entities          []*gui.EntityItem
+	selectedEntity    int
+	inspection        *gui.EntityInspection
+	inspectionHandled bool
 }
 
-func (ws *StageMakerWorkspace) World() *ecs.World                     { return ws.world }
-func (ws *StageMakerWorkspace) View() *gui.View                       { return ws.view }
-func (ws *StageMakerWorkspace) Stage() *game.Stage                    { return ws.stage }
-func (ws *StageMakerWorkspace) StagePath() string                     { return ws.stagePath }
-func (ws *StageMakerWorkspace) Inspection() *gui.EntityInspect        { return ws.inspect }
-func (ws *StageMakerWorkspace) SetInspection(insp *gui.EntityInspect) { ws.inspect = insp }
-func (ws *StageMakerWorkspace) Entities() []*gui.EntityItem           { return ws.entities }
+func (ws *StageMakerWorkspace) World() *ecs.World                 { return ws.world }
+func (ws *StageMakerWorkspace) View() *gui.View                   { return ws.view }
+func (ws *StageMakerWorkspace) Stage() *game.Stage                { return ws.stage }
+func (ws *StageMakerWorkspace) StagePath() string                 { return ws.stagePath }
+func (ws *StageMakerWorkspace) Inspection() *gui.EntityInspection { return ws.inspection }
+func (ws *StageMakerWorkspace) Inspect(inspection *gui.EntityInspection) {
+	ws.inspection = inspection
+	ws.inspectionHandled = false
+}
+func (ws *StageMakerWorkspace) Entities() []*gui.EntityItem { return ws.entities }
 func (ws *StageMakerWorkspace) SelectEntity(idx int) {
 	ws.selectedEntity = idx
 }

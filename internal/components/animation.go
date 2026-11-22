@@ -87,12 +87,12 @@ func clamp(val, max uint) uint {
 }
 
 func (c *AnimationComponent) WriteTo(w ecs.Writer) error {
-	w.WriteLabel(ecs.ComponentName(c))
-	w.WriteInt(len(c.Animations), true)
-	w.WriteString(c.Current, false)
-	w.WriteString(c.active, false)
-	w.WriteInt(int(c.Frame), false)
-	w.WriteFloat(c.FrameTimer, false)
+	w.StartSection(ecs.ComponentName(c))
+	w.WriteInt("Animations", len(c.Animations), true)
+	w.WriteString("Current", c.Current, false)
+	w.WriteString("Active", c.active, false)
+	w.WriteInt("Frame", int(c.Frame), false)
+	w.WriteFloat("Frame Timer", c.FrameTimer, false)
 
 	return nil
 }

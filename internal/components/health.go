@@ -11,8 +11,8 @@ func NewHealth(points int) *Health {
 }
 
 func (c *Health) WriteTo(w ecs.Writer) error {
-	w.WriteLabel(ecs.ComponentName(c))
-	w.WriteInt(c.Points, true)
+	w.StartSection(ecs.ComponentName(c))
+	w.WriteInt("Points", c.Points, true)
 
 	return nil
 }

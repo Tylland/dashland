@@ -40,20 +40,20 @@ func (s *BlockStep) Commit(target rl.Vector2) {
 }
 
 func (c *BlockStep) WriteTo(w ecs.Writer) error {
-	w.WriteLabel(ecs.ComponentName(c))
-	w.WriteInt(c.Increment.X, false)
-	w.WriteInt(c.Increment.Y, false)
+	w.StartSection(ecs.ComponentName(c))
+	w.WriteInt("Inc X", c.Increment.X, false)
+	w.WriteInt("Inc Y", c.Increment.Y, false)
 
-	w.WriteInt(c.Direction.X, false)
-	w.WriteInt(c.Direction.Y, false)
+	w.WriteInt("Dir X", c.Direction.X, false)
+	w.WriteInt("Dir Y", c.Direction.Y, false)
 
-	w.WriteInt(c.previousDirection.X, false)
-	w.WriteInt(c.previousDirection.Y, false)
+	w.WriteInt("Prev Dir X", c.previousDirection.X, false)
+	w.WriteInt("Prev Dir Y", c.previousDirection.Y, false)
 
-	w.WriteFloat(c.Target.X, false)
-	w.WriteFloat(c.Target.Y, false)
+	w.WriteFloat("Target X", c.Target.X, false)
+	w.WriteFloat("Target Y", c.Target.Y, false)
 
-	w.WriteFloat(c.Speed, false)
+	w.WriteFloat("Speed", c.Speed, false)
 
 	return nil
 }

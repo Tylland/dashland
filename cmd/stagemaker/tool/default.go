@@ -45,7 +45,7 @@ func (t *DefaultTool) WorldMouseDown(world rl.Vector2, button rl.MouseButton) {
 			path := filepath.Join(t.ws.StagePath(), game.BlockFileName(block))
 			preview := gui.LoadPreview(path)
 
-			t.ws.SetInspection(&gui.EntityInspect{Openpath: path, Info: preview})
+			t.ws.Inspect(&gui.EntityInspection{Openpath: path, Info: preview})
 
 			return
 		}
@@ -54,13 +54,17 @@ func (t *DefaultTool) WorldMouseDown(world rl.Vector2, button rl.MouseButton) {
 	if button == rl.MouseButtonLeft {
 		pos := t.ws.Stage().GetBlockPosition(world)
 		if entity, ok := t.ws.Stage().GetEntityAtPosition(pos); ok {
+			doc := &gui.Document{}
+			writer := gui.NewDocumentWriter(doc)
+
+			entity.WriteTo(writer)
+
 			path := filepath.Join(t.ws.StagePath(), game.EntityFileName(entity))
 			preview := gui.LoadPreview(path)
 
-			t.ws.SetInspection(&gui.EntityInspect{Openpath: path, Info: preview})
+			t.ws.Inspect(&gui.EntityInspection{Entity: entity, Document: doc, Openpath: path, Info: preview})
 
 			return
 		}
 	}
-
 }

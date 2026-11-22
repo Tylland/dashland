@@ -23,10 +23,10 @@ func (c *ColliderComponent) Collide(other *ColliderComponent) (bool, bool) {
 }
 
 func (c *ColliderComponent) WriteTo(w ecs.Writer) error {
-	w.WriteLabel(ecs.ComponentName(c))
-	w.WriteEnum(c.Layer, true, "is")
-	w.WriteEnum(c.Obstruct, true, "obstructs")
-	w.WriteEnum(c.Interact, true, "interacts with")
+	w.StartSection(ecs.ComponentName(c))
+	w.WriteEnum("Layer", c.Layer, true, "is")
+	w.WriteEnum("Obstruct", c.Obstruct, true, "obstructs")
+	w.WriteEnum("Interact", c.Interact, true, "interacts with")
 
 	return nil
 }

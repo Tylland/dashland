@@ -11,8 +11,8 @@ func NewPushableComponent(mass float32) *PushableComponent {
 }
 
 func (c *PushableComponent) WriteTo(w ecs.Writer) error {
-	w.WriteLabel(ecs.ComponentName(c))
-	w.WriteFloat(c.Mass, true)
+	w.StartSection(ecs.ComponentName(c))
+	w.WriteFloat("Mass", c.Mass, true)
 
 	return nil
 }
