@@ -2,6 +2,7 @@ package gui
 
 import (
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -105,6 +106,20 @@ func (d *ValuesDialog) buildRows() {
 						v.Edited = true
 					}
 					return ok
+				}}
+			case KindEnum:
+				row.field1 = &TextField{MaxLen: 10, Allow: func(r rune) bool {
+					return r >= '0' && r <= '9'
+				}, OnChange: func(t string) bool {
+					n, err := strconv.ParseUint(strings.TrimSpace(t), 10, 32)
+					if err != nil {
+						return false
+					}
+					text := strconv.FormatUint(n, 10)
+					if text != v.Text {
+						v.Text, v.Display, v.Edited = text, "", true
+					}
+					return true
 				}}
 			}
 			for _, f := range []*TextField{row.field1, row.field2} {
@@ -218,11 +233,10 @@ func (d *ValuesDialog) drawRow(r *valueRow, list rl.Rectangle, y float32, can bo
 	case KindText:
 		clicked = d.drawField(r.field1, v.Text, rl.NewRectangle(fx, y+3, 340, 26), list, can)
 	case KindEnum:
-		display := v.Display
-		if display == "" {
-			display = v.Text
+		clicked = d.drawField(r.field1, v.Text, rl.NewRectangle(fx, y+3, 130, 26), list, can)
+		if v.Display != "" {
+			rl.DrawText(FitText(v.Display, 190, 16), int32(fx)+142, int32(y)+7, 16, ColTextDim)
 		}
-		rl.DrawText(FitText(display, 340, 16), int32(fx), int32(y)+7, 16, ColText)
 	case KindInt, KindFloat:
 		c1 := d.drawField(r.field1, v.Text, rl.NewRectangle(fx, y+3, 190, 26), list, can)
 		rl.DrawText(":", int32(fx)+198, int32(y)+6, 18, ColTextDim)
