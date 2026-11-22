@@ -1,7 +1,6 @@
 package gui
 
 import (
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -19,7 +18,6 @@ const (
 type valueRow struct {
 	header         string // non-empty for a "# label" row
 	val            *Value
-	index          int // 1-based position inside the section
 	y, h           float32
 	field1, field2 *TextField // text / decimal field, hex field
 }
@@ -82,9 +80,9 @@ func (d *ValuesDialog) buildRows() {
 			d.rows = append(d.rows, &valueRow{header: sec.Label, y: y, h: vdHeaderH})
 			y += vdHeaderH
 		}
-		for i, v := range sec.Values {
+		for _, v := range sec.Values {
 			v := v // own copy for the closures below
-			row := &valueRow{val: v, index: i + 1, y: y, h: vdRowH}
+			row := &valueRow{val: v, y: y, h: vdRowH}
 			switch v.Kind {
 			case KindText:
 				row.field1 = &TextField{MaxLen: 60, Allow: printable, OnChange: func(t string) bool {
@@ -189,8 +187,9 @@ func (d *ValuesDialog) drawRow(r *valueRow, list rl.Rectangle, y float32, can bo
 	if v.Edited { // '*' = edited (not default)
 		rl.DrawText("*", int32(x)+14, int32(y)+8, 22, ColAccent)
 	}
-	rl.DrawText(fmt.Sprintf("%d", r.index), int32(x)+36, int32(y)+8, 16, ColTextDim)
-	fx := x + 66
+	name := FitText(v.Name, 104, 16)
+	rl.DrawText(name, int32(x)+36, int32(y)+8, 16, ColTextDim)
+	fx := x + 150
 
 	switch v.Kind {
 	case KindBool:
