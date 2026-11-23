@@ -26,6 +26,8 @@ func (r *TextReader) Rewind() error {
 		if err != nil {
 			return err
 		}
+
+		r.reader.Reset(r.source)
 	}
 
 	return nil

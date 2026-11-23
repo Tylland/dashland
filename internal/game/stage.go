@@ -260,7 +260,6 @@ func (s *Stage) Load(world *ecs.World, path string) error {
 		if header.Category == EntityCategoryBlock {
 			block := NewBlock(header, s.BlockMap, s.EntityMap, blockPosition)
 			block.ReadFrom(reader)
-			block.EntityHeader = header
 			s.BlockMap.SetBlock(block, block.Position)
 		} else {
 			entity, err := NewEntity(header, world, s, blockPosition)
@@ -270,7 +269,6 @@ func (s *Stage) Load(world *ecs.World, path string) error {
 			}
 
 			entity.ReadFrom(reader)
-			entity.EntityHeader = header
 			position := ecs.GetComponent[components.PositionComponent](entity)
 			s.EntityMap.SetEntity(entity, position.CurrentBlockPosition)
 		}
@@ -278,7 +276,7 @@ func (s *Stage) Load(world *ecs.World, path string) error {
 		counters.Increment(EntityTypeName(header.Type))
 	}
 
-	fmt.Printf("\nLoding stage %q from directory %q\n", s.Name, path)
+	fmt.Printf("\nLoading stage %q from directory %q\n", s.Name, path)
 	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 
 	total := 1

@@ -209,6 +209,8 @@ func (b *Block) WriteTo(w ecs.Writer) error {
 }
 
 func (b *Block) ReadFrom(r ecs.Reader) error {
+	b.EntityHeader.ReadFrom(r)
+
 	r.ConsumeLabel("position")
 
 	ecs.WithChangedValue(r.ReadInt, func(x int) {

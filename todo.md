@@ -5,11 +5,11 @@
 - [x] Boulder can not stay on one wall block 
 - [x] Boulder can not stay on other boulder
 - [ ] Add door entity
-- [X] Update button in Values Dialog, writes to entity
-- [X] Save to file in Values Dialog
+- [x] Update button in Values Dialog, writes to entity
+- [x] Save to file in Values Dialog
 - [ ] Improve entity counting in Stage to avoid duplicates
-- [X] Implement DocumentReader
+- [x] Implement DocumentReader
 - [ ] Implement Stage-edit-renderer
-- [ ] 
+- [ ] Add header to ReadFrom
 
 

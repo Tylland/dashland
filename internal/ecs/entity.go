@@ -93,7 +93,7 @@ func (e *Entity) WriteTo(w Writer) error {
 }
 
 func (e *Entity) ReadFrom(r Reader) error {
-	//e.EntityHeader.ReadFrom(r)
+	e.EntityHeader.ReadFrom(r)
 
 	for _, comp := range e.Components.Ordered() {
 		if rf, ok := comp.(ReaderFrom); ok {
