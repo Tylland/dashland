@@ -30,6 +30,39 @@ func (ec *EntityCounters) Reset() {
 	ec.Counters = make(map[string]int)
 }
 
+func (ec *EntityCounters) WriteTo(w ecs.Writer) error {
+	w.StartSection("counters")
+
+	w.WriteInt("Count", len(ec.Counters), false)
+
+	for k, v := range ec.Counters {
+		w.WriteString("Key", k, false)
+		w.WriteInt("Value", v, false)
+	}
+
+	return nil
+}
+
+func (ec *EntityCounters) ReadFrom(r ecs.Reader) error {
+	r.ConsumeLabel("counters")
+
+	ec.Reset()
+
+	count, _, err := r.ReadInt()
+
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < count; i++ {
+		key, _, _ := r.ReadString()
+		val, _, _ := r.ReadInt()
+		ec.Counters[key] = val
+	}
+
+	return nil
+}
+
 var EntityIdCounters *EntityCounters = NewEntityCounters()
 
 func NewEntityId(prefix string) ecs.EntityID {

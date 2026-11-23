@@ -8,16 +8,27 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/tylland/dashland/internal/ecs"
 )
 
 type TextReader struct {
+	source io.Reader
 	reader *bufio.Reader
 }
 
 func NewTextReader(r io.Reader) *TextReader {
-	return &TextReader{reader: bufio.NewReader(r)}
+	return &TextReader{source: r, reader: bufio.NewReader(r)}
+}
+
+func (r *TextReader) Rewind() error {
+	// Reset to the start
+	if seeker, ok := r.source.(io.Seeker); ok {
+		_, err := seeker.Seek(0, io.SeekStart)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *TextReader) ConsumeLine() error {
@@ -59,36 +70,6 @@ func (r *TextReader) readLine() (string, error) {
 	}
 
 	return strings.TrimSpace(line), nil
-}
-
-func (r *TextReader) ReadEntityID() (ecs.EntityID, error) {
-	str, err := r.readLine()
-
-	return ecs.EntityID(str), err
-}
-
-func (r *TextReader) ReadEntityType() (ecs.EntityType, error) {
-	str, err := r.readLine()
-
-	v, err := strconv.ParseInt(str, 10, 32)
-
-	return ecs.EntityType(v), err
-}
-
-func (r *TextReader) ReadEntityCategory() (ecs.EntityCategory, error) {
-	str, err := r.readLine()
-
-	v, err := strconv.ParseInt(str, 10, 32)
-
-	return ecs.EntityCategory(v), err
-}
-
-func (r *TextReader) ReadVersion() (int, error) {
-	str, err := r.readLine()
-
-	v, err := strconv.ParseInt(str, 10, 32)
-
-	return int(v), err
 }
 
 func (r *TextReader) readValue() (string, bool, error) {

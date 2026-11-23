@@ -20,6 +20,12 @@ func NewDocumentReader(doc *Document) *DocumentReader {
 	return &DocumentReader{doc: doc, section: -1}
 }
 
+func (r *DocumentReader) Rewind() error {
+	r.section = -1
+
+	return nil
+}
+
 func (r *DocumentReader) ReadLabel() (string, error) {
 	if r.doc == nil || r.section+1 >= len(r.doc.Sections) {
 		return "", fmt.Errorf("read label: no more sections")

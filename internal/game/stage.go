@@ -35,10 +35,17 @@ type Stage struct {
 	MagicWallActive    bool
 	MagicWallTimer     float32
 	MagicWallDuration  float32
+	counters           *EntityCounters
 }
 
 func NewStage(name string, size MapSize, blockTexture, entityTextures, groundCorners *rl.Texture2D) *Stage {
-	return &Stage{Name: name, MapSize: size, BlockMap: NewBlockMap(size, blockTexture), EntityMap: NewEntityMap(size, entityTextures, groundCorners), MagicWallDuration: 20.0}
+	return &Stage{Name: name,
+		MapSize:           size,
+		BlockMap:          NewBlockMap(size, blockTexture),
+		EntityMap:         NewEntityMap(size, entityTextures, groundCorners),
+		MagicWallDuration: 20.0,
+		counters:          NewEntityCounters(),
+	}
 }
 
 func (s *Stage) SetTimeLimit(seconds int) {
@@ -248,6 +255,7 @@ func (s *Stage) Load(world *ecs.World, path string) error {
 
 		header := &ecs.EntityHeader{}
 		header.ReadFrom(reader)
+		reader.Rewind()
 
 		if header.Category == EntityCategoryBlock {
 			block := NewBlock(header, s.BlockMap, s.EntityMap, blockPosition)
@@ -321,6 +329,8 @@ func (s *Stage) WriteTo(w ecs.Writer) error {
 	w.WriteFloat("Diration", s.MagicWallDuration, false)
 	w.WriteFloat("Timer", s.MagicWallTimer, false)
 
+	s.counters.WriteTo(w)
+
 	return nil
 }
 
@@ -337,8 +347,13 @@ func (s *Stage) ReadFrom(r ecs.Reader) error {
 		return err
 	}
 
-	s.BlockMap = NewBlockMap(s.MapSize, s.blockTextures)
-	s.EntityMap = NewEntityMap(s.MapSize, s.entityTextures, s.groundCorners)
+	if s.BlockMap.Width != s.MapSize.Width || s.BlockMap.Height != s.MapSize.Height {
+		s.BlockMap = NewBlockMap(s.MapSize, s.blockTextures)
+	}
+
+	if s.EntityMap.Width != s.MapSize.Width || s.EntityMap.Height != s.MapSize.Height {
+		s.EntityMap = NewEntityMap(s.MapSize, s.entityTextures, s.groundCorners)
+	}
 
 	r.ConsumeLabel("enter position")
 	if err := ecs.WithChangedValue(r.ReadInt, func(x int) {
@@ -421,6 +436,8 @@ func (s *Stage) ReadFrom(r ecs.Reader) error {
 	}); err != nil {
 		return err
 	}
+
+	s.counters.ReadFrom(r)
 
 	return nil
 }

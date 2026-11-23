@@ -14,6 +14,7 @@ type WriterTo interface {
 }
 
 type Reader interface {
+	Rewind() error
 	ConsumeLine() error
 	ConsumeLabel(lbl string) error
 	ReadBool() (bool, bool, error)
@@ -24,8 +25,18 @@ type Reader interface {
 	ReadString() (string, bool, error)
 }
 
+type WriterReader interface {
+	Writer
+	Reader
+}
+
 type ReaderFrom interface {
 	ReadFrom(r Reader) error
+}
+
+type Transferer interface {
+	WriterTo
+	ReaderFrom
 }
 
 func WithChangedValue[T any](fetch func() (T, bool, error), update func(T)) error {

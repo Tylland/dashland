@@ -100,8 +100,13 @@ func main() {
 		toolbar.ActivateTool(tool.NewDefaultTool())
 	}))
 
-	toolbar.Add(gui.NewButton("Clear", "Remove all placed entities (asks for confirmation)", func() {
-		dlg.Open(gui.DlgConfirm, gui.ActClear, "Clear canvas", "Remove all entities? This cannot be undone.", "")
+	toolbar.Add(gui.NewButton("Properties", "View and edit properties of current stage", func() {
+		doc := &gui.Document{}
+		writer := gui.NewDocumentWriter(doc)
+
+		ws.stage.WriteTo(writer)
+
+		vd.Open(ws.stage, doc, ws.stagePath)
 	}))
 	toolbar.Add(gui.NewButton("Rename", "Change the document name", func() {
 		dlg.Open(gui.DlgInput, gui.ActRename, "Rename document", "Enter a new name:", docName)
@@ -156,8 +161,6 @@ func main() {
 
 		if ws.stage != nil {
 			ws.world.Update(0)
-			// ws.stage.Update(0)
-			// ws.stage.Render(0)
 		}
 
 		ws.view.DrawGrid()
@@ -300,9 +303,21 @@ func entitySource(entityType ecs.EntityType) rl.Rectangle {
 	return rl.NewRectangle(float32(entityType)*32, 0, 32, 32)
 }
 
+func createEntityItem(entityType ecs.EntityType) *gui.EntityItem {
+	return gui.NewEntityItem(entityType, assets.LoadTexture("entities"), entitySource(entityType))
+}
+func createEnemyItem(entityType ecs.EntityType) *gui.EntityItem {
+	return gui.NewEntityItem(entityType, assets.LoadTexture("enemies"), entitySource(entityType))
+}
+
 func CreateEntityItems() []*gui.EntityItem {
 	return []*gui.EntityItem{
-		gui.NewEntityItem(game.EntityBoulder, assets.LoadTexture("entities"), entitySource(game.EntityBoulder)),
+		createEntityItem(game.EntityDiamond),
+		createEntityItem(game.EntityBoulder),
+		createEntityItem(game.EntityMagicWall),
+		createEntityItem(game.EntityExitDoor),
+		createEnemyItem(game.EntityFirefly),
+		createEnemyItem(game.EntityButterfly),
 	}
 }
 

@@ -38,7 +38,7 @@ type ValuesDialog struct {
 	Window
 	Active      bool
 	path        string
-	entity      *ecs.Entity
+	target      ecs.Transferer
 	document    *Document
 	rows        []*valueRow
 	fields      []fieldRef
@@ -54,13 +54,13 @@ type ValuesDialog struct {
 	openedFrame uint64
 }
 
-func (d *ValuesDialog) Open(entity *ecs.Entity, doc *Document, path string) error {
+func (d *ValuesDialog) Open(target ecs.Transferer, doc *Document, path string) error {
 	title := "Edit values: " + FitText(filepath.Base(path), 360, 18)
 	*d = ValuesDialog{
 		Window:      NewWindow(title, 580, 540),
 		Active:      true,
 		path:        path,
-		entity:      entity,
+		target:      target,
 		document:    doc,
 		openedFrame: Frame,
 	}
@@ -141,12 +141,12 @@ func (d *ValuesDialog) buildRows() {
 func (d *ValuesDialog) save() {
 	d.update()
 
-	if d.entity != nil && d.document != nil {
+	if d.target != nil && d.document != nil {
 		//fileName := filepath.Join(t.ws.StagePath(), game.EntityFileName(entity))
 
 		writer := game.Must(game.NewTextFileWriter(d.path))
 
-		d.entity.WriteTo(writer)
+		d.target.WriteTo(writer)
 
 		writer.Close()
 	}
@@ -156,15 +156,9 @@ func (d *ValuesDialog) save() {
 
 // Update entity by saveing back values
 func (d *ValuesDialog) update() {
-	if d.entity != nil && d.document != nil {
+	if d.target != nil && d.document != nil {
 		reader := NewDocumentReader(d.document)
-		if d.entity.EntityHeader != nil && len(d.document.Sections) > 0 && d.document.Sections[0] != nil && d.document.Sections[0].Label == "header" {
-			if err := d.entity.EntityHeader.ReadFrom(reader); err != nil {
-				d.err = err.Error()
-				return
-			}
-		}
-		if err := d.entity.ReadFrom(reader); err != nil {
+		if err := d.target.ReadFrom(reader); err != nil {
 			d.err = err.Error()
 			return
 		}
