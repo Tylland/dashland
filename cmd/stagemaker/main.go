@@ -74,13 +74,22 @@ func main() {
 	// Build the toolbar: each button carries its own label, tooltip and click handler.
 	var workspace tool.ToolbarWorkspace = ws
 	toolbar := gui.NewToolbar(rl.NewVector2(40, 40), workspace)
-	toolbar.Add(gui.NewButton("Open", "Browse for a file to open", func() {
+	toolbar.Add(gui.NewButton("Open...", "Browse for a file to open", func() {
 		fd.Open(lastDir, "stage.txt")
 	}))
 
-	toolbar.Add(gui.NewButton("Save", "Save stage", func() {
+	toolbar.Add(gui.NewButton("New...", "Create new stage", func() {
+		stage := game.NewStage("<new stage>", game.NewMapSize(30, 20, 32, 32), assets.LoadTexture("blocks"), assets.LoadTexture("entities"), assets.LoadTexture("groundCorners"))
+		doc := gui.NewDocument(stage)
+
+		vd.Open(stage, doc, "")
+		//	ws.stage.Save(ws.stagePath)
+	}))
+
+	saveBtn := toolbar.Add(gui.NewButton("Save", "Save stage", func() {
 		ws.stage.Save(ws.stagePath)
 	}))
+	saveBtn.GapAfter = gui.TbSepExtra
 
 	entityBtn := toolbar.Add(gui.NewButton("Entity", "Choose which entity gets placed on the canvas", func() {
 		ed.Open(ws.entities, ws.selectedEntity, palette[colorIdx])
@@ -94,9 +103,13 @@ func main() {
 		toolbar.ActivateTool(tool.NewFillRectTool(ws.stage))
 	}
 
-	toolbar.Add(gui.NewButton("Rect", "Grid tool: drag a rectangle to fill it with the entity (R)", toggleRect))
+	toolbar.Add(gui.NewButton("Create", "Grid tool: drag a rectangle to fill it with the entity (R)", toggleRect))
 
-	toolbar.Add(gui.NewButton("Inspect", "Grid tool: drag a rectangle to fill it with the entity (R)", func() {
+	toolbar.Add(gui.NewButton("Inspect", "Click on entity to inspect properties", func() {
+		toolbar.ActivateTool(tool.NewInspectTool())
+	}))
+
+	toolbar.Add(gui.NewButton("Edit", "Click on entity to edit properties", func() {
 		toolbar.ActivateTool(tool.NewDefaultTool())
 	}))
 
@@ -125,7 +138,7 @@ func main() {
 	toolbar.Add(gui.NewButton("Flip", "Switch horizontal / vertical (or double-click the grip)", toolbar.Flip))
 
 	ws.view = gui.NewView()
-	ws.world.AddSystem(systems.NewRenderSystem(ws.stage, &ViewCamera{view: ws.view}))
+	ws.world.AddSystem(systems.NewEditorRenderer(ws.stage, &ViewCamera{view: ws.view}))
 
 	for !rl.WindowShouldClose() {
 		gui.Frame++
@@ -202,10 +215,10 @@ func main() {
 		// file preview panel
 		if ws.inspection != nil && ws.inspection.Openpath != "" {
 			px, py := float32(gui.ScreenW-460), float32(130)
-			ph := float32(len(ws.inspection.Info)*18 + 44)
+			ph := float32(len(ws.inspection.Preview)*18 + 44)
 			rl.DrawRectangleRounded(rl.NewRectangle(px, py, 440, ph), 0.04, 6, gui.ColPanel)
 			rl.DrawText(gui.FitText(ws.inspection.Openpath, 400, 16), int32(px)+14, int32(py)+10, 16, gui.ColText)
-			for i, l := range ws.inspection.Info {
+			for i, l := range ws.inspection.Preview {
 				rl.DrawText(l, int32(px)+14, int32(py)+36+int32(i*18), 14, gui.ColTextDim)
 			}
 		}
@@ -256,7 +269,7 @@ func main() {
 				docName = filepath.Base(path)
 				info := gui.LoadPreview(path)
 
-				ws.Inspect(&gui.EntityInspection{Openpath: path, Info: info})
+				ws.Inspect(&gui.EntityInspection{Openpath: path, Preview: info})
 				ws.world.Clear()
 
 				stagePath := strings.TrimSuffix(path, docName)
@@ -268,7 +281,7 @@ func main() {
 
 				ws.stage = st
 				ws.stagePath = stagePath
-				ws.world.AddSystem(systems.NewRenderSystem(ws.stage, NewViewCamera(ws.view)))
+				ws.world.AddSystem(systems.NewEditorRenderer(ws.stage, NewViewCamera(ws.view)))
 			}
 		}
 

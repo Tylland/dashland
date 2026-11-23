@@ -12,6 +12,7 @@ import (
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/utils"
 )
 
 type SoundPlayer interface {
@@ -65,9 +66,22 @@ func (s *Stage) GetBlockPosition(position rl.Vector2) common.BlockPosition {
 	return common.BlockPosition{X: bx, Y: by}
 }
 
+func (s *Stage) ClampBlock(pos common.BlockPosition) common.BlockPosition {
+	return common.NewBlockPosition(utils.Clamp(pos.X, 0, s.Width), utils.Clamp(pos.Y, 0, s.Height))
+}
+
+func (s *Stage) ClampedBlockPosition(position rl.Vector2) common.BlockPosition {
+	bx := int(position.X / float32(s.BlockWidth))
+	by := int(position.Y / float32(s.BlockHeight))
+
+	return common.NewBlockPosition(utils.Clamp(bx, 0, s.Width-1), utils.Clamp(by, 0, s.Height-1))
+}
+
 func (s *Stage) Render(deltaTime float32) {
 	for _, block := range s.blocks {
-		block.Render()
+		if block != nil {
+			block.Render()
+		}
 	}
 }
 
@@ -154,12 +168,6 @@ func (s *Stage) CheckPositionOccupied(position common.BlockPosition) bool {
 
 	return s.GetEntity(position) != nil
 }
-
-// func (s *Stage) SpawnExitDoor(world *ecs.World, blockPos common.BlockPosition, targetStage string, targetPos common.BlockPosition) *ecs.Entity {
-// 	door := NewExitDoor(world, s, blockPos, s.GetPosition(blockPos), targetStage, targetPos)
-// 	s.EntityMap.SetEntity(door, blockPos)
-// 	return door
-// }
 
 func (s *Stage) Save(path string) error {
 	start := time.Now()

@@ -29,13 +29,12 @@ const cellSize = 32 // world units per grid cell; entities are drawn cellSize x 
 // FillRectTool fills a dragged rectangle of grid cells with the selected entity.
 // Cells are aligned to the world grid, so repeated fills line up exactly.
 type FillRectTool struct {
-	active     bool // tool is selected
-	dragging   bool
-	startX     int // cell coordinates where the drag began
-	startY     int
-	endX, endY int // cell under the mouse
-	stage      *game.Stage
-	ws         ToolbarWorkspace
+	active   bool // tool is selected
+	dragging bool
+	start    common.BlockPosition // cell coordinates where the drag began
+	end      common.BlockPosition // cell coordinates where the drag began
+	stage    *game.Stage
+	ws       ToolbarWorkspace
 }
 
 func NewFillRectTool(stage *game.Stage) *FillRectTool {
@@ -66,20 +65,26 @@ func (t *FillRectTool) Cancel() {
 // Mouse Tracking
 func (t *FillRectTool) WorldMouseDown(world rl.Vector2, button rl.MouseButton) {
 	t.dragging = true
-	t.startX, t.startY = cellOf(world)
-	t.endX, t.endY = t.startX, t.startY
+
+	t.start = t.stage.ClampedBlockPosition(world)
+
+	t.end = t.start
 }
 
 func (t *FillRectTool) WorldMouseMove(world rl.Vector2) {
 	if t.dragging {
-		t.endX, t.endY = cellOf(world)
+		//		t.endX, t.endY = cellOf(world)
+
+		t.end = t.stage.ClampedBlockPosition(world)
+
 		t.DrawPreview(t.ws.SelectedEntity(), rl.White, t.ws.View().Camera.Zoom)
 	}
 }
 
 func (t *FillRectTool) WorldMouseUp(world rl.Vector2, button rl.MouseButton) {
 	if t.dragging {
-		t.endX, t.endY = cellOf(world)
+		//		t.endX, t.endY = cellOf(world)
+		t.end = t.stage.ClampedBlockPosition(world)
 		t.CreateEntities()
 	}
 
@@ -99,8 +104,8 @@ func cellOf(world rl.Vector2) (int, int) {
 
 // Cells returns the dragged range as inclusive, normalized cell coordinates.
 func (t *FillRectTool) Cells() (x0, y0, x1, y1 int) {
-	x0, x1 = t.startX, t.endX
-	y0, y1 = t.startY, t.endY
+	x0, x1 = t.start.X, t.end.X
+	y0, y1 = t.start.Y, t.end.Y
 	if x0 > x1 {
 		x0, x1 = x1, x0
 	}

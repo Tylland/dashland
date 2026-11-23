@@ -51,5 +51,5 @@ type EntityInspection struct {
 	Block    *game.Block
 	Document *Document
 	Openpath string
-	Info     []string
+	Preview  []string
 }

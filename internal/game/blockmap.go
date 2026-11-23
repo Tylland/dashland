@@ -88,7 +88,9 @@ func (bm *BlockMap) GetBlockAtPosition(position common.BlockPosition) (*Block, b
 		return nil, false
 	}
 
-	return bm.blocks[position.Y*bm.Width+position.X], true
+	block := bm.blocks[position.Y*bm.Width+position.X]
+
+	return block, block != nil
 }
 
 func (bm *BlockMap) GetNearbyBlocks(position *common.BlockPosition) []*Block {
@@ -118,9 +120,10 @@ func (bm *BlockMap) GetNearbyBlocks(position *common.BlockPosition) []*Block {
 }
 
 func (bm *BlockMap) Update(deltaTime float32) {
-
 	for i := len(bm.blocks) - 1; i >= 0; i-- {
-		bm.blocks[i].Update(deltaTime)
+		if bm.blocks[i] != nil {
+			bm.blocks[i].Update(deltaTime)
+		}
 	}
 }
 

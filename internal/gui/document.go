@@ -5,6 +5,8 @@ import (
 	"math"
 	"strconv"
 	"strings"
+
+	"github.com/tylland/dashland/internal/ecs"
 )
 
 type ValueKind int
@@ -34,6 +36,16 @@ type Section struct {
 }
 
 type Document struct{ Sections []*Section }
+
+func NewDocument(transferer ecs.Transferer) *Document {
+	doc := &Document{}
+
+	writer := NewDocumentWriter(doc)
+
+	transferer.WriteTo(writer)
+
+	return doc
+}
 
 // formatNumber renders f as "30" (integer style) or "30.000000" (float style).
 // It also reports whether float style had to be used.
