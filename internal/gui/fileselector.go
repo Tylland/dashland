@@ -39,20 +39,30 @@ type FileEntry struct {
 	Size  int64
 }
 
+type FileDialogMode uint32
+
+const (
+	FileDialogModeFile      FileDialogMode = 0
+	FileDialogModeDirectory FileDialogMode = 1
+)
+
 // FileDialog is an in-app, modal file browser (raylib has no native file dialog).
 type FileDialog struct {
-	Active        bool
-	Bounds        rl.Rectangle
-	Dir           string
-	Entries       []FileEntry
-	Selected      int
-	Scroll        int
-	Err           string
-	dragging      bool
-	dragOffset    rl.Vector2
-	openedFrame   uint64
-	lastClickIdx  int
-	lastClickTime float64
+	Active          bool
+	Mode            FileDialogMode
+	Bounds          rl.Rectangle
+	Dir             string
+	Entries         []FileEntry
+	Selected        int
+	Scroll          int
+	Err             string
+	dragging        bool
+	dragOffset      rl.Vector2
+	openedFrame     uint64
+	lastClickIdx    int
+	lastClickTime   float64
+	directoriesOnly bool
+	OnSelected      func(path string) // called when a file or directory is confirmed
 
 	Pattern string // wildcard filter for file names, e.g. "*.entity.txt"; empty = all files
 
@@ -96,6 +106,17 @@ func FitText(s string, maxW, fontSize int32) string {
 // Open shows the dialog. pattern restricts the listed files with wildcards
 // (see matchPattern), e.g. "*.entity.txt"; pass "" to list every file.
 func (f *FileDialog) Open(startDir, pattern string) {
+	f.open(startDir, pattern, FileDialogModeFile)
+}
+
+// OpenDirectory shows the dialog in folder-selection mode. Activating a folder
+// navigates into it; Select folder returns the current directory.
+func (f *FileDialog) OpenDirectory(startDir string) {
+	f.open(startDir, "", FileDialogModeDirectory)
+}
+
+func (f *FileDialog) open(startDir, pattern string, mode FileDialogMode) {
+	onSelected := f.OnSelected
 	if startDir == "" {
 		if wd, err := os.Getwd(); err == nil {
 			startDir = wd
@@ -103,12 +124,23 @@ func (f *FileDialog) Open(startDir, pattern string) {
 			startDir = "."
 		}
 	}
-	*f = FileDialog{Active: true, openedFrame: Frame, lastClickIdx: -1}
+	*f = FileDialog{Active: true, openedFrame: Frame, lastClickIdx: -1, OnSelected: onSelected}
 	f.Pattern = pattern
+	f.Mode = mode
 	w, h := float32(560), float32(430)
 	f.Bounds = rl.NewRectangle((ScreenW-w)/2, (ScreenH-h)/2, w, h)
 	f.upBtn = NewButton("Up", "", f.goUp)
-	f.openBtn = NewButton("Open", "", func() { f.pick = f.activate() })
+	openLabel := "Open"
+	if f.Mode == FileDialogModeDirectory {
+		openLabel = "Select folder"
+	}
+	f.openBtn = NewButton(openLabel, "", func() {
+		if f.Mode == FileDialogModeDirectory {
+			f.pick = f.Dir
+		} else {
+			f.pick = f.activate()
+		}
+	})
 	f.cancelBtn = NewButton("Cancel", "", func() { f.result = ResCancel })
 	f.loadDir(startDir)
 	for rl.GetCharPressed() > 0 { // flush pending characters
@@ -142,7 +174,7 @@ func (f *FileDialog) loadDir(dir string) {
 		}
 		if e.IsDir {
 			dirs = append(dirs, e)
-		} else if matchPattern(f.Pattern, e.Name) {
+		} else if f.Mode != FileDialogModeDirectory && matchPattern(f.Pattern, e.Name) {
 			files = append(files, e)
 		}
 	}
@@ -172,6 +204,13 @@ func (f *FileDialog) goUp() {
 	if parent := filepath.Dir(f.Dir); parent != f.Dir {
 		f.loadDir(parent)
 	}
+}
+
+func (f *FileDialog) selectEntry(index int) {
+	if index < 0 || index >= len(f.Entries) || f.Selected == index {
+		return
+	}
+	f.Selected = index
 }
 
 // UpdateDraw handles input and draws the dialog. When it closes it returns the chosen path (if any).
@@ -205,7 +244,11 @@ func (f *FileDialog) UpdateDraw() (string, DialogResult) {
 	rl.DrawRectangleRounded(b, 0.03, 8, ColPanel)
 	rl.DrawRectangleRounded(titleBar, 0.4, 8, ColTitle)
 	rl.DrawRectangle(int32(b.X), int32(b.Y)+18, int32(b.Width), 12, ColTitle)
-	rl.DrawText("Open file", int32(b.X)+12, int32(b.Y)+6, 18, ColText)
+	title := "Open file"
+	if f.Mode == FileDialogModeDirectory {
+		title = "Select folder"
+	}
+	rl.DrawText(title, int32(b.X)+12, int32(b.Y)+6, 18, ColText)
 
 	// --- path bar + [active filter chip] + Up button
 	chipText, chipW := "", float32(0)
@@ -239,10 +282,10 @@ func (f *FileDialog) UpdateDraw() (string, DialogResult) {
 			f.Scroll -= int(rl.GetMouseWheelMove()) * 3
 		}
 		if rl.IsKeyPressed(rl.KeyDown) && f.Selected < len(f.Entries)-1 {
-			f.Selected++
+			f.selectEntry(f.Selected + 1)
 		}
 		if rl.IsKeyPressed(rl.KeyUp) && f.Selected > 0 {
-			f.Selected--
+			f.selectEntry(f.Selected - 1)
 		}
 		if rl.IsKeyPressed(rl.KeyBackspace) {
 			f.goUp()
@@ -253,7 +296,7 @@ func (f *FileDialog) UpdateDraw() (string, DialogResult) {
 		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) && rl.CheckCollisionPointRec(m, list) {
 			idx := f.Scroll + int((m.Y-list.Y)/fdRowH)
 			if idx >= 0 && idx < len(f.Entries) {
-				f.Selected = idx
+				f.selectEntry(idx)
 				now := rl.GetTime()
 				if idx == f.lastClickIdx && now-f.lastClickTime < 0.35 { // double-click
 					pick = f.activate()
@@ -330,17 +373,22 @@ func (f *FileDialog) UpdateDraw() (string, DialogResult) {
 	const bw, bh = 96, 34
 	by := b.Y + b.Height - bh - 16
 	label := "No file selected"
-	if f.Selected >= 0 && f.Selected < len(f.Entries) {
+	openW := float32(bw)
+	if f.Mode == FileDialogModeDirectory {
+		openW = 120
+		label = f.Dir
+	} else if f.Selected >= 0 && f.Selected < len(f.Entries) {
 		label = f.Entries[f.Selected].Name
 	}
-	rl.DrawText(FitText(label, int32(b.Width)-32-2*bw-30, 16), int32(b.X)+16, int32(by)+9, 16, ColTextDim)
+	labelWidth := int32(b.Width) - 32 - int32(openW) - bw - 30
+	rl.DrawText(FitText(label, labelWidth, 16), int32(b.X)+16, int32(by)+9, 16, ColTextDim)
 
 	rightX := b.X + b.Width - 16
 	f.pick, f.result = "", ResNone
-	f.openBtn.Bounds = rl.NewRectangle(rightX-bw, by, bw, bh)
-	f.openBtn.Enabled = can && f.Selected >= 0
+	f.openBtn.Bounds = rl.NewRectangle(rightX-openW, by, openW, bh)
+	f.openBtn.Enabled = can && (f.Mode == FileDialogModeDirectory || f.Selected >= 0)
 	f.openBtn.UpdateDraw()
-	f.cancelBtn.Bounds = rl.NewRectangle(rightX-2*bw-10, by, bw, bh)
+	f.cancelBtn.Bounds = rl.NewRectangle(rightX-openW-10-bw, by, bw, bh)
 	f.cancelBtn.Enabled = can
 	f.cancelBtn.UpdateDraw()
 	if can && rl.IsKeyPressed(rl.KeyEscape) {
@@ -355,6 +403,9 @@ func (f *FileDialog) UpdateDraw() (string, DialogResult) {
 
 	if pick != "" {
 		result = ResOK
+		if f.OnSelected != nil {
+			f.OnSelected(pick)
+		}
 	}
 	if result != ResNone {
 		f.Active = false

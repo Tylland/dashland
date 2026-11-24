@@ -52,10 +52,12 @@ type ValuesDialog struct {
 	result      DialogResult
 	err         string
 	openedFrame uint64
+	OnSaved     func(path string)
 }
 
 func (d *ValuesDialog) Open(target ecs.Transferer, doc *Document, path string) error {
 	title := "Edit values: " + FitText(filepath.Base(path), 360, 18)
+	onSaved := d.OnSaved
 	*d = ValuesDialog{
 		Window:      NewWindow(title, 580, 540),
 		Active:      true,
@@ -63,6 +65,7 @@ func (d *ValuesDialog) Open(target ecs.Transferer, doc *Document, path string) e
 		target:      target,
 		document:    doc,
 		openedFrame: Frame,
+		OnSaved:     onSaved,
 	}
 	d.buildRows()
 	d.saveBtn = NewButton("Save", "", func() { d.save() })
@@ -141,6 +144,7 @@ func (d *ValuesDialog) buildRows() {
 func (d *ValuesDialog) save() {
 	d.update()
 
+	saved := false
 	if d.target != nil && d.document != nil {
 		//fileName := filepath.Join(t.ws.StagePath(), game.EntityFileName(entity))
 
@@ -149,9 +153,13 @@ func (d *ValuesDialog) save() {
 		d.target.WriteTo(writer)
 
 		writer.Close()
+		saved = true
 	}
 
 	d.result = ResOK
+	if saved && d.OnSaved != nil {
+		d.OnSaved(d.path)
+	}
 }
 
 // Update entity by saveing back values

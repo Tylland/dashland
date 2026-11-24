@@ -76,13 +76,31 @@ func main() {
 	toolbar := gui.NewToolbar(rl.NewVector2(40, 40), workspace)
 	toolbar.Add(gui.NewButton("Open...", "Browse for a file to open", func() {
 		fd.Open(lastDir, "stage.txt")
+		fd.OnSelected = func(path string) {
+			if fd.Mode == gui.FileDialogModeFile {
+				ws.OpenStage(path)
+			}
+		}
 	}))
 
 	toolbar.Add(gui.NewButton("New...", "Create new stage", func() {
-		stage := game.NewStage("<new stage>", game.NewMapSize(30, 20, 32, 32), assets.LoadTexture("blocks"), assets.LoadTexture("entities"), assets.LoadTexture("groundCorners"))
-		doc := gui.NewDocument(stage)
+		fd.OpenDirectory(lastDir)
+		fd.OnSelected = func(path string) {
+			if fd.Mode == gui.FileDialogModeDirectory {
+				stage := game.NewStage("<new stage>", game.NewMapSize(30, 20, 32, 32), assets.LoadTexture("blocks"), assets.LoadTexture("entities"), assets.LoadTexture("groundCorners"))
+				doc := gui.NewDocument(stage)
 
-		vd.Open(stage, doc, "")
+				vd.Open(stage, doc, filepath.Join(path, "stage.txt"))
+				vd.OnSaved = func(stageFilePath string) {
+					ws.OpenStage(stageFilePath)
+				}
+			}
+
+			// if fd.Mode == gui.FileDialogModeFile {
+			// 	ws.OpenStage(path)
+			// }
+		}
+
 		//	ws.stage.Save(ws.stagePath)
 	}))
 
@@ -96,7 +114,7 @@ func main() {
 
 		ws.stage.WriteTo(writer)
 
-		vd.Open(ws.stage, doc, ws.stagePath)
+		vd.Open(ws.stage, doc, filepath.Join(ws.stagePath))
 	}))
 
 	prppBtn.GapAfter = gui.TbSepExtra
@@ -265,26 +283,26 @@ func main() {
 		}
 
 		// file selector (modal, drawn on top)
-		if path, res := fd.UpdateDraw(); res != gui.ResNone {
+		if _, res := fd.UpdateDraw(); res != gui.ResNone {
 			lastDir = fd.Dir
-			if res == gui.ResOK {
-				docName = filepath.Base(path)
-				info := gui.LoadPreview(path)
+			// if res == gui.ResOK && fd.Mode == gui.FileDialogModeFile {
+			// 	docName = filepath.Base(path)
+			// 	info := gui.LoadPreview(path)
 
-				ws.Inspect(&gui.EntityInspection{Openpath: path, Preview: info})
-				ws.world.Clear()
+			// 	ws.Inspect(&gui.EntityInspection{Openpath: path, Preview: info})
+			// 	ws.world.Clear()
 
-				stagePath := strings.TrimSuffix(path, docName)
-				st, err := openStage(ws.world, stagePath)
+			// 	stagePath := strings.TrimSuffix(path, docName)
+			// 	st, err := openStage(ws.world, stagePath)
 
-				if err != nil {
-					panic(err)
-				}
+			// 	if err != nil {
+			// 		panic(err)
+			// 	}
 
-				ws.stage = st
-				ws.stagePath = stagePath
-				ws.world.AddSystem(systems.NewEditorRenderer(ws.stage, NewViewCamera(ws.view)))
-			}
+			// 	ws.stage = st
+			// 	ws.stagePath = stagePath
+			// 	ws.world.AddSystem(systems.NewEditorRenderer(ws.stage, NewViewCamera(ws.view)))
+			// }
 		}
 
 		// entity selector (modal, drawn on top)
@@ -362,6 +380,23 @@ func (ws *StageMakerWorkspace) SelectEntity(idx int) {
 }
 func (ws *StageMakerWorkspace) SelectedEntity() *gui.EntityItem {
 	return ws.entities[ws.selectedEntity]
+}
+
+func (ws *StageMakerWorkspace) OpenStage(path string) {
+	docName := filepath.Base(path)
+	stagePath := strings.TrimSuffix(path, docName)
+
+	ws.world.Clear()
+
+	st, err := openStage(ws.world, stagePath)
+
+	if err != nil {
+		panic(err)
+	}
+
+	ws.stage = st
+	ws.stagePath = stagePath
+	ws.world.AddSystem(systems.NewEditorRenderer(ws.stage, NewViewCamera(ws.view)))
 }
 
 type ViewCamera struct {
