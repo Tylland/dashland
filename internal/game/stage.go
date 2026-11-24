@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/tabwriter"
 	"time"
 
@@ -169,13 +170,14 @@ func (s *Stage) CheckPositionOccupied(position common.BlockPosition) bool {
 	return s.GetEntity(position) != nil
 }
 
-func (s *Stage) Save(path string) error {
-	start := time.Now()
+func (s *Stage) Save(path string) ([]string, error) {
+	//	start := time.Now()
+	counters := NewEntityCounters()
 
 	writer, err := NewTextFileWriter(path + "/" + "stage.txt")
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	s.WriteTo(writer)
@@ -192,12 +194,14 @@ func (s *Stage) Save(path string) error {
 		writer, err := NewTextFileWriter(path + "/" + fileName)
 
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		b.WriteTo(writer)
 
 		writer.Close()
+
+		counters.Increment(EntityTypeName(b.Type))
 	}
 
 	for _, e := range s.entities {
@@ -209,31 +213,38 @@ func (s *Stage) Save(path string) error {
 		writer, err := NewTextFileWriter(path + "/" + fileName)
 
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		e.WriteTo(writer)
 
 		writer.Close()
+
+		counters.Increment(EntityTypeName(e.Type))
 	}
 
-	fmt.Printf("\nSaving stage %q in directory %q\n", s.Name, path)
-	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	buf := &strings.Builder{}
+
+	//	fmt.Fprintf(buf, "\nSaving stage %q in directory %q\n", s.Name, path)
+	tw := tabwriter.NewWriter(buf, 0, 0, 2, ' ', 0)
 
 	total := 1
 
 	fmt.Fprintf(tw, "%s\t:\t%d\t\n", "stage", 1)
 
-	for name, count := range EntityIdCounters.Counters {
+	for name, count := range counters.Counters {
 		fmt.Fprintf(tw, "%s\t:\t%d\t\n", name, count)
 		total += count
 	}
 	fmt.Fprintf(tw, "%s\t:\t%d\t\n", "total", total)
 
 	tw.Flush()
-	fmt.Printf("Elapsed time %s\n\n", time.Since(start))
 
-	return nil
+	//	fmt.Fprintf(buf, "Elapsed time %s\n\n", time.Since(start))
+
+	fmt.Print(buf.String())
+
+	return strings.Split(buf.String(), "\n"), nil
 }
 
 func (s *Stage) Load(world *ecs.World, path string) error {

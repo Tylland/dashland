@@ -95,20 +95,16 @@ func main() {
 					ws.OpenStage(stageFilePath)
 				}
 			}
-
-			// if fd.Mode == gui.FileDialogModeFile {
-			// 	ws.OpenStage(path)
-			// }
 		}
-
-		//	ws.stage.Save(ws.stagePath)
 	}))
 
 	toolbar.Add(gui.NewButton("Save", "Save stage", func() {
-		ws.stage.Save(ws.stagePath)
+		preview := game.Must(ws.stage.Save(ws.stagePath))
+
+		ws.Inspect(&gui.EntityInspection{Openpath: "saved", Preview: preview})
 	}))
 
-	prppBtn := toolbar.Add(gui.NewButton("Props...", "View and edit properties of current stage", func() {
+	propBtn := toolbar.Add(gui.NewButton("Props...", "View and edit properties of current stage", func() {
 		doc := &gui.Document{}
 		writer := gui.NewDocumentWriter(doc)
 
@@ -117,11 +113,12 @@ func main() {
 		vd.Open(ws.stage, doc, filepath.Join(ws.stagePath))
 	}))
 
-	prppBtn.GapAfter = gui.TbSepExtra
+	propBtn.GapAfter = gui.TbSepExtra
 
 	entityBtn := toolbar.Add(gui.NewButton("Entity", "Choose which entity gets placed on the canvas", func() {
 		ed.Open(ws.entities, ws.selectedEntity, palette[colorIdx])
 	}))
+
 	entityBtn.Decorate = func(b *gui.Button) { // thumbnail of the current entity
 		thumb := rl.NewRectangle(b.Bounds.X+b.Bounds.Width-30, b.Bounds.Y+5, 20, 20)
 		ws.entities[ws.selectedEntity].Draw(thumb, palette[colorIdx])
@@ -236,7 +233,7 @@ func main() {
 		if ws.inspection != nil && ws.inspection.Openpath != "" {
 			px, py := float32(gui.ScreenW-460), float32(130)
 			ph := float32(len(ws.inspection.Preview)*18 + 44)
-			rl.DrawRectangleRounded(rl.NewRectangle(px, py, 440, ph), 0.04, 6, gui.ColPanel)
+			rl.DrawRectangleRounded(rl.NewRectangle(px, py, 440, ph), 0.04, 6, rl.Fade(gui.ColPanel, 0.5))
 			rl.DrawText(gui.FitText(ws.inspection.Openpath, 400, 16), int32(px)+14, int32(py)+10, 16, gui.ColText)
 			for i, l := range ws.inspection.Preview {
 				rl.DrawText(l, int32(px)+14, int32(py)+36+int32(i*18), 14, gui.ColTextDim)
@@ -256,14 +253,15 @@ func main() {
 		help := "Ctrl+wheel: zoom  |  Space+drag: pan  |  Home: reset"
 		rl.DrawText(help, int32(gui.ScreenW)-rl.MeasureText(help, 16)-10, int32(gui.ScreenH)-20, 16, gui.ColTextDim)
 
+		// Set the canvas cursor first; the toolbar overrides it while hovered.
+		if ws.view.Panning || (ws.view.Grab && !overToolbar) {
+			rl.SetMouseCursor(rl.MouseCursorResizeAll)
+		} else {
+			rl.SetMouseCursor(rl.MouseCursorDefault)
+		}
+
 		// toolbar (its buttons run their own OnClick handlers)
 		toolbar.UpdateDraw(!modal)
-		// the toolbar resets the cursor each frame, so set the grab cursors after it
-		if ws.view.Panning {
-			rl.SetMouseCursor(rl.MouseCursorResizeAll)
-		} else if ws.view.Grab && !overToolbar {
-			rl.SetMouseCursor(rl.MouseCursorPointingHand)
-		}
 
 		vd.UpdateDraw()
 

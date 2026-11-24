@@ -23,8 +23,6 @@ func NewEditorRenderer(stage *game.Stage, camera game.Camera) *EditorRenderer {
 func (s *EditorRenderer) Update(world *ecs.World, deltaTime float32) {
 	s.elapsedTime += float64(deltaTime)
 
-	s.DrawGrid()
-
 	s.stage.Update(deltaTime)
 	s.stage.Render(deltaTime)
 
@@ -64,6 +62,8 @@ func (s *EditorRenderer) Update(world *ecs.World, deltaTime float32) {
 			s.drawParticle(particle)
 		}
 	}
+
+	s.DrawGrid()
 }
 
 func (s *EditorRenderer) RunWhenPaused() bool {

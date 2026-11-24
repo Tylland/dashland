@@ -150,9 +150,10 @@ func (t *Toolbar) UpdateDraw(enabled bool) {
 			t.dragging = false
 		}
 	}
+	overToolbar := enabled && rl.CheckCollisionPointRec(m, t.Bounds())
 	if t.dragging || overGrip {
 		rl.SetMouseCursor(rl.MouseCursorResizeAll)
-	} else {
+	} else if overToolbar {
 		rl.SetMouseCursor(rl.MouseCursorDefault)
 	}
 
