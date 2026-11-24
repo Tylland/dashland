@@ -23,16 +23,18 @@ func NewEditorRenderer(stage *game.Stage, camera game.Camera) *EditorRenderer {
 func (s *EditorRenderer) Update(world *ecs.World, deltaTime float32) {
 	s.elapsedTime += float64(deltaTime)
 
+	s.DrawGrid()
+
 	s.stage.Update(deltaTime)
 	s.stage.Render(deltaTime)
 
-	rl.DrawRectangle(
-		0,
-		0,
-		int32(s.stage.Width*int(s.stage.BlockWidth)),
-		int32(s.stage.Height*int(s.stage.BlockHeight)),
-		rl.Gray,
-	)
+	// rl.DrawRectangle(
+	// 	0,
+	// 	0,
+	// 	int32(s.stage.Width*int(s.stage.BlockWidth)),
+	// 	int32(s.stage.Height*int(s.stage.BlockHeight)),
+	// 	rl.Gray,
+	// )
 
 	for _, entity := range world.Entities() {
 		position := ecs.GetComponent[components.PositionComponent](entity)
@@ -77,4 +79,31 @@ func (s *EditorRenderer) drawParticle(particle *components.ParticleComponent) {
 		dst := rl.NewRectangle(p.X, p.Y, p.Size, p.Size*0.6)
 		rl.DrawTexturePro(s.mist, src, dst, rl.NewVector2(p.Size/2, p.Size*0.3), 0, c)
 	}
+}
+
+// DrawGrid draws an adaptive background grid (call between Begin and End).
+func (s *EditorRenderer) DrawGrid() {
+
+	zoom := s.camera.GetCamera().Zoom
+	thick := 1 / zoom // constant 1px on screen
+	line := rl.Fade(rl.White, 0.07)
+	axis := rl.Fade(rl.NewColor(90, 150, 255, 255), 0.55)
+
+	maxX := float32(s.stage.Width) * s.stage.BlockWidth
+	maxY := float32(s.stage.Height) * s.stage.BlockHeight
+
+	for x := float32(0); x <= maxX; x = x + s.stage.BlockWidth {
+		c := line
+
+		rl.DrawLineEx(rl.NewVector2(x, 0), rl.NewVector2(x, maxY), thick, c)
+	}
+
+	for y := float32(0); y <= maxY; y = y + s.stage.BlockWidth {
+		c := line
+
+		rl.DrawLineEx(rl.NewVector2(0, y), rl.NewVector2(maxX, y), thick, c)
+	}
+
+	area := rl.NewRectangle(0, 0, maxX, maxY)
+	rl.DrawRectangleLinesEx(area, 2/zoom, axis)
 }

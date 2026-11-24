@@ -30,9 +30,9 @@ func NewRenderSystem(stage *game.Stage, camera game.Camera) *Renderer {
 func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 	s.elapsedTime += float64(deltaTime)
 
-	// rl.BeginDrawing()
-	// rl.ClearBackground(rl.Black)
-	// rl.BeginMode2D(s.camera.GetCamera())
+	rl.BeginDrawing()
+	rl.ClearBackground(rl.Black)
+	rl.BeginMode2D(s.camera.GetCamera())
 
 	s.stage.Update(deltaTime)
 	s.stage.Render(deltaTime)
@@ -66,7 +66,7 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 		}
 	}
 
-	// rl.EndMode2D()
+	rl.EndMode2D()
 
 	s.drawTimer()
 	s.drawInventory(world)
@@ -75,7 +75,7 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 		s.drawTimeExpired()
 	}
 
-	//rl.EndDrawing()
+	rl.EndDrawing()
 }
 
 func (s *Renderer) RunWhenPaused() bool {

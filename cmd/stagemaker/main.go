@@ -86,10 +86,20 @@ func main() {
 		//	ws.stage.Save(ws.stagePath)
 	}))
 
-	saveBtn := toolbar.Add(gui.NewButton("Save", "Save stage", func() {
+	toolbar.Add(gui.NewButton("Save", "Save stage", func() {
 		ws.stage.Save(ws.stagePath)
 	}))
-	saveBtn.GapAfter = gui.TbSepExtra
+
+	prppBtn := toolbar.Add(gui.NewButton("Props...", "View and edit properties of current stage", func() {
+		doc := &gui.Document{}
+		writer := gui.NewDocumentWriter(doc)
+
+		ws.stage.WriteTo(writer)
+
+		vd.Open(ws.stage, doc, ws.stagePath)
+	}))
+
+	prppBtn.GapAfter = gui.TbSepExtra
 
 	entityBtn := toolbar.Add(gui.NewButton("Entity", "Choose which entity gets placed on the canvas", func() {
 		ed.Open(ws.entities, ws.selectedEntity, palette[colorIdx])
@@ -113,14 +123,6 @@ func main() {
 		toolbar.ActivateTool(tool.NewDefaultTool())
 	}))
 
-	toolbar.Add(gui.NewButton("Properties", "View and edit properties of current stage", func() {
-		doc := &gui.Document{}
-		writer := gui.NewDocumentWriter(doc)
-
-		ws.stage.WriteTo(writer)
-
-		vd.Open(ws.stage, doc, ws.stagePath)
-	}))
 	toolbar.Add(gui.NewButton("Rename", "Change the document name", func() {
 		dlg.Open(gui.DlgInput, gui.ActRename, "Rename document", "Enter a new name:", docName)
 	}))
@@ -176,7 +178,7 @@ func main() {
 			ws.world.Update(0)
 		}
 
-		ws.view.DrawGrid()
+		//ws.view.DrawGrid()
 
 		canDraw := !modal && !ws.view.Grab && !ws.view.Panning && !overToolbar && m.Y < gui.ScreenH-gui.StatusH
 		world := ws.view.ScreenToWorld(m) // dots live in world coordinates, so zoom/pan do not move them

@@ -7,9 +7,12 @@
 - [ ] Add door entity
 - [x] Update button in Values Dialog, writes to entity
 - [x] Save to file in Values Dialog
-- [ ] Improve entity counting in Stage to avoid duplicates
 - [x] Implement DocumentReader
 - [ ] Implement Stage-edit-renderer
-- [ ] Add header to ReadFrom
+- [x] Add header to ReadFrom
+- [ ] Improve entity counting in Stage to avoid duplicates?
+- [ ] Rework EntityID generation?
+- [ ] Add layers to editor?
+
 
 

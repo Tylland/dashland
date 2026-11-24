@@ -183,6 +183,10 @@ func (s *Stage) Save(path string) error {
 	writer.Close()
 
 	for _, b := range s.blocks {
+		if b == nil {
+			continue
+		}
+
 		fileName := BlockFileName(b)
 
 		writer, err := NewTextFileWriter(path + "/" + fileName)
