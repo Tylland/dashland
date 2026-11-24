@@ -1,38 +1,36 @@
-package systems
+package renderer
 
 import (
 	"math"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"github.com/tylland/dashland/cmd/stagemaker/tool"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
 	"github.com/tylland/dashland/internal/game"
 )
 
+var ColHoovered = rl.NewColor(255, 255, 0, 125)
+var ColSelected = rl.NewColor(0, 255, 0, 125)
+
 type EditorRenderer struct {
-	stage       *game.Stage
+	ws          tool.ToolbarWorkspace
 	camera      game.Camera
 	elapsedTime float64
 	mist        rl.Texture2D
 }
 
-func NewEditorRenderer(stage *game.Stage, camera game.Camera) *EditorRenderer {
-	return &EditorRenderer{stage: stage, camera: camera}
+func NewEditorRenderer(ws tool.ToolbarWorkspace, camera game.Camera) *EditorRenderer {
+	return &EditorRenderer{ws: ws, camera: camera}
 }
 
 func (s *EditorRenderer) Update(world *ecs.World, deltaTime float32) {
 	s.elapsedTime += float64(deltaTime)
 
-	s.stage.Update(deltaTime)
-	s.stage.Render(deltaTime)
+	stage := s.ws.Stage()
 
-	// rl.DrawRectangle(
-	// 	0,
-	// 	0,
-	// 	int32(s.stage.Width*int(s.stage.BlockWidth)),
-	// 	int32(s.stage.Height*int(s.stage.BlockHeight)),
-	// 	rl.Gray,
-	// )
+	stage.Update(deltaTime)
+	stage.Render(deltaTime)
 
 	for _, entity := range world.Entities() {
 		position := ecs.GetComponent[components.PositionComponent](entity)
@@ -63,7 +61,9 @@ func (s *EditorRenderer) Update(world *ecs.World, deltaTime float32) {
 		}
 	}
 
-	s.DrawGrid()
+	s.drawGrid()
+	s.drawHoover()
+	s.drawSelected()
 }
 
 func (s *EditorRenderer) RunWhenPaused() bool {
@@ -81,24 +81,39 @@ func (s *EditorRenderer) drawParticle(particle *components.ParticleComponent) {
 	}
 }
 
-// DrawGrid draws an adaptive background grid (call between Begin and End).
-func (s *EditorRenderer) DrawGrid() {
+func (s *EditorRenderer) drawHoover() {
+	if target := s.ws.HoveredTarget(); target != nil {
+		area := s.ws.Stage().Area(target.Position)
+		rl.DrawRectangleLinesEx(area, 2/s.ws.View().Camera.Zoom, ColHoovered)
+	}
+}
 
+func (s *EditorRenderer) drawSelected() {
+	if target := s.ws.SelectedTarget(); target != nil {
+		area := s.ws.Stage().Area(target.Position)
+		rl.DrawRectangleLinesEx(area, 2/s.ws.View().Camera.Zoom, ColSelected)
+	}
+}
+
+// drawGrid draws an adaptive background grid (call between Begin and End).
+func (s *EditorRenderer) drawGrid() {
+
+	stage := s.ws.Stage()
 	zoom := s.camera.GetCamera().Zoom
 	thick := 1 / zoom // constant 1px on screen
 	line := rl.Fade(rl.White, 0.07)
 	axis := rl.Fade(rl.NewColor(90, 150, 255, 255), 0.55)
 
-	maxX := float32(s.stage.Width) * s.stage.BlockWidth
-	maxY := float32(s.stage.Height) * s.stage.BlockHeight
+	maxX := float32(stage.Width) * stage.BlockWidth
+	maxY := float32(stage.Height) * stage.BlockHeight
 
-	for x := float32(0); x <= maxX; x = x + s.stage.BlockWidth {
+	for x := float32(0); x <= maxX; x = x + stage.BlockWidth {
 		c := line
 
 		rl.DrawLineEx(rl.NewVector2(x, 0), rl.NewVector2(x, maxY), thick, c)
 	}
 
-	for y := float32(0); y <= maxY; y = y + s.stage.BlockWidth {
+	for y := float32(0); y <= maxY; y = y + stage.BlockWidth {
 		c := line
 
 		rl.DrawLineEx(rl.NewVector2(0, y), rl.NewVector2(maxX, y), thick, c)

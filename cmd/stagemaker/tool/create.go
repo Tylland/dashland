@@ -20,6 +20,10 @@ type ToolbarWorkspace interface {
 	SelectedEntity() *gui.EntityItem
 	Inspection() *gui.EntityInspection
 	Inspect(inspect *gui.EntityInspection)
+	HoveredTarget() *Target
+	SetHoveredTarget(target *Target)
+	SelectedTarget() *Target
+	SetSelectedTarget(target *Target)
 }
 
 // ------------------------------------------------------------------ Rectangle grid tool
@@ -51,6 +55,7 @@ func (t *FillRectTool) Activate(tb gui.ToolBar) {
 
 	if ws, ok := tb.Workspace().(ToolbarWorkspace); ok {
 		t.ws = ws
+		t.ws.SetHoveredTarget(nil)
 	}
 }
 
@@ -66,7 +71,7 @@ func (t *FillRectTool) Cancel() {
 func (t *FillRectTool) WorldMouseDown(world rl.Vector2, button rl.MouseButton) {
 	t.dragging = true
 
-	t.start = t.stage.ClampedBlockPosition(world)
+	t.start, _ = t.stage.ClampedBlockPosition(world)
 
 	t.end = t.start
 }
@@ -75,7 +80,7 @@ func (t *FillRectTool) WorldMouseMove(world rl.Vector2) {
 	if t.dragging {
 		//		t.endX, t.endY = cellOf(world)
 
-		t.end = t.stage.ClampedBlockPosition(world)
+		t.end, _ = t.stage.ClampedBlockPosition(world)
 
 		t.DrawPreview(t.ws.SelectedEntity(), rl.White, t.ws.View().Camera.Zoom)
 	}
@@ -84,7 +89,7 @@ func (t *FillRectTool) WorldMouseMove(world rl.Vector2) {
 func (t *FillRectTool) WorldMouseUp(world rl.Vector2, button rl.MouseButton) {
 	if t.dragging {
 		//		t.endX, t.endY = cellOf(world)
-		t.end = t.stage.ClampedBlockPosition(world)
+		t.end, _ = t.stage.ClampedBlockPosition(world)
 		t.CreateEntities()
 	}
 

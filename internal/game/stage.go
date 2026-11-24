@@ -50,6 +50,10 @@ func NewStage(name string, size MapSize, blockTexture, entityTextures, groundCor
 	}
 }
 
+func (s *Stage) Area(pos common.BlockPosition) rl.Rectangle {
+	return rl.NewRectangle(float32(pos.X)*s.BlockWidth, float32(pos.Y)*s.BlockHeight, s.BlockWidth, s.BlockHeight)
+}
+
 func (s *Stage) SetTimeLimit(seconds int) {
 	s.TimeLimit = seconds
 	s.TimeRemaining = float32(seconds)
@@ -71,11 +75,14 @@ func (s *Stage) ClampBlock(pos common.BlockPosition) common.BlockPosition {
 	return common.NewBlockPosition(utils.Clamp(pos.X, 0, s.Width), utils.Clamp(pos.Y, 0, s.Height))
 }
 
-func (s *Stage) ClampedBlockPosition(position rl.Vector2) common.BlockPosition {
+func (s *Stage) ClampedBlockPosition(position rl.Vector2) (common.BlockPosition, bool) {
 	bx := int(position.X / float32(s.BlockWidth))
 	by := int(position.Y / float32(s.BlockHeight))
 
-	return common.NewBlockPosition(utils.Clamp(bx, 0, s.Width-1), utils.Clamp(by, 0, s.Height-1))
+	x, xi := utils.ClampInside(bx, 0, s.Width-1)
+	y, yi := utils.ClampInside(by, 0, s.Height-1)
+
+	return common.NewBlockPosition(x, y), xi && yi
 }
 
 func (s *Stage) Render(deltaTime float32) {

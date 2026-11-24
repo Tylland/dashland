@@ -10,6 +10,16 @@ func Clamp(value, min, max int) int {
 	return value
 }
 
+func ClampInside(value, min, max int) (int, bool) {
+	if value < min {
+		return min, false
+	}
+	if value > max {
+		return max, false
+	}
+	return value, true
+}
+
 func Min(a, b float32) float32 {
 	if a < b {
 		return a

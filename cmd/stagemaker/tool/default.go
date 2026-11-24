@@ -26,6 +26,7 @@ func (t *DefaultTool) Activate(tb gui.ToolBar) {
 
 	if ws, ok := tb.Workspace().(ToolbarWorkspace); ok {
 		t.ws = ws
+		t.ws.SetHoveredTarget(nil)
 	}
 }
 
@@ -34,14 +35,48 @@ func (t *DefaultTool) Deactivate() {
 }
 
 func (t *DefaultTool) Cancel() {
+	t.WorldMouseLeave()
 }
 
 // Mouse Tracking
+func (t *DefaultTool) WorldMouseMove(world rl.Vector2) {
+	if t.ws == nil || t.ws.Stage() == nil {
+		t.WorldMouseLeave()
+		return
+	}
+
+	pos, inside := t.ws.Stage().ClampedBlockPosition(world)
+	var target *Target
+	if inside {
+		if _, ok := t.ws.Stage().GetEntityAtPosition(pos); ok {
+			target = &Target{Kind: TargetEntity, Position: pos}
+		} else if _, ok := t.ws.Stage().GetBlockAtPosition(pos); ok {
+			target = &Target{Kind: TargetBlock, Position: pos}
+		}
+	}
+
+	t.ws.SetHoveredTarget(target)
+}
+
+func (t *DefaultTool) WorldMouseLeave() {
+	if t.ws != nil {
+		t.ws.SetHoveredTarget(nil)
+	}
+}
+
 func (t *DefaultTool) WorldMouseDown(world rl.Vector2, button rl.MouseButton) {
+	if t.ws == nil || t.ws.Stage() == nil {
+		return
+	}
 
 	if button == rl.MouseButtonRight {
-		pos := t.ws.Stage().GetBlockPosition(world)
+		t.ws.SetSelectedTarget(nil)
+		pos, inside := t.ws.Stage().ClampedBlockPosition(world)
+		if !inside {
+			return
+		}
 		if block, ok := t.ws.Stage().GetBlockAtPosition(pos); ok {
+			t.ws.SetSelectedTarget(&Target{Kind: TargetBlock, Position: pos})
 			path := filepath.Join(t.ws.StagePath(), game.BlockFileName(block))
 			preview := gui.LoadPreview(path)
 
@@ -52,8 +87,13 @@ func (t *DefaultTool) WorldMouseDown(world rl.Vector2, button rl.MouseButton) {
 	}
 
 	if button == rl.MouseButtonLeft {
-		pos := t.ws.Stage().GetBlockPosition(world)
+		t.ws.SetSelectedTarget(nil)
+		pos, inside := t.ws.Stage().ClampedBlockPosition(world)
+		if !inside {
+			return
+		}
 		if entity, ok := t.ws.Stage().GetEntityAtPosition(pos); ok {
+			t.ws.SetSelectedTarget(&Target{Kind: TargetEntity, Position: pos})
 			doc := &gui.Document{}
 			writer := gui.NewDocumentWriter(doc)
 

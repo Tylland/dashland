@@ -29,24 +29,13 @@ import (
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 
+	"github.com/tylland/dashland/cmd/stagemaker/renderer"
 	"github.com/tylland/dashland/cmd/stagemaker/tool"
 	"github.com/tylland/dashland/internal/assets"
 	"github.com/tylland/dashland/internal/ecs"
 	"github.com/tylland/dashland/internal/game"
 	"github.com/tylland/dashland/internal/gui"
-	"github.com/tylland/dashland/internal/systems"
 )
-
-// const (
-// 	initialW  = 900 // starting (and minimum) window size
-// 	initialH  = 600
-// 	maxText   = 32
-// 	maxPoints = 2048
-// )
-
-// // Current window size. Refreshed every frame so the whole UI follows
-// // resizing and maximizing.
-// var screenW, screenH float32 = initialW, initialH
 
 func main() {
 	rl.SetConfigFlags(rl.FlagWindowResizable) // enables the maximize button and edge resizing
@@ -155,7 +144,7 @@ func main() {
 	toolbar.Add(gui.NewButton("Flip", "Switch horizontal / vertical (or double-click the grip)", toolbar.Flip))
 
 	ws.view = gui.NewView()
-	ws.world.AddSystem(systems.NewEditorRenderer(ws.stage, &ViewCamera{view: ws.view}))
+	ws.world.AddSystem(renderer.NewEditorRenderer(ws, &ViewCamera{view: ws.view}))
 
 	for !rl.WindowShouldClose() {
 		gui.Frame++
@@ -359,6 +348,8 @@ type StageMakerWorkspace struct {
 	stagePath         string
 	entities          []*gui.EntityItem
 	selectedEntity    int
+	hoveredTarget     *tool.Target
+	selectedTarget    *tool.Target
 	inspection        *gui.EntityInspection
 	inspectionHandled bool
 }
@@ -379,6 +370,14 @@ func (ws *StageMakerWorkspace) SelectEntity(idx int) {
 func (ws *StageMakerWorkspace) SelectedEntity() *gui.EntityItem {
 	return ws.entities[ws.selectedEntity]
 }
+func (ws *StageMakerWorkspace) HoveredTarget() *tool.Target { return ws.hoveredTarget }
+func (ws *StageMakerWorkspace) SetHoveredTarget(target *tool.Target) {
+	ws.hoveredTarget = target
+}
+func (ws *StageMakerWorkspace) SelectedTarget() *tool.Target { return ws.selectedTarget }
+func (ws *StageMakerWorkspace) SetSelectedTarget(target *tool.Target) {
+	ws.selectedTarget = target
+}
 
 func (ws *StageMakerWorkspace) OpenStage(path string) {
 	docName := filepath.Base(path)
@@ -394,7 +393,9 @@ func (ws *StageMakerWorkspace) OpenStage(path string) {
 
 	ws.stage = st
 	ws.stagePath = stagePath
-	ws.world.AddSystem(systems.NewEditorRenderer(ws.stage, NewViewCamera(ws.view)))
+	ws.hoveredTarget = nil
+	ws.selectedTarget = nil
+	ws.world.AddSystem(renderer.NewEditorRenderer(ws, NewViewCamera(ws.view)))
 }
 
 type ViewCamera struct {

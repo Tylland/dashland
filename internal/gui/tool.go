@@ -18,6 +18,10 @@ type WorldMouseMoveTracker interface {
 	WorldMouseMove(world rl.Vector2)
 }
 
+type WorldMouseLeaveTracker interface {
+	WorldMouseLeave()
+}
+
 type WorldMouseUpTracker interface {
 	WorldMouseUp(world rl.Vector2, button rl.MouseButton)
 }
