@@ -15,9 +15,12 @@ func InitBlocks(world *ecs.World, s *Stage, tiles []*tiled.LayerTile) {
 	for index, tile := range tiles {
 		blockPosition := common.NewBlockPositionFromIndex(index, s.BlockMap.Width)
 		header := NewEntityHeader(ecs.EntityType(uint32(EntityCategoryBlock) + tile.ID))
-		block := NewBlock(header, s.BlockMap, s.EntityMap, blockPosition)
+		block, err := NewEntity(header, world, s, blockPosition)
+		if err != nil {
+			fmt.Printf("block at %s %d:%d: %s\n", s.Name, blockPosition.X, blockPosition.Y, err)
+			continue
+		}
 		s.BlockMap.SetBlock(block, blockPosition)
-		world.AddEntity(block)
 	}
 
 	//	s.BlockMap.PrintBlockMap()

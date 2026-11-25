@@ -72,11 +72,15 @@ func (s *GameplaySystem) handleBlockCollision(world *ecs.World, collision *game.
 		poistion := ecs.GetComponent[components.PositionComponent](collision.Entity)
 		step := ecs.GetComponent[components.BlockStep](collision.Entity)
 
-		block, replaced := s.stage.VisitBlock(poistion.CurrentBlockPosition.Add(step.Increment))
+		block, err := game.NewEntityAndHeader(game.EntityVoid, world, s.stage, poistion.CurrentBlockPosition.Add(step.Increment))
+		if err != nil {
+			fmt.Printf("creating void block: %v\n", err)
+			return
+		}
+		replaced := s.stage.VisitBlock(block, poistion.CurrentBlockPosition.Add(step.Increment))
 		if replaced != nil && replaced != block {
 			world.RemoveEntity(replaced)
 		}
-		world.AddEntity(block)
 	}
 
 	if collision.Block.Type == game.EntitySoil && collision.Entity.Type == game.EntityBoulder {
@@ -287,13 +291,15 @@ func (s *GameplaySystem) CreateDiamonds(world *ecs.World, position common.BlockP
 		for x := -width; x <= width; x++ {
 			diamondPosition := position.Offset(x, y)
 			if s.stage.CheckCharacteristics(diamondPosition, characteristics.Destructable) {
-				header := game.NewEntityHeader(game.EntityVoid)
-				block := game.NewBlock(header, s.stage.BlockMap, s.stage.EntityMap, diamondPosition)
+				block, err := game.NewEntityAndHeader(game.EntityVoid, world, s.stage, diamondPosition)
+				if err != nil {
+					fmt.Printf("creating void block at %d:%d: %v\n", diamondPosition.X, diamondPosition.Y, err)
+					continue
+				}
 				old := s.stage.BlockMap.SetBlock(block, diamondPosition)
 				if old != nil && old != block {
 					world.RemoveEntity(old)
 				}
-				world.AddEntity(block)
 
 				doomed := s.stage.GetEntity(diamondPosition)
 				if doomed != nil {
@@ -315,13 +321,15 @@ func (s *GameplaySystem) CreateSquare(world *ecs.World, entityType ecs.EntityTyp
 		for x := -width; x <= width; x++ {
 			pos := center.Offset(x, y)
 			if s.stage.CheckCharacteristics(pos, characteristics.Destructable) {
-				header := game.NewEntityHeader(game.EntityVoid)
-				block := game.NewBlock(header, s.stage.BlockMap, s.stage.EntityMap, pos)
+				block, err := game.NewEntityAndHeader(game.EntityVoid, world, s.stage, pos)
+				if err != nil {
+					fmt.Printf("creating void block at %d:%d: %v\n", pos.X, pos.Y, err)
+					continue
+				}
 				old := s.stage.BlockMap.SetBlock(block, pos)
 				if old != nil && old != block {
 					world.RemoveEntity(old)
 				}
-				world.AddEntity(block)
 
 				doomed := s.stage.GetEntity(pos)
 				if doomed != nil {

@@ -89,18 +89,16 @@ func (s *Stage) Render(deltaTime float32) {
 	}
 }
 
-// VisitBlock replaces the block at position with void and returns the new block
-// and the block it replaced. The replaced block is nil when the cell was empty.
-func (s *Stage) VisitBlock(position common.BlockPosition) (*ecs.Entity, *ecs.Entity) {
+// VisitBlock stores the visited block at position and returns the block it
+// replaced. The replaced block is nil when the cell was empty.
+func (s *Stage) VisitBlock(block *ecs.Entity, position common.BlockPosition) *ecs.Entity {
 	if old, ok := s.GetBlockAtPosition(position); ok {
-		fmt.Printf("Block at position %d,%d changed from %s", position.X, position.Y, ToBlockName(old.Type))
+		fmt.Printf("Block at position %d,%d changed from %s", position.X, position.Y, EntityTypeName(old.Type))
 	}
 
-	header := NewEntityHeader(EntityVoid)
-	block := NewBlock(header, s.BlockMap, s.EntityMap, position)
 	replaced := s.BlockMap.SetBlock(block, position)
-	fmt.Printf(" to %s \n", ToBlockName(block.Type))
-	return block, replaced
+	fmt.Printf(" to %s \n", EntityTypeName(block.Type))
+	return replaced
 }
 
 func (s *Stage) ActivateMagicWall() {
@@ -296,13 +294,16 @@ func (s *Stage) Load(world *ecs.World, path string) error {
 		reader.Rewind()
 
 		if header.Category == EntityCategoryBlock {
-			block := NewBlock(header, s.BlockMap, s.EntityMap, blockPosition)
+			block, err := NewEntity(header, world, s, blockPosition)
+			if err != nil {
+				return fmt.Errorf("creating block %q from %q: %w", EntityTypeName(header.Type), fileName, err)
+			}
 			if err := ReadBlockFrom(block, reader, s.BlockMap); err != nil {
+				world.RemoveEntity(block)
 				return fmt.Errorf("reading block %q from %q: %w", EntityTypeName(header.Type), fileName, err)
 			}
 			position := ecs.GetComponent[components.PositionComponent](block)
 			s.BlockMap.SetBlock(block, position.CurrentBlockPosition)
-			world.AddEntity(block)
 		} else {
 			entity, err := NewEntity(header, world, s, blockPosition)
 

@@ -5,76 +5,9 @@ import (
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/characteristics"
-	"github.com/tylland/dashland/internal/collider"
-	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
 )
-
-type BlockType uint32
-
-const (
-	Unknown BlockType = iota
-	Bedrock
-	Void
-	Soil
-	Wall
-	All = BlockType(0xFFFF)
-)
-
-func (bt BlockType) String() string {
-	switch bt {
-	case Bedrock:
-		return "bedrock"
-	case Void:
-		return "void"
-	case Soil:
-		return "soil"
-	case Wall:
-		return "wall"
-	default:
-		return "unknown"
-	}
-}
-
-func ToBlockName(id ecs.EntityType) string {
-	switch id {
-	case EntityBedrock:
-		return "bedrock"
-	case EntityVoid:
-		return "void"
-	case EntitySoil:
-		return "soil"
-	case EntityWall:
-		return "wall"
-	default:
-		return "unknown"
-	}
-}
-
-func NewBlockWithCharacteristics(header *ecs.EntityHeader, bm *BlockMap, gm *EntityMap, position common.BlockPosition, character characteristics.Characteristics, layer collider.CollisionLayer, obstruct collider.CollisionLayer, overlap collider.CollisionLayer) *ecs.Entity {
-	entity := ecs.NewEntity(header)
-	entity.AddComponent(components.NewPositionComponent(position, rl.NewVector2(float32(position.X)*bm.BlockWidth, float32(position.Y)*bm.BlockHeight)))
-	entity.AddComponent(components.NewCharacteristicsComponent(character))
-	entity.AddComponent(components.NewColliderComponent(layer, obstruct, overlap))
-	entity.AddComponent(&components.BlockComponent{})
-	return entity
-}
-
-func NewBlock(header *ecs.EntityHeader, bm *BlockMap, gm *EntityMap, position common.BlockPosition) *ecs.Entity {
-	switch header.Type {
-	case EntityVoid:
-		return NewBlockWithCharacteristics(header, bm, gm, position, characteristics.Destructable, collider.LayerNone, collider.LayerNone, collider.LayerNone)
-	case EntitySoil:
-		return NewBlockWithCharacteristics(header, bm, gm, position, characteristics.CanHoldGravity|characteristics.Destructable, collider.LayerGround, collider.LayerEnemy, collider.LayerAll)
-	case EntityWall:
-		return NewBlockWithCharacteristics(header, bm, gm, position, characteristics.CanHoldGravity|characteristics.GravityRollOff|characteristics.Destructable, collider.LayerWall, collider.LayerAll, collider.LayerNone)
-	case EntityBedrock:
-		return NewBlockWithCharacteristics(header, bm, gm, position, characteristics.CanHoldGravity, collider.LayerBedrock, collider.LayerAll, collider.LayerNone)
-	default:
-		return NewBlockWithCharacteristics(header, bm, gm, position, characteristics.None, collider.LayerGround, collider.LayerNone, collider.LayerNone)
-	}
-}
 
 const (
 	BlockLeft   = -1

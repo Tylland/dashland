@@ -16,12 +16,14 @@ func TestBlockIsAnEntityAndRoundTrips(t *testing.T) {
 	stage := NewStage("test", size, nil, nil, nil)
 	world := ecs.NewWorld()
 	position := common.NewBlockPosition(1, 0)
-	block := NewBlock(NewEntityHeader(EntitySoil), stage.BlockMap, stage.EntityMap, position)
+	block, err := NewEntityAndHeader(EntitySoil, world, stage, position)
+	if err != nil {
+		t.Fatal(err)
+	}
 	blockComponent := ecs.GetComponent[components.BlockComponent](block)
 	blockComponent.Corners = [4]uint8{1, 2, 3, 4}
 
 	stage.BlockMap.SetBlock(block, position)
-	world.AddEntity(block)
 
 	if got := len(world.Entities()); got != 1 || world.Entities()[0] != block {
 		t.Fatalf("world contains %d entities; want the block entity", got)
@@ -38,7 +40,11 @@ func TestBlockIsAnEntityAndRoundTrips(t *testing.T) {
 		t.Fatalf("write block: %v", err)
 	}
 
-	loaded := NewBlock(NewEntityHeader(EntitySoil), stage.BlockMap, stage.EntityMap, common.NewBlockPosition(0, 0))
+	header := NewEntityHeader(EntitySoil)
+	loaded, err := NewEntity(header, world, stage, common.NewBlockPosition(0, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := ReadBlockFrom(loaded, NewTextReader(strings.NewReader(data.String())), stage.BlockMap); err != nil {
 		t.Fatalf("read block: %v", err)
 	}
@@ -61,16 +67,20 @@ func TestSetBlockReplacesWorldEntity(t *testing.T) {
 	stage := NewStage("test", size, nil, nil, nil)
 	world := ecs.NewWorld()
 	position := common.NewBlockPosition(0, 0)
-	first := NewBlock(NewEntityHeader(EntitySoil), stage.BlockMap, stage.EntityMap, position)
-	second := NewBlock(NewEntityHeader(EntityVoid), stage.BlockMap, stage.EntityMap, position)
+	first, err := NewEntityAndHeader(EntitySoil, world, stage, position)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := NewEntityAndHeader(EntityVoid, world, stage, position)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	stage.BlockMap.SetBlock(first, position)
-	world.AddEntity(first)
 	old := stage.BlockMap.SetBlock(second, position)
 	if old != nil {
 		world.RemoveEntity(old)
 	}
-	world.AddEntity(second)
 
 	if got := world.Entities(); len(got) != 1 || got[0] != second {
 		t.Fatalf("world entities after replacement = %v; want only replacement", got)

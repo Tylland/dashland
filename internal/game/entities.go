@@ -78,24 +78,32 @@ func NewEntityHeader(entityType ecs.EntityType) *ecs.EntityHeader {
 	return ecs.NewEntityHeader(ecs.EntityID(fmt.Sprintf("%s-%d", prefix, count)), entityType, EntityCategory(entityType))
 }
 
-func NewEntity(header *ecs.EntityHeader, world *ecs.World, stage *Stage, blockPosition common.BlockPosition) (*ecs.Entity, error) {
-	position := stage.GetPosition(blockPosition)
+func NewEntity(header *ecs.EntityHeader, world *ecs.World, stage *Stage, bpos common.BlockPosition) (*ecs.Entity, error) {
+	pos := stage.GetPosition(bpos)
 
 	switch header.Type {
+	case EntityVoid:
+		return NewBlock(header, stage, bpos, pos, characteristics.Destructable, collider.LayerNone, collider.LayerNone, collider.LayerNone)
+	case EntitySoil:
+		return NewBlock(header, stage, bpos, pos, characteristics.CanHoldGravity|characteristics.Destructable, collider.LayerGround, collider.LayerEnemy, collider.LayerAll)
+	case EntityWall:
+		return NewBlock(header, stage, bpos, pos, characteristics.CanHoldGravity|characteristics.GravityRollOff|characteristics.Destructable, collider.LayerWall, collider.LayerAll, collider.LayerNone)
+	case EntityBedrock:
+		return NewBlock(header, stage, bpos, pos, characteristics.CanHoldGravity, collider.LayerBedrock, collider.LayerAll, collider.LayerNone)
 	case EntityDiamond:
-		return NewDiamond(header, world, stage, blockPosition, position), nil
+		return NewDiamond(header, world, stage, bpos, pos), nil
 	case EntityBoulder:
-		return NewBoulder(header, world, stage, blockPosition, position), nil
+		return NewBoulder(header, world, stage, bpos, pos), nil
 	case EntityExplosion:
-		return NewExplosion(header, world, stage, blockPosition, position), nil
+		return NewExplosion(header, world, stage, bpos, pos), nil
 	case EntityMagicWall:
-		return NewMagicWall(header, world, stage, blockPosition, position), nil
+		return NewMagicWall(header, world, stage, bpos, pos), nil
 	case EntityExitDoor:
-		return NewExitDoor(header, world, stage, blockPosition, position, "", blockPosition), nil
+		return NewExitDoor(header, world, stage, bpos, pos, "", bpos), nil
 	case EntityFirefly:
-		return NewFirefly(header, world, stage, blockPosition, position), nil
+		return NewFirefly(header, world, stage, bpos, pos), nil
 	case EntityButterfly:
-		return NewButterfly(header, world, stage, blockPosition, position), nil
+		return NewButterfly(header, world, stage, bpos, pos), nil
 	default:
 		return nil, fmt.Errorf("%q (%d) is unknown EntityType", EntityTypeName(header.Type), int(header.Type))
 	}
@@ -231,7 +239,7 @@ func NewExitDoor(header *ecs.EntityHeader, world *ecs.World, stage *Stage, block
 
 	entity.AddComponent(components.NewPositionComponent(blockPosition, position))
 	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
-	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(stage.blockTextures, stage.BlockWidth, stage.BlockHeight, float32(Bedrock)*stage.BlockWidth, 0, 0)))
+	entity.AddComponent(components.NewSpriteComponent(common.NewSprite(assets.LoadTexture("entities"), stage.BlockWidth, stage.BlockHeight, float32(header.Type)*stage.BlockWidth, 0, 0)))
 	entity.AddComponent(components.NewColliderComponent(collider.LayerBedrock, collider.LayerAll, collider.LayerNone))
 	entity.AddComponent(components.NewDoorComponent(targetStage, targetPosition, components.DoorHidden))
 
@@ -269,4 +277,17 @@ func NewFlash(world *ecs.World) *ecs.Entity {
 	world.AddEntity(entity)
 
 	return entity
+}
+
+func NewBlock(header *ecs.EntityHeader, stage *Stage, bpos common.BlockPosition, pos rl.Vector2, character characteristics.Characteristics, layer collider.CollisionLayer, obstruct collider.CollisionLayer, interact collider.CollisionLayer) (*ecs.Entity, error) {
+	sprite := common.NewSprite(assets.LoadTexture("blocks"), stage.BlockWidth, stage.BlockHeight, float32(header.Type)*stage.BlockWidth, 0, 0)
+
+	entity := ecs.NewEntity(header)
+	entity.AddComponent(components.NewPositionComponent(bpos, pos))
+	entity.AddComponent(components.NewSpriteComponent(sprite))
+	entity.AddComponent(components.NewCharacteristicsComponent(character))
+	entity.AddComponent(components.NewColliderComponent(layer, obstruct, interact))
+	entity.AddComponent(&components.BlockComponent{})
+
+	return entity, nil
 }
