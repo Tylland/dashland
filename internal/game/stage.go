@@ -178,7 +178,7 @@ func (s *Stage) CheckPositionOccupied(position common.BlockPosition) bool {
 }
 
 func (s *Stage) Save(path string) ([]string, error) {
-	//	start := time.Now()
+	start := time.Now()
 	counters := NewEntityCounters()
 
 	writer, err := NewTextFileWriter(path + "/" + "stage.txt")
@@ -232,7 +232,7 @@ func (s *Stage) Save(path string) ([]string, error) {
 
 	buf := &strings.Builder{}
 
-	//	fmt.Fprintf(buf, "\nSaving stage %q in directory %q\n", s.Name, path)
+	fmt.Fprintf(buf, "\nSaving stage %q in directory %q\n", s.Name, path)
 	tw := tabwriter.NewWriter(buf, 0, 0, 2, ' ', 0)
 
 	total := 1
@@ -247,7 +247,7 @@ func (s *Stage) Save(path string) ([]string, error) {
 
 	tw.Flush()
 
-	//	fmt.Fprintf(buf, "Elapsed time %s\n\n", time.Since(start))
+	fmt.Fprintf(buf, "Elapsed time %s\n\n", time.Since(start))
 
 	fmt.Print(buf.String())
 
