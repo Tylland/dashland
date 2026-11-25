@@ -31,11 +31,11 @@ func NewEntityEvent(actor *ecs.Entity, target *ecs.Entity) *EntityEvent {
 }
 
 type BlockEvent struct {
-	Block  *Block
+	Block  *ecs.Entity
 	Entity *ecs.Entity
 }
 
-func NewBlockEvent(block *Block, entity *ecs.Entity) *BlockEvent {
+func NewBlockEvent(block *ecs.Entity, entity *ecs.Entity) *BlockEvent {
 	return &BlockEvent{
 		Block:  block,
 		Entity: entity,
@@ -43,11 +43,11 @@ func NewBlockEvent(block *Block, entity *ecs.Entity) *BlockEvent {
 }
 
 type BlockCollisionEvent struct {
-	Block  *Block
+	Block  *ecs.Entity
 	Entity *ecs.Entity
 }
 
-func NewBlockCollisionEvent(block *Block, entity *ecs.Entity) *BlockCollisionEvent {
+func NewBlockCollisionEvent(block *ecs.Entity, entity *ecs.Entity) *BlockCollisionEvent {
 	return &BlockCollisionEvent{
 		Block:  block,
 		Entity: entity,

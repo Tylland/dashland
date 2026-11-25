@@ -40,23 +40,26 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 	targetPosition := position.CurrentBlockPosition.Add(step.Increment)
 
 	if block, ok := s.stage.GetBlockAtPosition(targetPosition); ok {
-		obstructs, interacts := collider.Collide(block.Collider)
+		blockCollider := ecs.GetComponent[components.ColliderComponent](block)
+		if blockCollider != nil {
+			obstructs, interacts := collider.Collide(blockCollider)
 
-		if obstructs {
-			fmt.Printf("%s is obstructed by %s\n", actor.ID, block.ID)
+			if obstructs {
+				fmt.Printf("%s is obstructed by %s\n", actor.ID, block.ID)
 
-			if character.Has(characteristics.Falling) {
-				s.StopFalling(actor, step, character)
-			} else {
-				step.Cancel()
+				if character.Has(characteristics.Falling) {
+					s.StopFalling(actor, step, character)
+				} else {
+					step.Cancel()
+				}
+
+				world.AddEvent("blockblocks", game.NewBlockEvent(block, actor))
 			}
 
-			world.AddEvent("blockblocks", game.NewBlockEvent(block, actor))
-		}
-
-		if interacts {
-			fmt.Printf("%s overlap %s\n", actor.ID, block.ID)
-			world.AddEvent("blockcollision", game.NewBlockCollisionEvent(block, actor))
+			if interacts {
+				fmt.Printf("%s overlap %s\n", actor.ID, block.ID)
+				world.AddEvent("blockcollision", game.NewBlockCollisionEvent(block, actor))
+			}
 		}
 	}
 

@@ -12,11 +12,11 @@ import (
 type BlockMap struct {
 	MapSize
 	blockTextures *rl.Texture2D
-	blocks        []*Block
+	blocks        []*ecs.Entity
 }
 
 func NewBlockMap(mapSize MapSize, blockTextures *rl.Texture2D) *BlockMap {
-	return &BlockMap{MapSize: mapSize, blockTextures: blockTextures, blocks: make([]*Block, mapSize.Count())}
+	return &BlockMap{MapSize: mapSize, blockTextures: blockTextures, blocks: make([]*ecs.Entity, mapSize.Count())}
 }
 
 func (bm *BlockMap) CheckBlockAtPosition(blockType ecs.EntityType, position common.BlockPosition) bool {
@@ -24,7 +24,8 @@ func (bm *BlockMap) CheckBlockAtPosition(blockType ecs.EntityType, position comm
 		return false
 	}
 
-	return bm.blocks[position.Y*bm.Width+position.X].Type == blockType
+	block := bm.blocks[position.Y*bm.Width+position.X]
+	return block != nil && block.Type == blockType
 }
 
 func (bm *BlockMap) CheckNeighbourTypes(blockType ecs.EntityType, position common.BlockPosition) (neighbours [9]bool) {
@@ -55,34 +56,47 @@ func (bm *BlockMap) PrintBlockMap() {
 				row += ", "
 			}
 
-			row += fmt.Sprintf("%d", int(bm.blocks[y*bm.Width+x].Type))
+			block := bm.blocks[y*bm.Width+x]
+			if block == nil {
+				row += "-"
+			} else {
+				row += fmt.Sprintf("%d", int(block.Type))
+			}
 		}
 
 		fmt.Println(row)
 	}
 }
 
-func (bm *BlockMap) SetBlock(block *Block, pos common.BlockPosition) {
+// SetBlock stores block at pos and returns the block previously stored there.
+// It returns nil without changing the map if block is nil or pos is out of bounds.
+func (bm *BlockMap) SetBlock(block *ecs.Entity, pos common.BlockPosition) *ecs.Entity {
 
-	if pos.X < 0 || pos.X >= bm.Width || pos.Y < 0 || pos.Y >= bm.Height {
-		return
+	if block == nil || pos.X < 0 || pos.X >= bm.Width || pos.Y < 0 || pos.Y >= bm.Height {
+		return nil
 	}
 
-	block.Position = pos
+	index := pos.Y*bm.Width + pos.X
+	existing := bm.blocks[index]
+	bm.blocks[index] = block
 
-	bm.blocks[pos.Y*bm.Width+pos.X] = block
+	return existing
 }
 
-func (bm *BlockMap) GetBlock(x int, y int) (*Block, bool) {
+func (bm *BlockMap) GetBlock(x int, y int) (*ecs.Entity, bool) {
 
 	if x < 0 || x >= bm.Width || y < 0 || y >= bm.Height {
 		return nil, false
 	}
 
-	return bm.blocks[y*bm.Width+x], true
+	block := bm.blocks[y*bm.Width+x]
+	return block, block != nil
 }
 
-func (bm *BlockMap) GetBlockAtPosition(position common.BlockPosition) (*Block, bool) {
+// GetBlockAtPosition returns the block entity at position and whether a block
+// is present there. It returns (nil, false) when position is outside the map
+// or the cell is empty.
+func (bm *BlockMap) GetBlockAtPosition(position common.BlockPosition) (*ecs.Entity, bool) {
 
 	if position.X < 0 || position.X >= bm.Width || position.Y < 0 || position.Y >= bm.Height {
 		return nil, false
@@ -93,13 +107,13 @@ func (bm *BlockMap) GetBlockAtPosition(position common.BlockPosition) (*Block, b
 	return block, block != nil
 }
 
-func (bm *BlockMap) GetNearbyBlocks(position *common.BlockPosition) []*Block {
+func (bm *BlockMap) GetNearbyBlocks(position *common.BlockPosition) []*ecs.Entity {
 	// Get entity's block position
 	blockX := position.X
 	blockY := position.Y
 
 	// Check surrounding blocks (3x3 grid around entity)
-	var nearbyBlocks []*Block
+	var nearbyBlocks []*ecs.Entity
 
 	for y := -1; y <= 1; y++ {
 		for x := -1; x <= 1; x++ {
@@ -122,7 +136,7 @@ func (bm *BlockMap) GetNearbyBlocks(position *common.BlockPosition) []*Block {
 func (bm *BlockMap) Update(deltaTime float32) {
 	for i := len(bm.blocks) - 1; i >= 0; i-- {
 		if bm.blocks[i] != nil {
-			bm.blocks[i].Update(deltaTime)
+			UpdateBlock(bm.blocks[i], bm)
 		}
 	}
 }
@@ -133,7 +147,11 @@ func (bm *BlockMap) IsBlocked(pos common.BlockPosition, collider *components.Col
 	}
 
 	if block, ok := bm.GetBlockAtPosition(pos); ok {
-		obstructs, _ := block.Collider.Collide(collider)
+		blockCollider := ecs.GetComponent[components.ColliderComponent](block)
+		if blockCollider == nil {
+			return false
+		}
+		obstructs, _ := blockCollider.Collide(collider)
 		return obstructs
 	}
 

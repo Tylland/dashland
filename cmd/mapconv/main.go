@@ -55,7 +55,7 @@ func convertMap(fileName string) {
 		game.EntityIdCounters.Reset()
 
 		fmt.Printf("Reading blocks from layer %s \n", tiledMap.Layers[0].Name)
-		game.InitBlocks(stage, tiledMap.Layers[0].Tiles)
+		game.InitBlocks(world, stage, tiledMap.Layers[0].Tiles)
 
 		fmt.Printf("Reading entities from layer \"%s\" \n", tiledMap.Layers[1].Name)
 

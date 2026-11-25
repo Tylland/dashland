@@ -178,8 +178,8 @@ func EntityFileName(entity *ecs.Entity) string {
 	return fmt.Sprintf("%s.entity.txt", entity.ID)
 }
 
-func BlockFileName(block *Block) string {
-	return fmt.Sprintf("%s.entity.txt", block.ID)
+func BlockFileName(block *ecs.Entity) string {
+	return EntityFileName(block)
 }
 
 func StageFileName(stage *Stage) string {

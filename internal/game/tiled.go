@@ -9,13 +9,15 @@ import (
 	"github.com/tylland/dashland/internal/ecs"
 )
 
-func InitBlocks(s *Stage, tiles []*tiled.LayerTile) {
-	s.blocks = make([]*Block, len(tiles))
+func InitBlocks(world *ecs.World, s *Stage, tiles []*tiled.LayerTile) {
+	s.blocks = make([]*ecs.Entity, s.MapSize.Count())
 
 	for index, tile := range tiles {
 		blockPosition := common.NewBlockPositionFromIndex(index, s.BlockMap.Width)
 		header := NewEntityHeader(ecs.EntityType(uint32(EntityCategoryBlock) + tile.ID))
-		s.BlockMap.SetBlock(NewBlock(header, s.BlockMap, s.EntityMap, blockPosition), blockPosition)
+		block := NewBlock(header, s.BlockMap, s.EntityMap, blockPosition)
+		s.BlockMap.SetBlock(block, blockPosition)
+		world.AddEntity(block)
 	}
 
 	//	s.BlockMap.PrintBlockMap()

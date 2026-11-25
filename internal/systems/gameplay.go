@@ -72,7 +72,11 @@ func (s *GameplaySystem) handleBlockCollision(world *ecs.World, collision *game.
 		poistion := ecs.GetComponent[components.PositionComponent](collision.Entity)
 		step := ecs.GetComponent[components.BlockStep](collision.Entity)
 
-		s.stage.VisitBlock(poistion.CurrentBlockPosition.Add(step.Increment))
+		block, replaced := s.stage.VisitBlock(poistion.CurrentBlockPosition.Add(step.Increment))
+		if replaced != nil && replaced != block {
+			world.RemoveEntity(replaced)
+		}
+		world.AddEntity(block)
 	}
 
 	if collision.Block.Type == game.EntitySoil && collision.Entity.Type == game.EntityBoulder {
@@ -284,7 +288,12 @@ func (s *GameplaySystem) CreateDiamonds(world *ecs.World, position common.BlockP
 			diamondPosition := position.Offset(x, y)
 			if s.stage.CheckCharacteristics(diamondPosition, characteristics.Destructable) {
 				header := game.NewEntityHeader(game.EntityVoid)
-				s.stage.SetBlock(game.NewBlock(header, s.stage.BlockMap, s.stage.EntityMap, diamondPosition), diamondPosition)
+				block := game.NewBlock(header, s.stage.BlockMap, s.stage.EntityMap, diamondPosition)
+				old := s.stage.BlockMap.SetBlock(block, diamondPosition)
+				if old != nil && old != block {
+					world.RemoveEntity(old)
+				}
+				world.AddEntity(block)
 
 				doomed := s.stage.GetEntity(diamondPosition)
 				if doomed != nil {
@@ -307,7 +316,12 @@ func (s *GameplaySystem) CreateSquare(world *ecs.World, entityType ecs.EntityTyp
 			pos := center.Offset(x, y)
 			if s.stage.CheckCharacteristics(pos, characteristics.Destructable) {
 				header := game.NewEntityHeader(game.EntityVoid)
-				s.stage.SetBlock(game.NewBlock(header, s.stage.BlockMap, s.stage.EntityMap, pos), pos)
+				block := game.NewBlock(header, s.stage.BlockMap, s.stage.EntityMap, pos)
+				old := s.stage.BlockMap.SetBlock(block, pos)
+				if old != nil && old != block {
+					world.RemoveEntity(old)
+				}
+				world.AddEntity(block)
 
 				doomed := s.stage.GetEntity(pos)
 				if doomed != nil {

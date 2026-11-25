@@ -1,6 +1,8 @@
 package game
 
 import (
+	"fmt"
+
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/collider"
@@ -50,22 +52,16 @@ func ToBlockName(id ecs.EntityType) string {
 	}
 }
 
-type Block struct {
-	*ecs.EntityHeader
-	bm *BlockMap
-	gm *EntityMap
-
-	Position  common.BlockPosition
-	Character characteristics.Characteristics
-	Collider  *components.ColliderComponent
-	Corners   [4]uint8
+func NewBlockWithCharacteristics(header *ecs.EntityHeader, bm *BlockMap, gm *EntityMap, position common.BlockPosition, character characteristics.Characteristics, layer collider.CollisionLayer, obstruct collider.CollisionLayer, overlap collider.CollisionLayer) *ecs.Entity {
+	entity := ecs.NewEntity(header)
+	entity.AddComponent(components.NewPositionComponent(position, rl.NewVector2(float32(position.X)*bm.BlockWidth, float32(position.Y)*bm.BlockHeight)))
+	entity.AddComponent(components.NewCharacteristicsComponent(character))
+	entity.AddComponent(components.NewColliderComponent(layer, obstruct, overlap))
+	entity.AddComponent(&components.BlockComponent{})
+	return entity
 }
 
-func NewBlockWithCharacteristics(header *ecs.EntityHeader, bm *BlockMap, gm *EntityMap, position common.BlockPosition, character characteristics.Characteristics, layer collider.CollisionLayer, block collider.CollisionLayer, overlap collider.CollisionLayer) *Block {
-	return &Block{EntityHeader: header, bm: bm, gm: gm, Position: position, Character: character, Collider: components.NewColliderComponent(layer, block, overlap)}
-}
-
-func NewBlock(header *ecs.EntityHeader, bm *BlockMap, gm *EntityMap, position common.BlockPosition) *Block {
+func NewBlock(header *ecs.EntityHeader, bm *BlockMap, gm *EntityMap, position common.BlockPosition) *ecs.Entity {
 	switch header.Type {
 	case EntityVoid:
 		return NewBlockWithCharacteristics(header, bm, gm, position, characteristics.Destructable, collider.LayerNone, collider.LayerNone, collider.LayerNone)
@@ -110,134 +106,147 @@ const (
 	CornerUnderRight
 )
 
-func (b *Block) HasCharacteristic(characteristics characteristics.Characteristics) bool {
-	return b.Character&characteristics == characteristics
+func BlockHasCharacteristic(entity *ecs.Entity, characteristic characteristics.Characteristics) bool {
+	component := ecs.GetComponent[components.CharacteristicComponent](entity)
+	return component != nil && component.Has(characteristic)
 }
 
-func (b *Block) cornerIndex(neighbors [9]bool, corner CornerPosition, strict bool) uint8 {
-
+func cornerIndex(neighbors [9]bool, corner CornerPosition, strict bool) uint8 {
 	if corner == CornerOverLeft && neighbors[MiddleLeft] && (neighbors[OverLeft] || !strict) && neighbors[OverCenter] {
 		return 1
 	}
-
 	if corner == CornerOverRight && neighbors[OverCenter] && (neighbors[OverRight] || !strict) && neighbors[MiddleRight] {
 		return 2
 	}
-
 	if corner == CornerUnderRight && neighbors[MiddleRight] && (neighbors[UnderRight] || !strict) && neighbors[UnderCenter] {
 		return 3
 	}
-
 	if corner == CornerUnderLeft && neighbors[UnderCenter] && (neighbors[UnderLeft] || !strict) && neighbors[MiddleLeft] {
 		return 4
 	}
-
 	return 0
 }
 
-func (b *Block) Update(_ float32) {
-
-	if b.Type == EntitySoil {
-		voids := b.bm.CheckNeighbourTypes(EntityVoid, b.Position)
-		strict := true
-
-		b.Corners[CornerOverLeft] = b.cornerIndex(voids, CornerOverLeft, strict)
-		b.Corners[CornerOverRight] = b.cornerIndex(voids, CornerOverRight, strict)
-		b.Corners[CornerUnderRight] = b.cornerIndex(voids, CornerUnderRight, strict)
-		b.Corners[CornerUnderLeft] = b.cornerIndex(voids, CornerUnderLeft, strict)
+func UpdateBlock(entity *ecs.Entity, blockMap *BlockMap) {
+	position := ecs.GetComponent[components.PositionComponent](entity)
+	block := ecs.GetComponent[components.BlockComponent](entity)
+	if position == nil || block == nil {
+		return
 	}
 
-	if b.Type == EntityVoid {
-		soils := b.bm.CheckNeighbourTypes(EntitySoil, b.Position)
-		strict := false
-
-		b.Corners[CornerOverLeft] = b.cornerIndex(soils, CornerOverLeft, strict)
-		b.Corners[CornerOverRight] = b.cornerIndex(soils, CornerOverRight, strict)
-		b.Corners[CornerUnderRight] = b.cornerIndex(soils, CornerUnderRight, strict)
-		b.Corners[CornerUnderLeft] = b.cornerIndex(soils, CornerUnderLeft, strict)
-	}
-}
-
-func (b *Block) renderCorners(row float32) {
-	cornerWidth := b.gm.BlockWidth / 2
-	cornerHeight := b.gm.BlockHeight / 2
-
-	rl.DrawTextureRec(*b.gm.groundCorners, rl.NewRectangle(float32(b.Corners[CornerOverLeft])*cornerWidth, row*cornerHeight, cornerWidth, cornerHeight), rl.NewVector2(float32(b.Position.X)*b.gm.BlockWidth, float32(b.Position.Y)*b.gm.BlockHeight), rl.White)
-	rl.DrawTextureRec(*b.gm.groundCorners, rl.NewRectangle(float32(b.Corners[CornerOverRight])*cornerWidth, row*cornerHeight, cornerWidth, cornerHeight), rl.NewVector2(float32(b.Position.X)*b.gm.BlockWidth+cornerWidth, float32(b.Position.Y)*b.gm.BlockHeight), rl.White)
-	rl.DrawTextureRec(*b.gm.groundCorners, rl.NewRectangle(float32(b.Corners[CornerUnderRight])*cornerWidth, row*cornerHeight, cornerWidth, cornerHeight), rl.NewVector2(float32(b.Position.X)*b.gm.BlockWidth+cornerWidth, float32(b.Position.Y)*b.gm.BlockHeight+cornerHeight), rl.White)
-	rl.DrawTextureRec(*b.gm.groundCorners, rl.NewRectangle(float32(b.Corners[CornerUnderLeft])*cornerWidth, row*cornerHeight, cornerWidth, cornerHeight), rl.NewVector2(float32(b.Position.X)*b.gm.BlockWidth, float32(b.Position.Y)*b.gm.BlockHeight+cornerHeight), rl.White)
-}
-
-func (b *Block) Render() {
-	switch b.Type {
+	switch entity.Type {
 	case EntitySoil:
-		b.renderCorners(1)
+		neighbors := blockMap.CheckNeighbourTypes(EntityVoid, position.CurrentBlockPosition)
+		block.Corners[CornerOverLeft] = cornerIndex(neighbors, CornerOverLeft, true)
+		block.Corners[CornerOverRight] = cornerIndex(neighbors, CornerOverRight, true)
+		block.Corners[CornerUnderRight] = cornerIndex(neighbors, CornerUnderRight, true)
+		block.Corners[CornerUnderLeft] = cornerIndex(neighbors, CornerUnderLeft, true)
 	case EntityVoid:
-		b.renderCorners(0)
-	default:
-		rl.DrawTextureRec(*b.bm.blockTextures, rl.NewRectangle(float32(b.Type)*b.bm.BlockWidth, 0, b.bm.BlockWidth, b.bm.BlockHeight), rl.NewVector2(float32(b.Position.X)*b.bm.BlockWidth, float32(b.Position.Y)*b.bm.BlockHeight), rl.White)
+		neighbors := blockMap.CheckNeighbourTypes(EntitySoil, position.CurrentBlockPosition)
+		block.Corners[CornerOverLeft] = cornerIndex(neighbors, CornerOverLeft, false)
+		block.Corners[CornerOverRight] = cornerIndex(neighbors, CornerOverRight, false)
+		block.Corners[CornerUnderRight] = cornerIndex(neighbors, CornerUnderRight, false)
+		block.Corners[CornerUnderLeft] = cornerIndex(neighbors, CornerUnderLeft, false)
 	}
 }
 
-func (b *Block) Rectangle() rl.Rectangle {
-	return rl.Rectangle{X: float32(b.Position.X) * b.bm.BlockWidth, Y: float32(b.Position.Y) * b.bm.BlockHeight, Width: b.bm.BlockWidth, Height: b.bm.BlockHeight}
+func renderBlockCorners(entity *ecs.Entity, entityMap *EntityMap, row float32) {
+	position := ecs.GetComponent[components.PositionComponent](entity)
+	block := ecs.GetComponent[components.BlockComponent](entity)
+	if position == nil || block == nil || entityMap.groundCorners == nil {
+		return
+	}
+
+	cornerWidth := entityMap.BlockWidth / 2
+	cornerHeight := entityMap.BlockHeight / 2
+	x := float32(position.CurrentBlockPosition.X) * entityMap.BlockWidth
+	y := float32(position.CurrentBlockPosition.Y) * entityMap.BlockHeight
+
+	rl.DrawTextureRec(*entityMap.groundCorners, rl.NewRectangle(float32(block.Corners[CornerOverLeft])*cornerWidth, row*cornerHeight, cornerWidth, cornerHeight), rl.NewVector2(x, y), rl.White)
+	rl.DrawTextureRec(*entityMap.groundCorners, rl.NewRectangle(float32(block.Corners[CornerOverRight])*cornerWidth, row*cornerHeight, cornerWidth, cornerHeight), rl.NewVector2(x+cornerWidth, y), rl.White)
+	rl.DrawTextureRec(*entityMap.groundCorners, rl.NewRectangle(float32(block.Corners[CornerUnderRight])*cornerWidth, row*cornerHeight, cornerWidth, cornerHeight), rl.NewVector2(x+cornerWidth, y+cornerHeight), rl.White)
+	rl.DrawTextureRec(*entityMap.groundCorners, rl.NewRectangle(float32(block.Corners[CornerUnderLeft])*cornerWidth, row*cornerHeight, cornerWidth, cornerHeight), rl.NewVector2(x, y+cornerHeight), rl.White)
 }
 
-func (b *Block) WriteTo(w ecs.Writer) error {
-	b.EntityHeader.WriteTo(w)
+func RenderBlock(entity *ecs.Entity, blockMap *BlockMap, entityMap *EntityMap) {
+	position := ecs.GetComponent[components.PositionComponent](entity)
+	if position == nil {
+		return
+	}
+	switch entity.Type {
+	case EntitySoil:
+		renderBlockCorners(entity, entityMap, 1)
+	case EntityVoid:
+		renderBlockCorners(entity, entityMap, 0)
+	default:
+		if blockMap.blockTextures != nil {
+			rl.DrawTextureRec(*blockMap.blockTextures, rl.NewRectangle(float32(entity.Type)*blockMap.BlockWidth, 0, blockMap.BlockWidth, blockMap.BlockHeight), position.Vector2, rl.White)
+		}
+	}
+}
 
-	w.StartSection("position")
-	w.WriteInt("X", b.Position.X, false)
-	w.WriteInt("Y", b.Position.Y, false)
-
-	w.StartSection("characteristics")
-	w.WriteEnum("Characteristics", b.Character, true, "")
-
-	err := b.Collider.WriteTo(w)
-
-	if err != nil {
+func WriteBlockTo(entity *ecs.Entity, w ecs.Writer) error {
+	if err := entity.EntityHeader.WriteTo(w); err != nil {
 		return err
 	}
+	position := ecs.GetComponent[components.PositionComponent](entity)
+	character := ecs.GetComponent[components.CharacteristicComponent](entity)
+	collider := ecs.GetComponent[components.ColliderComponent](entity)
+	block := ecs.GetComponent[components.BlockComponent](entity)
+	if position == nil || character == nil || collider == nil || block == nil {
+		return fmt.Errorf("block entity %q is missing required components", entity.ID)
+	}
 
+	w.StartSection("position")
+	w.WriteInt("X", position.CurrentBlockPosition.X, false)
+	w.WriteInt("Y", position.CurrentBlockPosition.Y, false)
+	w.StartSection("characteristics")
+	w.WriteEnum("Characteristics", character.Value(), true, "")
+	if err := collider.WriteTo(w); err != nil {
+		return err
+	}
 	w.StartSection("corners")
-	w.WriteInt("Upper left", int(b.Corners[0]), b.Corners[0] == 0)
-	w.WriteInt("Upper right", int(b.Corners[1]), b.Corners[1] == 0)
-	w.WriteInt("Lower left", int(b.Corners[2]), b.Corners[2] == 0)
-	w.WriteInt("Lower right", int(b.Corners[3]), b.Corners[3] == 0)
-
+	w.WriteInt("Upper left", int(block.Corners[0]), block.Corners[0] == 0)
+	w.WriteInt("Upper right", int(block.Corners[1]), block.Corners[1] == 0)
+	w.WriteInt("Lower left", int(block.Corners[2]), block.Corners[2] == 0)
+	w.WriteInt("Lower right", int(block.Corners[3]), block.Corners[3] == 0)
 	return nil
 }
 
-func (b *Block) ReadFrom(r ecs.Reader) error {
-	b.EntityHeader.ReadFrom(r)
-
-	r.ConsumeLabel("position")
-
-	ecs.WithChangedValue(r.ReadInt, func(x int) {
-		b.Position.X = x
-	})
-
-	ecs.WithChangedValue(r.ReadInt, func(y int) {
-		b.Position.Y = y
-	})
-
-	r.ConsumeLabel("characteristics")
-
-	ecs.WithChangedValue(r.ReadEnum, func(enum uint32) {
-		b.Character = characteristics.Characteristics(enum)
-	})
-
-	err := b.Collider.ReadFrom(r)
-
-	if err != nil {
+func ReadBlockFrom(entity *ecs.Entity, r ecs.Reader, blockMap *BlockMap) error {
+	if err := entity.EntityHeader.ReadFrom(r); err != nil {
 		return err
 	}
+	position := ecs.GetComponent[components.PositionComponent](entity)
+	character := ecs.GetComponent[components.CharacteristicComponent](entity)
+	collider := ecs.GetComponent[components.ColliderComponent](entity)
+	block := ecs.GetComponent[components.BlockComponent](entity)
+	if position == nil || character == nil || collider == nil || block == nil {
+		return fmt.Errorf("block entity %q is missing required components", entity.ID)
+	}
 
+	r.ConsumeLabel("position")
+	if err := ecs.WithChangedValue(r.ReadInt, func(x int) { position.CurrentBlockPosition.X = x }); err != nil {
+		return err
+	}
+	if err := ecs.WithChangedValue(r.ReadInt, func(y int) { position.CurrentBlockPosition.Y = y }); err != nil {
+		return err
+	}
+	position.PreviousBlockPosition = position.CurrentBlockPosition
+	position.Vector2 = rl.NewVector2(float32(position.CurrentBlockPosition.X)*blockMap.BlockWidth, float32(position.CurrentBlockPosition.Y)*blockMap.BlockHeight)
+
+	r.ConsumeLabel("characteristics")
+	if err := ecs.WithChangedValue(r.ReadEnum, func(value uint32) { character.Set(characteristics.Characteristics(value)) }); err != nil {
+		return err
+	}
+	if err := collider.ReadFrom(r); err != nil {
+		return err
+	}
 	r.ConsumeLabel("corners")
-	r.ConsumeLine()
-	r.ConsumeLine()
-	r.ConsumeLine()
-	r.ConsumeLine()
-
+	for i := range block.Corners {
+		if err := ecs.WithChangedValue(r.ReadInt, func(value int) { block.Corners[i] = uint8(value) }); err != nil {
+			return err
+		}
+	}
 	return nil
 }

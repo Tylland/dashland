@@ -66,47 +66,47 @@ func (g *DashlandGame) LoadTilesetTexture(tiledMap *tiled.Map, name string) (*rl
 	return nil, fmt.Errorf("Layer %s not found!", name)
 }
 
-func (g *DashlandGame) loadStageFromFile(name string) (*game.Stage, error) {
-	tiledMap, err := tiled.LoadFile(g.mapFile(name))
+// func (g *DashlandGame) loadStageFromFile(name string) (*game.Stage, error) {
+// 	tiledMap, err := tiled.LoadFile(g.mapFile(name))
 
-	if err != nil {
-		return nil, err
-	}
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	blockTexture, _ := g.LoadTilesetTexture(tiledMap, "Blocks")
-	entityTextures, _ := g.LoadTilesetTexture(tiledMap, "Entities")
+// 	blockTexture, _ := g.LoadTilesetTexture(tiledMap, "Blocks")
+// 	entityTextures, _ := g.LoadTilesetTexture(tiledMap, "Entities")
 
-	groundCorners := assets.LoadTexture("ground_corners")
+// 	groundCorners := assets.LoadTexture("ground_corners")
 
-	mapSize := game.NewMapSize(tiledMap.Width, tiledMap.Height, tiledMap.TileWidth, tiledMap.TileHeight)
-	stage := game.NewStage(name, mapSize, blockTexture, entityTextures, groundCorners)
-	//	stage := &game.Stage{MapSize: mapSize, SoundPlayer: &g.Sounds, BlockMap: game.NewBlockMap(mapSize, blockTexture), EntityMap: game.NewEntityMap(mapSize, entityTextures, groundCorners)}
+// 	mapSize := game.NewMapSize(tiledMap.Width, tiledMap.Height, tiledMap.TileWidth, tiledMap.TileHeight)
+// 	stage := game.NewStage(name, mapSize, blockTexture, entityTextures, groundCorners)
+// 	//	stage := &game.Stage{MapSize: mapSize, SoundPlayer: &g.Sounds, BlockMap: game.NewBlockMap(mapSize, blockTexture), EntityMap: game.NewEntityMap(mapSize, entityTextures, groundCorners)}
 
-	if tiledMap.Properties != nil {
-		stage.DiamondsRequired = tiledMap.Properties.GetInt("DiamondsRequired")
-		stage.DiamondPoints = tiledMap.Properties.GetInt("DiamondPoints")
-		stage.DiamondBonusPoints = tiledMap.Properties.GetInt("DiamondBonusPoints")
-		stage.SetTimeLimit(tiledMap.Properties.GetInt("TimeLimit"))
-	}
+// 	if tiledMap.Properties != nil {
+// 		stage.DiamondsRequired = tiledMap.Properties.GetInt("DiamondsRequired")
+// 		stage.DiamondPoints = tiledMap.Properties.GetInt("DiamondPoints")
+// 		stage.DiamondBonusPoints = tiledMap.Properties.GetInt("DiamondBonusPoints")
+// 		stage.SetTimeLimit(tiledMap.Properties.GetInt("TimeLimit"))
+// 	}
 
-	fmt.Printf("Reading blocks from layer %s \n", tiledMap.Layers[0].Name)
-	game.InitBlocks(stage, tiledMap.Layers[0].Tiles)
+// 	fmt.Printf("Reading blocks from layer %s \n", tiledMap.Layers[0].Name)
+// 	game.InitBlocks(g.world, stage, tiledMap.Layers[0].Tiles)
 
-	fmt.Printf("Reading entities from layer \"%s\" \n", tiledMap.Layers[1].Name)
+// 	fmt.Printf("Reading entities from layer \"%s\" \n", tiledMap.Layers[1].Name)
 
-	if pos, ok := stage.GetEnterPosition(tiledMap.Layers[1].Tiles); ok {
-		stage.EnterPosition = pos
-	}
+// 	if pos, ok := stage.GetEnterPosition(tiledMap.Layers[1].Tiles); ok {
+// 		stage.EnterPosition = pos
+// 	}
 
-	game.InitEntities(g.world, stage, game.EntityCategoryObject, tiledMap.Layers[1].Tiles)
-	game.InitEntities(g.world, stage, game.EntityCategoryEnemy, tiledMap.Layers[2].Tiles)
+// 	game.InitEntities(g.world, stage, game.EntityCategoryObject, tiledMap.Layers[1].Tiles)
+// 	game.InitEntities(g.world, stage, game.EntityCategoryEnemy, tiledMap.Layers[2].Tiles)
 
-	if len(tiledMap.ObjectGroups) > 0 {
-		game.InitObjectsEntities(g.world, stage, game.EntityCategoryObject, tiledMap.ObjectGroups[0])
-	}
+// 	if len(tiledMap.ObjectGroups) > 0 {
+// 		game.InitObjectsEntities(g.world, stage, game.EntityCategoryObject, tiledMap.ObjectGroups[0])
+// 	}
 
-	return stage, nil
-}
+// 	return stage, nil
+// }
 
 // func (g *DashlandGame) LoadStage(name string, position common.BlockPosition) error {
 // 	g.world.Clear()

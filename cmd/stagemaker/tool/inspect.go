@@ -68,12 +68,15 @@ func (t *InspectTool) WorldMouseMove(world rl.Vector2) {
 		return
 	}
 
+	// TODO: Remove block handling like WriteBlockTo, all are entities
 	if target.Kind == TargetBlock {
 		if block, ok := t.ws.Stage().GetBlockAtPosition(pos); ok {
 			var buffer bytes.Buffer
 			writer := game.NewTextWriter(&buffer)
 
-			block.WriteTo(writer)
+			if err := game.WriteBlockTo(block, writer); err != nil {
+				panic(err)
+			}
 
 			t.ws.Inspect(&gui.EntityInspection{Openpath: "inmemory", Preview: strings.Split(buffer.String(), "\n")})
 		}

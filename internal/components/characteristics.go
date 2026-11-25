@@ -29,6 +29,14 @@ func (c *CharacteristicComponent) Remove(characteristic characteristics.Characte
 	c.characteristics = c.characteristics &^ characteristic
 }
 
+func (c *CharacteristicComponent) Value() characteristics.Characteristics {
+	return c.characteristics
+}
+
+func (c *CharacteristicComponent) Set(value characteristics.Characteristics) {
+	c.characteristics = value
+}
+
 func (c *CharacteristicComponent) WriteTo(w ecs.Writer) error {
 	w.StartSection(ecs.ComponentName(c))
 	w.WriteEnum("Characteristics", c.characteristics, false, "")

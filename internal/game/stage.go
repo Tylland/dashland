@@ -71,10 +71,6 @@ func (s *Stage) GetBlockPosition(position rl.Vector2) common.BlockPosition {
 	return common.BlockPosition{X: bx, Y: by}
 }
 
-func (s *Stage) ClampBlock(pos common.BlockPosition) common.BlockPosition {
-	return common.NewBlockPosition(utils.Clamp(pos.X, 0, s.Width), utils.Clamp(pos.Y, 0, s.Height))
-}
-
 func (s *Stage) ClampedBlockPosition(position rl.Vector2) (common.BlockPosition, bool) {
 	bx := int(position.X / float32(s.BlockWidth))
 	by := int(position.Y / float32(s.BlockHeight))
@@ -88,17 +84,23 @@ func (s *Stage) ClampedBlockPosition(position rl.Vector2) (common.BlockPosition,
 func (s *Stage) Render(deltaTime float32) {
 	for _, block := range s.blocks {
 		if block != nil {
-			block.Render()
+			RenderBlock(block, s.BlockMap, s.EntityMap)
 		}
 	}
 }
 
-func (s *Stage) VisitBlock(position common.BlockPosition) {
-	fmt.Printf("Block at position %d,%d changed from %s", position.X, position.Y, ToBlockName(s.blocks[position.Y*s.Width+position.X].Type))
+// VisitBlock replaces the block at position with void and returns the new block
+// and the block it replaced. The replaced block is nil when the cell was empty.
+func (s *Stage) VisitBlock(position common.BlockPosition) (*ecs.Entity, *ecs.Entity) {
+	if old, ok := s.GetBlockAtPosition(position); ok {
+		fmt.Printf("Block at position %d,%d changed from %s", position.X, position.Y, ToBlockName(old.Type))
+	}
 
 	header := NewEntityHeader(EntityVoid)
-	s.SetBlock(NewBlock(header, s.BlockMap, s.EntityMap, position), position)
-	fmt.Printf(" to %s \n", ToBlockName(s.blocks[position.Y*s.Width+position.X].Type))
+	block := NewBlock(header, s.BlockMap, s.EntityMap, position)
+	replaced := s.BlockMap.SetBlock(block, position)
+	fmt.Printf(" to %s \n", ToBlockName(block.Type))
+	return block, replaced
 }
 
 func (s *Stage) ActivateMagicWall() {
@@ -127,7 +129,7 @@ func (s *Stage) IsMagicWallActive() bool {
 func (s *Stage) CheckCharacteristics(position common.BlockPosition, character characteristics.Characteristics) bool {
 
 	if block, ok := s.GetBlock(position.X, position.Y); ok {
-		if block.HasCharacteristic(character) {
+		if BlockHasCharacteristic(block, character) {
 			return true
 		}
 	}
@@ -144,9 +146,12 @@ func (s *Stage) CheckCharacteristics(position common.BlockPosition, character ch
 func (s *Stage) CheckBlocked(world *ecs.World, position common.BlockPosition, collider *components.ColliderComponent) bool {
 
 	if block, ok := s.GetBlock(position.X, position.Y); ok {
-		obstructs, _ := collider.Collide(block.Collider)
-		if obstructs {
-			return true
+		blockCollider := ecs.GetComponent[components.ColliderComponent](block)
+		if blockCollider != nil {
+			obstructs, _ := collider.Collide(blockCollider)
+			if obstructs {
+				return true
+			}
 		}
 	}
 
@@ -204,7 +209,10 @@ func (s *Stage) Save(path string) ([]string, error) {
 			return nil, err
 		}
 
-		b.WriteTo(writer)
+		if err := WriteBlockTo(b, writer); err != nil {
+			writer.Close()
+			return nil, err
+		}
 
 		writer.Close()
 
@@ -289,8 +297,12 @@ func (s *Stage) Load(world *ecs.World, path string) error {
 
 		if header.Category == EntityCategoryBlock {
 			block := NewBlock(header, s.BlockMap, s.EntityMap, blockPosition)
-			block.ReadFrom(reader)
-			s.BlockMap.SetBlock(block, block.Position)
+			if err := ReadBlockFrom(block, reader, s.BlockMap); err != nil {
+				return fmt.Errorf("reading block %q from %q: %w", EntityTypeName(header.Type), fileName, err)
+			}
+			position := ecs.GetComponent[components.PositionComponent](block)
+			s.BlockMap.SetBlock(block, position.CurrentBlockPosition)
+			world.AddEntity(block)
 		} else {
 			entity, err := NewEntity(header, world, s, blockPosition)
 

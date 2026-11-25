@@ -12,15 +12,16 @@ import (
 	"github.com/tylland/dashland/internal/ecs"
 )
 
-const saved = `test-1
-12
-0
+const saved = `# header
+   exitdoor-1
+   12
+   0
+   1 : 3f800000
 # position
  * 10 : 41200000
  * 10 : 41200000
  * 320.000000 : 43a00000
- * 329.000000 : 43a48000
- `
+ * 329.000000 : 43a48000`
 
 func commonPrefix(expected, actual string) string {
 	max := len(expected)
@@ -39,6 +40,7 @@ func commonPrefix(expected, actual string) string {
 }
 
 func TestWriter(t *testing.T) {
+	EntityIdCounters.Reset()
 
 	ent := ecs.NewEntity(NewEntityHeader(EntityExitDoor))
 	ent.AddComponent(components.NewPositionComponent(common.NewBlockPosition(10, 10), rl.NewVector2(320.0, 329.0)))
@@ -58,6 +60,7 @@ func TestWriter(t *testing.T) {
 }
 
 func TestRoundtrip(t *testing.T) {
+	EntityIdCounters.Reset()
 	ent := ecs.NewEntity(NewEntityHeader(EntityExitDoor))
 	ent.AddComponent(components.NewPositionComponent(common.NewBlockPosition(10, 10), rl.NewVector2(320.0, 329.0)))
 

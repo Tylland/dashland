@@ -19,7 +19,7 @@ func TestReader(t *testing.T) {
 
 	ent.ReadFrom(reader)
 
-	if ent.ID != "test-1" {
+	if ent.ID != "exitdoor-1" {
 		t.Fatalf("<-- ERROR")
 	}
 
