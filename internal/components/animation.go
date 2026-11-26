@@ -5,6 +5,8 @@ import (
 	"github.com/tylland/dashland/internal/ecs"
 )
 
+const AnimationComponentVersion = 1
+
 // Animation describes a named animation sequence inside a sprite sheet.
 type Animation struct {
 	BaseX         float32
@@ -87,7 +89,7 @@ func clamp(val, max uint) uint {
 }
 
 func (c *AnimationComponent) WriteTo(w ecs.Writer) error {
-	w.StartSection(ecs.ComponentName(c))
+	w.StartSection(ecs.ComponentName(c), AnimationComponentVersion)
 	w.WriteInt("Animations", len(c.Animations), true)
 	w.WriteString("Current", c.Current, false)
 	w.WriteString("Active", c.active, false)

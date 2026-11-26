@@ -2,6 +2,8 @@ package common
 
 import "github.com/tylland/dashland/internal/ecs"
 
+const MapSizeVersion = 1
+
 type MapSize struct {
 	Width       int
 	Height      int
@@ -18,7 +20,7 @@ func (s *MapSize) Count() int {
 }
 
 func (s *MapSize) WriteTo(w ecs.Writer) error {
-	w.StartSection("size")
+	w.StartSection("size", MapSizeVersion)
 	w.WriteInt("Width", s.Width, false)
 	w.WriteInt("Height", s.Height, false)
 	w.WriteFloat("BlockWidth", s.BlockWidth, false)

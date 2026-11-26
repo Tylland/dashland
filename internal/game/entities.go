@@ -33,7 +33,7 @@ func (ec *EntityCounters) Reset() {
 }
 
 func (ec *EntityCounters) WriteTo(w ecs.Writer) error {
-	w.StartSection("counters")
+	w.StartSection("counters", 1)
 
 	w.WriteInt("Count", len(ec.Counters), false)
 

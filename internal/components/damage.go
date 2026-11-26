@@ -11,7 +11,10 @@ func NewDamage(points int) *Damage {
 }
 
 func (c *Damage) WriteTo(w ecs.Writer) error {
-	w.StartSection(ecs.ComponentName(c))
+	const version = 1
+
+	w.StartSection(ecs.ComponentName(c), version)
+
 	w.WriteInt("Points", c.Points, true)
 
 	return nil

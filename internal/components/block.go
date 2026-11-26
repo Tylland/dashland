@@ -12,7 +12,9 @@ type BlockComponent struct {
 }
 
 func (c *BlockComponent) WriteTo(w ecs.Writer) error {
-	w.StartSection("corners")
+	w.StartSection("corners", BlockComponentVersion)
+
+	w.WriteBool("Has corners", c.HasCorners, true)
 	w.WriteInt("Upper left", int(c.Corners[0]), c.Corners[0] == 0)
 	w.WriteInt("Upper right", int(c.Corners[1]), c.Corners[1] == 0)
 	w.WriteInt("Lower left", int(c.Corners[2]), c.Corners[2] == 0)
@@ -22,7 +24,15 @@ func (c *BlockComponent) WriteTo(w ecs.Writer) error {
 }
 
 func (c *BlockComponent) ReadFrom(r ecs.Reader) error {
-	r.ConsumeSection("corners")
+	ver := r.ConsumeSection("corners")
+
+	if ver >= 2 {
+		if err := ecs.WithChangedValue(r.ReadBool, func(value bool) {
+			c.HasCorners = value
+		}); err != nil {
+			return err
+		}
+	}
 
 	for i := range c.Corners {
 		if err := ecs.WithChangedValue(r.ReadInt, func(value int) { c.Corners[i] = uint8(value) }); err != nil {

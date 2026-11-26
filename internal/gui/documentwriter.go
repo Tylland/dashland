@@ -22,8 +22,8 @@ func (w *DocumentWriter) addValue(val *Value) {
 	w.currentSection.Values = append(w.currentSection.Values, val)
 }
 
-func (w *DocumentWriter) StartSection(lbl string) error {
-	w.currentSection = &Section{Label: lbl}
+func (w *DocumentWriter) StartSection(lbl string, ver int) error {
+	w.currentSection = &Section{Label: lbl, Version: ver}
 	w.doc.Sections = append(w.doc.Sections, w.currentSection)
 
 	return nil

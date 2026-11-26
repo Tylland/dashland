@@ -5,6 +5,8 @@ import (
 	"github.com/tylland/dashland/internal/ecs"
 )
 
+const CharacteristicComponentVersion = 1
+
 type CharacteristicComponent struct {
 	characteristics characteristics.Characteristics
 }
@@ -38,7 +40,7 @@ func (c *CharacteristicComponent) Set(value characteristics.Characteristics) {
 }
 
 func (c *CharacteristicComponent) WriteTo(w ecs.Writer) error {
-	w.StartSection(ecs.ComponentName(c))
+	w.StartSection(ecs.ComponentName(c), CharacteristicComponentVersion)
 	w.WriteEnum("Characteristics", c.characteristics, false, "")
 
 	return nil

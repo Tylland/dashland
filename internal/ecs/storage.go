@@ -1,7 +1,7 @@
 package ecs
 
 type Writer interface {
-	StartSection(lbl string) error
+	StartSection(lbl string, ver int) error
 	WriteBool(name string, v bool, d bool) error
 	WriteEnum(name string, v any, d bool, c string) error
 	WriteFloat(name string, v float32, d bool) error

@@ -332,33 +332,35 @@ func (s *Stage) Load(world *ecs.World, path string) error {
 }
 
 func (s *Stage) WriteTo(w ecs.Writer) error {
-	w.StartSection("stage")
+	const version = 1
+
+	w.StartSection("stage", version)
 	w.WriteString("Name", s.Name, false)
 
 	s.MapSize.WriteTo(w)
 
-	w.StartSection("enter position")
+	w.StartSection("enter position", version)
 	w.WriteInt("X", s.EnterPosition.X, false)
 	w.WriteInt("Y", s.EnterPosition.Y, false)
 
-	w.StartSection("exit position")
+	w.StartSection("exit position", version)
 	w.WriteInt("X", s.ExitPosition.X, false)
 	w.WriteInt("Y", s.ExitPosition.Y, false)
 
-	w.StartSection("exit condition")
+	w.StartSection("exit condition", version)
 	w.WriteBool("Condition", s.ExitCondition, false)
 
-	w.StartSection("diamonds")
+	w.StartSection("diamonds", version)
 	w.WriteInt("Required", s.DiamondsRequired, false)
 	w.WriteInt("Points", s.DiamondPoints, false)
 	w.WriteInt("Bonus Points", s.DiamondBonusPoints, false)
 
-	w.StartSection("time")
+	w.StartSection("time", version)
 	w.WriteInt("Limit", s.TimeLimit, false)
 	w.WriteFloat("Remaining", s.TimeRemaining, false)
 	w.WriteBool("Expired", s.TimeExpired, false)
 
-	w.StartSection("magic wall")
+	w.StartSection("magic wall", version)
 	w.WriteBool("Active", s.MagicWallActive, false)
 	w.WriteFloat("Diration", s.MagicWallDuration, false)
 	w.WriteFloat("Timer", s.MagicWallTimer, false)

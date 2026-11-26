@@ -54,48 +54,51 @@ func NewPositionComponentZero() *PositionComponent {
 // }
 
 // Update BlockPosition and saves
-func (p *PositionComponent) GetBlockTarget(velocity *VelocityComponent) common.BlockPosition {
-	return p.CurrentBlockPosition.Add(velocity.BlockVector)
+func (c *PositionComponent) GetBlockTarget(velocity *VelocityComponent) common.BlockPosition {
+	return c.CurrentBlockPosition.Add(velocity.BlockVector)
 }
 
 // Update BlockPosition and saves
-func (p *PositionComponent) Update(position common.BlockPosition) {
-	p.PreviousBlockPosition = p.CurrentBlockPosition
-	p.CurrentBlockPosition = position
+func (c *PositionComponent) Update(position common.BlockPosition) {
+	c.PreviousBlockPosition = c.CurrentBlockPosition
+	c.CurrentBlockPosition = position
 }
 
 // Rollback rolls back the position to the previous block position
-func (p *PositionComponent) Rollback() {
-	p.CurrentBlockPosition = p.PreviousBlockPosition
+func (c *PositionComponent) Rollback() {
+	c.CurrentBlockPosition = c.PreviousBlockPosition
 }
 
-func (p *PositionComponent) WriteTo(ew ecs.Writer) error {
-	ew.StartSection(ecs.ComponentName(p))
-	ew.WriteInt("X", p.CurrentBlockPosition.X, false)
-	ew.WriteInt("Y", p.CurrentBlockPosition.Y, false)
-	ew.WriteFloat("x", p.Vector2.X, false)
-	ew.WriteFloat("y", p.Vector2.Y, false)
+func (c *PositionComponent) WriteTo(w ecs.Writer) error {
+	const version = 1
+
+	w.StartSection(ecs.ComponentName(c), version)
+
+	w.WriteInt("X", c.CurrentBlockPosition.X, false)
+	w.WriteInt("Y", c.CurrentBlockPosition.Y, false)
+	w.WriteFloat("x", c.Vector2.X, false)
+	w.WriteFloat("y", c.Vector2.Y, false)
 
 	return nil
 }
 
-func (p *PositionComponent) ReadFrom(r ecs.Reader) error {
-	r.ConsumeSection(ecs.ComponentName(p))
+func (c *PositionComponent) ReadFrom(r ecs.Reader) error {
+	r.ConsumeSection(ecs.ComponentName(c))
 
 	ecs.WithChangedValue(r.ReadInt, func(x int) {
-		p.CurrentBlockPosition.X = x
+		c.CurrentBlockPosition.X = x
 	})
 
 	ecs.WithChangedValue(r.ReadInt, func(y int) {
-		p.CurrentBlockPosition.Y = y
+		c.CurrentBlockPosition.Y = y
 	})
 
 	ecs.WithChangedValue(r.ReadFloat, func(x float32) {
-		p.Vector2.X = x
+		c.Vector2.X = x
 	})
 
 	ecs.WithChangedValue(r.ReadFloat, func(y float32) {
-		p.Vector2.Y = y
+		c.Vector2.Y = y
 	})
 
 	return nil

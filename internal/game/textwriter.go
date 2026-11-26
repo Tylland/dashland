@@ -49,24 +49,24 @@ func (m *TextWriter) write(format string, a ...any) error {
 	return nil
 }
 
-func (m *TextWriter) WriteEntityID(id ecs.EntityID) error {
-	return m.write("%s", id)
-}
+// func (m *TextWriter) WriteEntityID(id ecs.EntityID) error {
+// 	return m.write("%s", id)
+// }
 
-func (m *TextWriter) WriteEntityType(et ecs.EntityType) error {
-	return m.write("%d", et)
-}
+// func (m *TextWriter) WriteEntityType(et ecs.EntityType) error {
+// 	return m.write("%d", et)
+// }
 
-func (m *TextWriter) WriteEntityCategory(cat ecs.EntityCategory) error {
-	return m.write("%d", cat)
-}
+// func (m *TextWriter) WriteEntityCategory(cat ecs.EntityCategory) error {
+// 	return m.write("%d", cat)
+// }
 
-func (m *TextWriter) WriteVersion(ver int) error {
-	return m.write("%d", ver)
-}
+// func (m *TextWriter) WriteVersion(ver int) error {
+// 	return m.write("%d", ver)
+// }
 
-func (m *TextWriter) StartSection(lbl string) error {
-	return m.write("%s %s", TokenLabel, lbl)
+func (m *TextWriter) StartSection(lbl string, ver int) error {
+	return m.write("%s %s%s%d", TokenLabel, lbl, TokenVersion, ver)
 }
 
 // func (m *TextWriter) StartSection(name string, version int) error {

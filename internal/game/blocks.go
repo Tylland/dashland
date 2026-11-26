@@ -104,15 +104,15 @@ func WriteBlockTo(entity *ecs.Entity, w ecs.Writer) error {
 		return fmt.Errorf("block entity %q is missing required components", entity.ID)
 	}
 
-	w.StartSection("position")
+	w.StartSection("position", 1)
 	w.WriteInt("X", position.CurrentBlockPosition.X, false)
 	w.WriteInt("Y", position.CurrentBlockPosition.Y, false)
-	w.StartSection("characteristics")
+	w.StartSection("characteristics", 1)
 	w.WriteEnum("Characteristics", character.Value(), true, "")
 	if err := collider.WriteTo(w); err != nil {
 		return err
 	}
-	w.StartSection("corners")
+	w.StartSection("corners", 1)
 	w.WriteInt("Upper left", int(block.Corners[0]), block.Corners[0] == 0)
 	w.WriteInt("Upper right", int(block.Corners[1]), block.Corners[1] == 0)
 	w.WriteInt("Lower left", int(block.Corners[2]), block.Corners[2] == 0)

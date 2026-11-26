@@ -20,12 +20,14 @@ func NewEntityHeader(id EntityID, entType EntityType, category EntityCategory) *
 	}
 }
 
-func (e *EntityHeader) WriteTo(ew Writer) error {
-	ew.StartSection("header")
-	ew.WriteString("ID", string(e.ID), true)
-	ew.WriteEnum("Type", e.Type, true, "")
-	ew.WriteEnum("Category", e.Category, true, "")
-	ew.WriteInt("Version", e.Version, true)
+func (e *EntityHeader) WriteTo(w Writer) error {
+	const version = 1
+
+	w.StartSection("header", version)
+	w.WriteString("ID", string(e.ID), true)
+	w.WriteEnum("Type", e.Type, true, "")
+	w.WriteEnum("Category", e.Category, true, "")
+	w.WriteInt("Version", e.Version, true)
 
 	return nil
 }
