@@ -3,6 +3,7 @@ package components
 import (
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
 )
 
 type SpriteComponent struct {
@@ -14,9 +15,7 @@ func NewSpriteComponent(sprite *common.Sprite) *SpriteComponent {
 }
 
 func (c *SpriteComponent) WriteTo(w ecs.Writer) error {
-	const version = 1
-
-	w.StartSection(ecs.ComponentName(c), version)
+	w.StartSection(Section(types.ComponentTypeSprite))
 
 	w.WriteFloat("Width", c.Width, true)
 	w.WriteFloat("Height", c.Height, true)
@@ -26,7 +25,7 @@ func (c *SpriteComponent) WriteTo(w ecs.Writer) error {
 }
 
 func (c *SpriteComponent) ReadFrom(r ecs.Reader) error {
-	r.ConsumeSection(ecs.ComponentName(c))
+	r.ConsumeSection(types.ComponentTypeSprite.Name)
 	r.ConsumeLine()
 	r.ConsumeLine()
 	//r.ConsumeLine()

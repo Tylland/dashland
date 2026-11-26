@@ -2,9 +2,8 @@ package components
 
 import (
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
 )
-
-const BlockComponentVersion = 2
 
 type BlockComponent struct {
 	HasCorners bool     `version:"2"`
@@ -12,7 +11,7 @@ type BlockComponent struct {
 }
 
 func (c *BlockComponent) WriteTo(w ecs.Writer) error {
-	w.StartSection("corners", BlockComponentVersion)
+	w.StartSection(Section(types.ComponentTypeBlock))
 
 	w.WriteBool("Has corners", c.HasCorners, true)
 	w.WriteInt("Upper left", int(c.Corners[0]), c.Corners[0] == 0)
@@ -24,7 +23,7 @@ func (c *BlockComponent) WriteTo(w ecs.Writer) error {
 }
 
 func (c *BlockComponent) ReadFrom(r ecs.Reader) error {
-	ver := r.ConsumeSection("corners")
+	ver := r.ConsumeSection(types.ComponentTypeBlock.Name)
 
 	if ver >= 2 {
 		if err := ecs.WithChangedValue(r.ReadBool, func(value bool) {

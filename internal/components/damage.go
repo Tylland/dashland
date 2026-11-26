@@ -1,6 +1,9 @@
 package components
 
-import "github.com/tylland/dashland/internal/ecs"
+import (
+	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
+)
 
 type Damage struct {
 	Points int
@@ -11,9 +14,7 @@ func NewDamage(points int) *Damage {
 }
 
 func (c *Damage) WriteTo(w ecs.Writer) error {
-	const version = 1
-
-	w.StartSection(ecs.ComponentName(c), version)
+	w.StartSection(Section(types.ComponentTypeDamage))
 
 	w.WriteInt("Points", c.Points, true)
 

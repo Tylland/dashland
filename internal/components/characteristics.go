@@ -3,6 +3,7 @@ package components
 import (
 	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
 )
 
 const CharacteristicComponentVersion = 1
@@ -40,7 +41,7 @@ func (c *CharacteristicComponent) Set(value characteristics.Characteristics) {
 }
 
 func (c *CharacteristicComponent) WriteTo(w ecs.Writer) error {
-	w.StartSection(ecs.ComponentName(c), CharacteristicComponentVersion)
+	w.StartSection(Section(types.ComponentTypeCharacteristics))
 	w.WriteEnum("Characteristics", c.characteristics, false, "")
 
 	return nil

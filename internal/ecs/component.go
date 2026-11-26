@@ -6,6 +6,11 @@ import (
 	"strings"
 )
 
+type ComponentType struct {
+	Name    string
+	Version int
+}
+
 type Component interface {
 	//Name() string
 }

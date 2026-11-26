@@ -3,6 +3,7 @@ package components
 import (
 	"github.com/tylland/dashland/internal/collider"
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
 )
 
 type ColliderComponent struct {
@@ -23,9 +24,7 @@ func (c *ColliderComponent) Collide(other *ColliderComponent) (bool, bool) {
 }
 
 func (c *ColliderComponent) WriteTo(w ecs.Writer) error {
-	const version = 1
-
-	w.StartSection(ecs.ComponentName(c), version)
+	w.StartSection(Section(types.ComponentTypeCollider))
 	w.WriteEnum("Layer", c.Layer, true, "is")
 	w.WriteEnum("Obstruct", c.Obstruct, true, "obstructs")
 	w.WriteEnum("Interact", c.Interact, true, "interacts with")
@@ -34,7 +33,7 @@ func (c *ColliderComponent) WriteTo(w ecs.Writer) error {
 }
 
 func (c *ColliderComponent) ReadFrom(r ecs.Reader) error {
-	r.ConsumeSection(ecs.ComponentName(c))
+	r.ConsumeSection(types.ComponentTypeCollider.Name)
 	r.ConsumeLine()
 	r.ConsumeLine()
 	r.ConsumeLine()

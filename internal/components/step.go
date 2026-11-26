@@ -4,6 +4,7 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
 )
 
 type BlockStep struct {
@@ -40,9 +41,7 @@ func (s *BlockStep) Commit(target rl.Vector2) {
 }
 
 func (c *BlockStep) WriteTo(w ecs.Writer) error {
-	const version = 1
-
-	w.StartSection(ecs.ComponentName(c), version)
+	w.StartSection(Section(types.ComponentTypeBlockStep))
 
 	w.WriteInt("Inc X", c.Increment.X, false)
 	w.WriteInt("Inc Y", c.Increment.Y, false)
@@ -62,7 +61,7 @@ func (c *BlockStep) WriteTo(w ecs.Writer) error {
 }
 
 func (c *BlockStep) ReadFrom(r ecs.Reader) error {
-	r.ConsumeSection(ecs.ComponentName(c))
+	r.ConsumeSection(types.ComponentTypeBlockStep.Name)
 	r.ConsumeLine()
 	r.ConsumeLine()
 

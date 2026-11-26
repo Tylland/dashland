@@ -3,9 +3,8 @@ package components
 import (
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
 )
-
-const AnimationComponentVersion = 1
 
 // Animation describes a named animation sequence inside a sprite sheet.
 type Animation struct {
@@ -89,7 +88,7 @@ func clamp(val, max uint) uint {
 }
 
 func (c *AnimationComponent) WriteTo(w ecs.Writer) error {
-	w.StartSection(ecs.ComponentName(c), AnimationComponentVersion)
+	w.StartSection(Section(types.ComponentTypeAnimation))
 	w.WriteInt("Animations", len(c.Animations), true)
 	w.WriteString("Current", c.Current, false)
 	w.WriteString("Active", c.active, false)
@@ -100,7 +99,7 @@ func (c *AnimationComponent) WriteTo(w ecs.Writer) error {
 }
 
 func (c *AnimationComponent) ReadFrom(r ecs.Reader) error {
-	r.ConsumeSection(ecs.ComponentName(c))
+	r.ConsumeSection(types.ComponentTypeAnimation.Name)
 	r.ConsumeLine()
 	r.ConsumeLine()
 	r.ConsumeLine()

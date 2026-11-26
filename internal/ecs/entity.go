@@ -82,6 +82,12 @@ func (e *Entity) RemoveComponent(c Component) {
 	e.Components.RemoveComponent(c)
 }
 
+func (e *Entity) Component(name string) Component {
+	comp, _ := e.Components.GetComponent(name)
+
+	return comp
+}
+
 func (e *Entity) WriteTo(w Writer) error {
 	e.EntityHeader.WriteTo(w)
 

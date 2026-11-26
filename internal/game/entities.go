@@ -4,9 +4,6 @@ import (
 	"fmt"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/tylland/dashland/internal/assets"
-	"github.com/tylland/dashland/internal/characteristics"
-	"github.com/tylland/dashland/internal/collider"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
@@ -133,17 +130,4 @@ func NewFlash(world *ecs.World) *ecs.Entity {
 	world.AddEntity(entity)
 
 	return entity
-}
-
-func NewBlock(header *ecs.EntityHeader, stage *Stage, bpos common.BlockPosition, pos rl.Vector2, character characteristics.Characteristics, layer collider.CollisionLayer, obstruct collider.CollisionLayer, interact collider.CollisionLayer) (*ecs.Entity, error) {
-	sprite := common.NewSprite(assets.LoadTexture("blocks"), stage.BlockWidth, stage.BlockHeight, float32(header.Type)*stage.BlockWidth, 0, 0)
-
-	entity := ecs.NewEntity(header)
-	entity.AddComponent(components.NewPositionComponent(bpos, pos))
-	entity.AddComponent(components.NewSpriteComponent(sprite))
-	entity.AddComponent(components.NewCharacteristicsComponent(character))
-	entity.AddComponent(components.NewColliderComponent(layer, obstruct, interact))
-	entity.AddComponent(&components.BlockComponent{})
-
-	return entity, nil
 }

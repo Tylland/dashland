@@ -90,3 +90,20 @@ func EntityTypeName(entityType ecs.EntityType) string {
 		return "unknown"
 	}
 }
+
+var (
+	ComponentTypeAnimation       = ecs.ComponentType{Name: "animation", Version: 1}
+	ComponentTypeBlock           = ecs.ComponentType{Name: "corners", Version: 2}
+	ComponentTypeCharacteristics = ecs.ComponentType{Name: "characteristics", Version: 1}
+	ComponentTypeCollectable     = ecs.ComponentType{Name: "collectable", Version: 1}
+	ComponentTypeCollider        = ecs.ComponentType{Name: "collider", Version: 1}
+	ComponentTypeDamage          = ecs.ComponentType{Name: "damage", Version: 1}
+	ComponentTypeDoor            = ecs.ComponentType{Name: "door", Version: 1}
+	ComponentTypeFlash           = ecs.ComponentType{Name: "flash", Version: 1}
+	ComponentTypeHealth          = ecs.ComponentType{Name: "health", Version: 1}
+	ComponentTypeInput           = ecs.ComponentType{Name: "input", Version: 1}
+	ComponentTypePosition        = ecs.ComponentType{Name: "position", Version: 1}
+	ComponentTypePushable        = ecs.ComponentType{Name: "pushable", Version: 1}
+	ComponentTypeSprite          = ecs.ComponentType{Name: "sprite", Version: 1}
+	ComponentTypeBlockStep       = ecs.ComponentType{Name: "blockstep", Version: 1}
+)

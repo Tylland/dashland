@@ -1,6 +1,9 @@
 package components
 
-import "github.com/tylland/dashland/internal/ecs"
+import (
+	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
+)
 
 type CollectableType uint32
 
@@ -20,7 +23,7 @@ func NewCollectableComponent(name string, amount int) *CollectableComponent {
 }
 
 func (c *CollectableComponent) WriteTo(w ecs.Writer) error {
-	w.StartSection(ecs.ComponentName(c), 1)
+	w.StartSection(Section(types.ComponentTypeCollectable))
 	w.WriteString("Name", c.Name, false)
 	w.WriteInt("Amount", c.Amount, false)
 
@@ -28,7 +31,7 @@ func (c *CollectableComponent) WriteTo(w ecs.Writer) error {
 }
 
 func (c *CollectableComponent) ReadFrom(r ecs.Reader) error {
-	r.ConsumeSection(ecs.ComponentName(c))
+	r.ConsumeSection(types.ComponentTypeCollectable.Name)
 	r.ConsumeLine()
 
 	ecs.WithChangedValue(r.ReadInt, func(amount int) {

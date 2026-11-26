@@ -3,6 +3,7 @@ package components
 import (
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
 )
 
 type DoorState uint32
@@ -37,9 +38,7 @@ func NewDoorComponent(stage string, pos common.BlockPosition, state DoorState) *
 }
 
 func (c *DoorComponent) WriteTo(w ecs.Writer) error {
-	const version = 1
-
-	w.StartSection(ecs.ComponentName(c), version)
+	w.StartSection(Section(types.ComponentTypeDoor))
 
 	w.WriteString("Stage", c.Stage, false)
 	w.WriteInt("X", c.Position.X, false)
@@ -50,7 +49,7 @@ func (c *DoorComponent) WriteTo(w ecs.Writer) error {
 }
 
 func (c *DoorComponent) ReadFrom(r ecs.Reader) error {
-	r.ConsumeSection(ecs.ComponentName(c))
+	r.ConsumeSection(types.ComponentTypeDoor.Name)
 
 	ecs.WithChangedValue(r.ReadString, func(stage string) {
 		c.Stage = stage

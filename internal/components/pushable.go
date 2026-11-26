@@ -1,6 +1,9 @@
 package components
 
-import "github.com/tylland/dashland/internal/ecs"
+import (
+	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
+)
 
 type PushableComponent struct {
 	Mass float32
@@ -11,17 +14,14 @@ func NewPushableComponent(mass float32) *PushableComponent {
 }
 
 func (c *PushableComponent) WriteTo(w ecs.Writer) error {
-	const version = 1
-
-	w.StartSection(ecs.ComponentName(c), version)
-
+	w.StartSection(Section(types.ComponentTypePushable))
 	w.WriteFloat("Mass", c.Mass, true)
 
 	return nil
 }
 
 func (c *PushableComponent) ReadFrom(r ecs.Reader) error {
-	r.ConsumeSection(ecs.ComponentName(c))
+	r.ConsumeSection(types.ComponentTypePushable.Name)
 	r.ConsumeLine()
 
 	return nil
