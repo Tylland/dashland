@@ -22,7 +22,7 @@ func (c *Health) WriteTo(w ecs.Writer) error {
 }
 
 func (c *Health) ReadFrom(r ecs.Reader) error {
-	r.ConsumeSection(ecs.ComponentName(c))
+	r.ConsumeSection(types.ComponentTypeHealth.Name)
 	r.ConsumeLine()
 
 	return nil

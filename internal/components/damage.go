@@ -22,7 +22,7 @@ func (c *Damage) WriteTo(w ecs.Writer) error {
 }
 
 func (c *Damage) ReadFrom(r ecs.Reader) error {
-	r.ConsumeSection(ecs.ComponentName(c))
+	r.ConsumeSection(types.ComponentTypeDamage.Name)
 	r.ConsumeLine()
 
 	return nil

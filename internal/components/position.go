@@ -4,6 +4,7 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
 )
 
 type PositionComponent struct {
@@ -70,9 +71,7 @@ func (c *PositionComponent) Rollback() {
 }
 
 func (c *PositionComponent) WriteTo(w ecs.Writer) error {
-	const version = 1
-
-	w.StartSection(ecs.ComponentName(c), version)
+	w.StartSection(Section(types.ComponentTypePosition))
 
 	w.WriteInt("X", c.CurrentBlockPosition.X, false)
 	w.WriteInt("Y", c.CurrentBlockPosition.Y, false)
@@ -83,7 +82,7 @@ func (c *PositionComponent) WriteTo(w ecs.Writer) error {
 }
 
 func (c *PositionComponent) ReadFrom(r ecs.Reader) error {
-	r.ConsumeSection(ecs.ComponentName(c))
+	r.ConsumeSection(types.ComponentTypePosition.Name)
 
 	ecs.WithChangedValue(r.ReadInt, func(x int) {
 		c.CurrentBlockPosition.X = x
