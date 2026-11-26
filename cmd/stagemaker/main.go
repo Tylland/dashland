@@ -37,6 +37,7 @@ import (
 	"github.com/tylland/dashland/internal/game"
 	"github.com/tylland/dashland/internal/game/types"
 	"github.com/tylland/dashland/internal/gui"
+	"github.com/tylland/dashland/internal/systems"
 )
 
 func main() {
@@ -397,6 +398,7 @@ func (ws *StageMakerWorkspace) OpenStage(path string) {
 	ws.stagePath = stagePath
 	ws.hoveredTarget = nil
 	ws.selectedTarget = nil
+	ws.world.AddSystem(systems.NewBlockUpdateSystem(ws.stage))
 	ws.world.AddSystem(renderer.NewEditorRenderer(ws, NewViewCamera(ws.view)))
 }
 

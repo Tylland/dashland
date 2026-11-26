@@ -35,8 +35,6 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 	rl.ClearBackground(rl.Black)
 	rl.BeginMode2D(s.camera.GetCamera())
 
-	s.stage.Update(deltaTime)
-
 	for _, entity := range world.Entities() {
 		if entity.Category == types.EntityCategoryBlock {
 			position := ecs.GetComponent[components.PositionComponent](entity)

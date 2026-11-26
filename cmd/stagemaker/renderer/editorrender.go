@@ -28,10 +28,6 @@ func NewEditorRenderer(ws tool.ToolbarWorkspace, camera game.Camera) *EditorRend
 func (s *EditorRenderer) Update(world *ecs.World, deltaTime float32) {
 	s.elapsedTime += float64(deltaTime)
 
-	stage := s.ws.Stage()
-
-	stage.Update(deltaTime)
-
 	for _, entity := range world.Entities() {
 		if entity.Category == types.EntityCategoryBlock {
 			position := ecs.GetComponent[components.PositionComponent](entity)

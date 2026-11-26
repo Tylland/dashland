@@ -137,13 +137,13 @@ func (bm *BlockMap) GetNearbyBlocks(position *common.BlockPosition) []*ecs.Entit
 	return nearbyBlocks
 }
 
-func (bm *BlockMap) Update(deltaTime float32) {
-	for i := len(bm.blocks) - 1; i >= 0; i-- {
-		if bm.blocks[i] != nil {
-			UpdateBlock(bm.blocks[i], bm)
-		}
-	}
-}
+// func (bm *BlockMap) Update(deltaTime float32) {
+// 	for i := len(bm.blocks) - 1; i >= 0; i-- {
+// 		if bm.blocks[i] != nil {
+// 			UpdateBlock(bm.blocks[i], bm)
+// 		}
+// 	}
+// }
 
 func (bm *BlockMap) IsBlocked(pos common.BlockPosition, collider *components.ColliderComponent) bool {
 	if pos.X < 0 || pos.Y < 0 || pos.X >= bm.Width || pos.Y >= bm.Height {
