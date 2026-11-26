@@ -120,9 +120,8 @@ func (s *Stage) IsMagicWallActive() bool {
 func (s *Stage) CheckCharacteristics(position common.BlockPosition, character characteristics.Characteristics) bool {
 
 	if block, ok := s.GetBlock(position.X, position.Y); ok {
-		if BlockHasCharacteristic(block, character) {
-			return true
-		}
+		component := ecs.GetComponent[components.CharacteristicComponent](block)
+		return component != nil && component.Has(character)
 	}
 
 	if entity, ok := s.GetEntityAtPosition(position); ok {
@@ -200,10 +199,12 @@ func (s *Stage) Save(path string) ([]string, error) {
 			return nil, err
 		}
 
-		if err := WriteBlockTo(b, writer); err != nil {
-			writer.Close()
-			return nil, err
-		}
+		// if err := WriteBlockTo(b, writer); err != nil {
+		// 	writer.Close()
+		// 	return nil, err
+		// }
+
+		b.WriteTo(writer)
 
 		writer.Close()
 
@@ -291,10 +292,11 @@ func (s *Stage) Load(world *ecs.World, path string) error {
 			if err != nil {
 				return fmt.Errorf("creating block %q from %q: %w", types.EntityTypeName(header.Type), fileName, err)
 			}
-			if err := ReadBlockFrom(block, reader, s.BlockMap); err != nil {
+			if err := block.ReadFrom(reader); err != nil {
 				world.RemoveEntity(block)
 				return fmt.Errorf("reading block %q from %q: %w", types.EntityTypeName(header.Type), fileName, err)
 			}
+
 			position := ecs.GetComponent[components.PositionComponent](block)
 			s.BlockMap.SetBlock(block, position.CurrentBlockPosition)
 		} else {

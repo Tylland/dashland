@@ -68,27 +68,37 @@ func (t *InspectTool) WorldMouseMove(world rl.Vector2) {
 		return
 	}
 
-	// TODO: Remove block handling like WriteBlockTo, all are entities
-	if target.Kind == TargetBlock {
-		if block, ok := t.ws.Stage().GetBlockAtPosition(pos); ok {
-			var buffer bytes.Buffer
-			writer := game.NewTextWriter(&buffer)
+	var preview []string
 
-			if err := game.WriteBlockTo(block, writer); err != nil {
-				panic(err)
-			}
+	if block, ok := t.ws.Stage().GetBlockAtPosition(pos); ok {
+		var buffer bytes.Buffer
+		writer := game.NewTextWriter(&buffer)
 
-			t.ws.Inspect(&gui.EntityInspection{Openpath: "inmemory", Preview: strings.Split(buffer.String(), "\n")})
+		if err := block.WriteTo(writer); err != nil {
+			panic(err)
 		}
-	} else if target.Kind == TargetEntity {
-		if entity, ok := t.ws.Stage().GetEntityAtPosition(pos); ok {
-			var buffer bytes.Buffer
-			writer := game.NewTextWriter(&buffer)
 
-			entity.WriteTo(writer)
+		preview = append(preview, "------> Block <------")
+		preview = append(preview, strings.Split(buffer.String(), "\n")...)
+	}
 
-			t.ws.Inspect(&gui.EntityInspection{Openpath: "inmemory", Preview: strings.Split(buffer.String(), "\n")})
+	if entity, ok := t.ws.Stage().GetEntityAtPosition(pos); ok {
+		var buffer bytes.Buffer
+		writer := game.NewTextWriter(&buffer)
+
+		entity.WriteTo(writer)
+
+		if len(preview) > 0 {
+			preview = append(preview, "")
+			preview = append(preview, "")
 		}
+
+		preview = append(preview, "------> Entity <------")
+		preview = append(preview, strings.Split(buffer.String(), "\n")...)
+	}
+
+	if len(preview) > 0 {
+		t.ws.Inspect(&gui.EntityInspection{Openpath: "inmemory", Preview: preview})
 	}
 }
 

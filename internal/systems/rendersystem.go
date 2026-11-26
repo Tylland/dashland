@@ -110,17 +110,6 @@ func (s *Renderer) drawBlock(entity *ecs.Entity, position *components.PositionCo
 	} else {
 		s.drawBlockCorners(entity, position, sprite, block)
 	}
-
-	// switch entity.Type {
-	// case types.EntitySoil:
-	// 	s.drawBlockCorners(entity, position, 1)
-	// case types.EntityVoid:
-	// 	s.drawBlockCorners(entity, position, 0)
-	// default:
-	// 	blockTextures := s.stage.BlockMap.GetBlockTextures()
-	// 	if blockTextures != nil {
-	// 	}
-	// }
 }
 
 func (s *Renderer) drawBlockCorners(entity *ecs.Entity,
