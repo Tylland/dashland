@@ -118,10 +118,12 @@ func (s *Stage) IsMagicWallActive() bool {
 }
 
 func (s *Stage) CheckCharacteristics(position common.BlockPosition, character characteristics.Characteristics) bool {
-
 	if block, ok := s.GetBlock(position.X, position.Y); ok {
-		component := ecs.GetComponent[components.CharacteristicComponent](block)
-		return component != nil && component.Has(character)
+		if component, ok := block.Component[components.CharacteristicComponent](); ok {
+			if component.Has(character) {
+				return true
+			}
+		}
 	}
 
 	if entity, ok := s.GetEntityAtPosition(position); ok {
@@ -287,28 +289,21 @@ func (s *Stage) Load(world *ecs.World, path string) error {
 		header.ReadFrom(reader)
 		reader.Rewind()
 
-		if header.Category == types.EntityCategoryBlock {
-			block, err := NewEntity(header, world, s, blockPosition)
-			if err != nil {
-				return fmt.Errorf("creating block %q from %q: %w", types.EntityTypeName(header.Type), fileName, err)
-			}
-			if err := block.ReadFrom(reader); err != nil {
-				world.RemoveEntity(block)
-				return fmt.Errorf("reading block %q from %q: %w", types.EntityTypeName(header.Type), fileName, err)
-			}
+		entity, err := NewEntity(header, world, s, blockPosition)
+		if err != nil {
+			return fmt.Errorf("creating block %q from %q: %w", types.EntityTypeName(header.Type), fileName, err)
+		}
+		if err := entity.ReadFrom(reader); err != nil {
+			world.RemoveEntity(entity)
+			return fmt.Errorf("reading entity %q from %q: %w", types.EntityTypeName(header.Type), fileName, err)
+		}
 
-			position := ecs.GetComponent[components.PositionComponent](block)
-			s.BlockMap.SetBlock(block, position.CurrentBlockPosition)
-		} else {
-			entity, err := NewEntity(header, world, s, blockPosition)
-
-			if err != nil {
-				return fmt.Errorf("reading %q from %q: %w", types.EntityTypeName(header.Type), fileName, err)
+		if position, ok := entity.Component[components.PositionComponent](); ok {
+			if header.Category == types.EntityCategoryBlock {
+				s.BlockMap.SetBlock(entity, position.CurrentBlockPosition)
+			} else {
+				s.EntityMap.SetEntity(entity, position.CurrentBlockPosition)
 			}
-
-			entity.ReadFrom(reader)
-			position := ecs.GetComponent[components.PositionComponent](entity)
-			s.EntityMap.SetEntity(entity, position.CurrentBlockPosition)
 		}
 
 		counters.Increment(types.EntityTypeName(header.Type))

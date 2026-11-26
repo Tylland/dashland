@@ -30,8 +30,8 @@ func (s *EditorRenderer) Update(world *ecs.World, deltaTime float32) {
 
 	for _, entity := range world.Entities() {
 		if entity.Category == types.EntityCategoryBlock {
-			position := ecs.GetComponent[components.PositionComponent](entity)
-			sprite := ecs.GetComponent[components.SpriteComponent](entity)
+			position, _ := entity.Component[components.PositionComponent]()
+			sprite, _ := entity.Component[components.SpriteComponent]()
 
 			if position != nil && sprite != nil {
 				s.drawBlock(entity, position, sprite)
@@ -82,29 +82,18 @@ func (s *EditorRenderer) RunWhenPaused() bool {
 }
 
 func (s *EditorRenderer) drawBlock(entity *ecs.Entity, position *components.PositionComponent, sprite *components.SpriteComponent) {
-	block := ecs.GetComponent[components.BlockComponent](entity)
-
-	if !block.HasCorners {
-		rl.DrawTextureRec(
-			*sprite.Texture,
-			rl.NewRectangle(float32(entity.Type)*game.BlockWidth, 0, game.BlockWidth, game.BlockHeight),
-			position.Vector2,
-			rl.White,
-		)
-	} else {
-		s.drawBlockCorners(entity, position, sprite, block)
+	if block, ok := entity.Component[components.BlockComponent](); ok {
+		if !block.HasCorners {
+			rl.DrawTextureRec(
+				*sprite.Texture,
+				rl.NewRectangle(float32(entity.Type)*game.BlockWidth, 0, game.BlockWidth, game.BlockHeight),
+				position.Vector2,
+				rl.White,
+			)
+		} else {
+			s.drawBlockCorners(entity, position, sprite, block)
+		}
 	}
-
-	// switch entity.Type {
-	// case types.EntitySoil:
-	// 	s.drawBlockCorners(entity, position, 1)
-	// case types.EntityVoid:
-	// 	s.drawBlockCorners(entity, position, 0)
-	// default:
-	// 	blockTextures := s.stage.BlockMap.GetBlockTextures()
-	// 	if blockTextures != nil {
-	// 	}
-	// }
 }
 
 func (s *EditorRenderer) drawBlockCorners(entity *ecs.Entity,

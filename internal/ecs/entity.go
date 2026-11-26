@@ -1,5 +1,7 @@
 package ecs
 
+import "slices"
+
 type EntityCategory uint32
 type EntityType uint32
 type EntityID string
@@ -64,34 +66,46 @@ func (e *EntityHeader) ReadFrom(r Reader) error {
 
 type Entity struct {
 	*EntityHeader
-	Components *Components
+	index      map[ComponentKey]Component
+	components []Component
 }
 
 func NewEntity(header *EntityHeader) *Entity {
 	return &Entity{
 		EntityHeader: header,
-		Components:   NewComponents(),
+		index:        make(map[ComponentKey]Component),
 	}
 }
 
-func (e *Entity) AddComponent(c Component) {
-	e.Components.AddComponent(c)
+func (e *Entity) AddComponent(comp Component) {
+	e.index[keyOf(comp)] = comp
+	e.components = append(e.components, comp)
 }
 
-func (e *Entity) RemoveComponent(c Component) {
-	e.Components.RemoveComponent(c)
+func (e *Entity) RemoveComponent[T any]() {
+	k := key[T]()
+
+	if comp, ok := e.index[k]; ok {
+		delete(e.index, k)
+
+		if i := slices.Index(e.components, comp); i != -1 {
+			e.components = slices.Delete(e.components, i, i+1)
+		}
+	}
 }
 
-func (e *Entity) Component(name string) Component {
-	comp, _ := e.Components.GetComponent(name)
+func (e *Entity) Component[T any]() (*T, bool) {
+	if comp, ok := e.index[key[T]()]; ok {
+		return comp.(*T), true
+	}
 
-	return comp
+	return nil, false
 }
 
 func (e *Entity) WriteTo(w Writer) error {
 	e.EntityHeader.WriteTo(w)
 
-	for _, comp := range e.Components.Ordered() {
+	for _, comp := range e.components {
 		if wt, ok := comp.(WriterTo); ok {
 			wt.WriteTo(w)
 		}
@@ -103,11 +117,25 @@ func (e *Entity) WriteTo(w Writer) error {
 func (e *Entity) ReadFrom(r Reader) error {
 	e.EntityHeader.ReadFrom(r)
 
-	for _, comp := range e.Components.Ordered() {
+	for _, comp := range e.components {
 		if rf, ok := comp.(ReaderFrom); ok {
 			rf.ReadFrom(r)
 		}
 	}
 
 	return nil
+}
+
+// Deprecated: use entity.Component direct.
+func GetComponent[T Component](entity *Entity) *T {
+	if comp, ok := entity.Component[T](); ok {
+		return comp
+	}
+
+	return nil
+}
+
+// Deprecated: use entity.RemoveComponent direct.
+func RemoveComponent[T Component](entity *Entity) {
+	entity.RemoveComponent[T]()
 }

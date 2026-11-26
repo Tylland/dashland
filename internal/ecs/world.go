@@ -74,9 +74,9 @@ func (w *World) RemoveEntity(entity *Entity) {
 	}
 }
 
-func (w *World) AddSingleton(component Component) {
-	name := ComponentName(component)
-	w.singeltons[name] = component
+func (w *World) AddSingleton(comp Component) {
+	name := ComponentName(comp)
+	w.singeltons[name] = comp
 }
 
 func (w *World) Singleton(name string) (Component, bool) {

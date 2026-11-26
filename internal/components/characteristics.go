@@ -6,8 +6,6 @@ import (
 	"github.com/tylland/dashland/internal/game/types"
 )
 
-const CharacteristicComponentVersion = 1
-
 type CharacteristicComponent struct {
 	characteristics characteristics.Characteristics
 }
@@ -42,7 +40,7 @@ func (c *CharacteristicComponent) Set(value characteristics.Characteristics) {
 
 func (c *CharacteristicComponent) WriteTo(w ecs.Writer) error {
 	w.StartSection(Section(types.ComponentTypeCharacteristics))
-	w.WriteEnum("Characteristics", c.characteristics, false, "")
+	w.WriteEnum("Characteristics", c.characteristics, true, "")
 
 	return nil
 }

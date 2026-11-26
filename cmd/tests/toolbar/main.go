@@ -33,13 +33,11 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/tylland/dashland/internal/ecs"
 )
 
 const (
@@ -843,108 +841,6 @@ func parseValue(line string) *Value {
 		v.Kind = KindBool
 	}
 	return v
-}
-
-// DocumentFromEntity reflects the exported component fields of an entity into
-// one section per component. Structs and collections are expanded recursively.
-func DocumentFromEntity(entity *ecs.Entity) *Document {
-	doc := &Document{}
-	if entity == nil || entity.Components == nil {
-		return doc
-	}
-
-	for _, component := range entity.Components.Ordered() {
-		section := &Section{Label: ecs.ComponentName(component)}
-		appendReflectedValues(section, "", reflect.ValueOf(component))
-		doc.Sections = append(doc.Sections, section)
-	}
-	return doc
-}
-
-func appendReflectedValues(section *Section, name string, value reflect.Value) {
-	if !value.IsValid() {
-		return
-	}
-	for value.Kind() == reflect.Interface || value.Kind() == reflect.Pointer {
-		if value.IsNil() {
-			return
-		}
-		value = value.Elem()
-	}
-
-	switch value.Kind() {
-	case reflect.Struct:
-		for i := 0; i < value.NumField(); i++ {
-			field := value.Type().Field(i)
-			if !field.IsExported() {
-				continue
-			}
-			fieldName := field.Name
-			if name != "" {
-				fieldName = name + "." + fieldName
-			}
-			appendReflectedValues(section, fieldName, value.Field(i))
-		}
-	case reflect.Array, reflect.Slice:
-		for i := 0; i < value.Len(); i++ {
-			appendReflectedValues(section, fmt.Sprintf("%s[%d]", name, i), value.Index(i))
-		}
-	case reflect.Map:
-		keys := value.MapKeys()
-		sort.Slice(keys, func(i, j int) bool {
-			left, leftOK := reflectedScalarText(keys[i])
-			right, rightOK := reflectedScalarText(keys[j])
-			return leftOK && rightOK && left < right
-		})
-		for _, key := range keys {
-			keyText, ok := reflectedScalarText(key)
-			if !ok {
-				continue
-			}
-			appendReflectedValues(section, fmt.Sprintf("%s[%s]", name, keyText), value.MapIndex(key))
-		}
-	case reflect.Bool:
-		text := strconv.FormatBool(value.Bool())
-		section.Values = append(section.Values, &Value{Name: name, Kind: KindBool, Text: text})
-	case reflect.String:
-		section.Values = append(section.Values, &Value{Name: name, Kind: KindText, Text: value.String()})
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		section.Values = append(section.Values, &Value{Name: name, Kind: KindText, Text: strconv.FormatInt(value.Int(), 10)})
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		section.Values = append(section.Values, &Value{Name: name, Kind: KindText, Text: strconv.FormatUint(value.Uint(), 10)})
-	case reflect.Float32:
-		f := float32(value.Float())
-		section.Values = append(section.Values, &Value{
-			Name: name, Kind: KindNumber,
-			Text: strconv.FormatFloat(float64(f), 'f', -1, 32),
-			Hex:  fmt.Sprintf("%08x", math.Float32bits(f)),
-			Float: true,
-		})
-	case reflect.Float64:
-		section.Values = append(section.Values, &Value{
-			Name: name, Kind: KindText,
-			Text: strconv.FormatFloat(value.Float(), 'g', -1, 64),
-		})
-	}
-}
-
-func reflectedScalarText(value reflect.Value) (string, bool) {
-	switch value.Kind() {
-	case reflect.Bool:
-		return strconv.FormatBool(value.Bool()), true
-	case reflect.String:
-		return value.String(), true
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return strconv.FormatInt(value.Int(), 10), true
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return strconv.FormatUint(value.Uint(), 10), true
-	case reflect.Float32:
-		return strconv.FormatFloat(value.Float(), 'g', -1, 32), true
-	case reflect.Float64:
-		return strconv.FormatFloat(value.Float(), 'g', -1, 64), true
-	default:
-		return "", false
-	}
 }
 
 // ParseDocument reads the "# label" / " * value" format. Blank lines are ignored.
