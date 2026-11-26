@@ -9,6 +9,7 @@ import (
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
 )
 
 type Vector struct {
@@ -27,7 +28,7 @@ func (v Vector) Normalized() Vector {
 }
 
 func NewPlayerEntity(world *ecs.World, stage *Stage, position common.BlockPosition, texture *rl.Texture2D) *ecs.Entity {
-	player := ecs.NewEntity(NewEntityHeader(EntityPlayer))
+	player := ecs.NewEntity(NewEntityHeader(types.EntityPlayer))
 
 	player.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
 	player.AddComponent(components.NewInputComponent())

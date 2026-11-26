@@ -4,6 +4,7 @@ import (
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
 	"github.com/tylland/dashland/internal/game"
+	"github.com/tylland/dashland/internal/game/types"
 )
 
 type PushBehavior struct {
@@ -42,7 +43,7 @@ func (s *PushBehavior) handlePlayerPush(world *ecs.World, playerPosition *compon
 		if !playerStep.Increment.IsZero() && playerStep.Increment.IsHorizontal() {
 			pushPos := targetPosition.CurrentBlockPosition.Add(playerStep.Increment)
 
-			if s.stage.CheckBlockAtPosition(game.EntityVoid, pushPos) && s.stage.GetEntity(pushPos) == nil {
+			if s.stage.CheckBlockAtPosition(types.EntityVoid, pushPos) && s.stage.GetEntity(pushPos) == nil {
 				targetStep.Move(playerStep.Increment, moveSpeed)
 			}
 		}

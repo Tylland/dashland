@@ -27,6 +27,14 @@ func (w *World) AddEntity(entity *Entity) {
 	w.entities = append(w.entities, entity)
 }
 
+func (w *World) AddEntitySuccess(entity *Entity, err error) (*Entity, error) {
+	if err == nil {
+		w.entities = append(w.entities, entity)
+	}
+
+	return entity, err
+}
+
 func (w *World) AddEntityNamed(name string, entity *Entity) {
 	w.AddEntity(entity)
 	w.entityNames[name] = entity

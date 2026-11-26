@@ -18,7 +18,7 @@ func (c *PushableComponent) WriteTo(w ecs.Writer) error {
 }
 
 func (c *PushableComponent) ReadFrom(r ecs.Reader) error {
-	r.ConsumeLabel(ecs.ComponentName(c))
+	r.ConsumeSection(ecs.ComponentName(c))
 	r.ConsumeLine()
 
 	return nil

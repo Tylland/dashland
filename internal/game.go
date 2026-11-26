@@ -201,7 +201,7 @@ func (g *DashlandGame) loadStage(path string) (*game.Stage, error) {
 	entityTextures := assets.LoadTexture("entities")
 	groundCorners := assets.LoadTexture("ground_corners")
 
-	mapSize := game.MapSize{}
+	mapSize := common.MapSize{}
 	stage := game.NewStage("generated", mapSize, blockTexture, entityTextures, groundCorners)
 
 	err := stage.Load(g.world, path)

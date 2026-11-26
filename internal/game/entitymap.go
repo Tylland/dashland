@@ -6,16 +6,17 @@ import (
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
 )
 
 type EntityMap struct {
-	MapSize
+	common.MapSize
 	entityTextures *rl.Texture2D
 	groundCorners  *rl.Texture2D
 	entities       []*ecs.Entity
 }
 
-func NewEntityMap(mapSize MapSize, entityTextures *rl.Texture2D, groundCorners *rl.Texture2D) *EntityMap {
+func NewEntityMap(mapSize common.MapSize, entityTextures *rl.Texture2D, groundCorners *rl.Texture2D) *EntityMap {
 	return &EntityMap{MapSize: mapSize, entityTextures: entityTextures, groundCorners: groundCorners, entities: make([]*ecs.Entity, mapSize.Count())}
 }
 
@@ -23,7 +24,7 @@ func (m *EntityMap) GetEnterPosition(tiles []*tiled.LayerTile) (common.BlockPosi
 	m.entities = make([]*ecs.Entity, len(tiles))
 
 	for index, tile := range tiles {
-		if ecs.EntityType(tile.ID) == EntityPlayer {
+		if ecs.EntityType(tile.ID) == types.EntityPlayer {
 			return common.NewBlockPosition(index%m.Width, index/m.Width), true
 		}
 	}
@@ -90,4 +91,8 @@ func (m *EntityMap) TryRemoveEntity(doomed *ecs.Entity) bool {
 
 func (m *EntityMap) GetEntityTextures() *rl.Texture2D {
 	return m.entityTextures
+}
+
+func (m *EntityMap) GetGroundCorners() *rl.Texture2D {
+	return m.groundCorners
 }

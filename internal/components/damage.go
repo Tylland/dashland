@@ -18,7 +18,7 @@ func (c *Damage) WriteTo(w ecs.Writer) error {
 }
 
 func (c *Damage) ReadFrom(r ecs.Reader) error {
-	r.ConsumeLabel(ecs.ComponentName(c))
+	r.ConsumeSection(ecs.ComponentName(c))
 	r.ConsumeLine()
 
 	return nil

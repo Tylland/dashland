@@ -23,7 +23,7 @@ func (c *SpriteComponent) WriteTo(w ecs.Writer) error {
 }
 
 func (c *SpriteComponent) ReadFrom(r ecs.Reader) error {
-	r.ConsumeLabel(ecs.ComponentName(c))
+	r.ConsumeSection(ecs.ComponentName(c))
 	r.ConsumeLine()
 	r.ConsumeLine()
 	//r.ConsumeLine()

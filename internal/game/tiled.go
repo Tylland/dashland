@@ -7,6 +7,8 @@ import (
 	"github.com/lafriks/go-tiled"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/entity"
+	"github.com/tylland/dashland/internal/game/types"
 )
 
 func InitBlocks(world *ecs.World, s *Stage, tiles []*tiled.LayerTile) {
@@ -14,7 +16,7 @@ func InitBlocks(world *ecs.World, s *Stage, tiles []*tiled.LayerTile) {
 
 	for index, tile := range tiles {
 		blockPosition := common.NewBlockPositionFromIndex(index, s.BlockMap.Width)
-		header := NewEntityHeader(ecs.EntityType(uint32(EntityCategoryBlock) + tile.ID))
+		header := NewEntityHeader(ecs.EntityType(uint32(types.EntityCategoryBlock) + tile.ID))
 		block, err := NewEntity(header, world, s, blockPosition)
 		if err != nil {
 			fmt.Printf("block at %s %d:%d: %s\n", s.Name, blockPosition.X, blockPosition.Y, err)
@@ -30,7 +32,7 @@ func InitEntities(world *ecs.World, stage *Stage, category ecs.EntityCategory, t
 	for index, tile := range tiles {
 		entityType := ecs.EntityType(uint32(category) + tile.ID)
 
-		if entityType == EntityUnknown || entityType == EntityUnknownEnemy {
+		if entityType == types.EntityUnknown || entityType == types.EntityUnknownEnemy {
 			continue
 		}
 
@@ -39,7 +41,7 @@ func InitEntities(world *ecs.World, stage *Stage, category ecs.EntityCategory, t
 		entity, err := NewEntityAndHeader(entityType, world, stage, blockPosition)
 
 		if err != nil {
-			fmt.Printf("%s at %s %d:%d: %s\n", EntityCategoryName(category), stage.Name, blockPosition.X, blockPosition.Y, err.Error())
+			fmt.Printf("%s at %s %d:%d: %s\n", types.EntityCategoryName(category), stage.Name, blockPosition.X, blockPosition.Y, err.Error())
 			continue
 		}
 
@@ -79,10 +81,12 @@ func InitObjectsEntities(world *ecs.World, s *Stage, category ecs.EntityCategory
 				panic(err.Error())
 			}
 
-			header := NewEntityHeader(EntityExitDoor)
-			door := NewExitDoor(header, world, s, blockPos, s.GetPosition(blockPos), targetStage, targetPosition)
+			header := NewEntityHeader(types.EntityExitDoor)
+			door := entity.NewExitDoor(header, s.MapSize, blockPos, s.GetPosition(blockPos), targetStage, targetPosition)
 			s.EntityMap.SetEntity(door, blockPos)
 			s.ExitPosition = blockPos
+
+			world.AddEntity(door)
 		}
 	}
 }

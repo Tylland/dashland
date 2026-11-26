@@ -1,5 +1,34 @@
 package components
 
+import (
+	"github.com/tylland/dashland/internal/ecs"
+)
+
+const BlockComponentVersion = 2
+
 type BlockComponent struct {
-	Corners [4]uint8
+	HasCorners bool     `version:"2"`
+	Corners    [4]uint8 `version:"1"`
+}
+
+func (c *BlockComponent) WriteTo(w ecs.Writer) error {
+	w.StartSection("corners")
+	w.WriteInt("Upper left", int(c.Corners[0]), c.Corners[0] == 0)
+	w.WriteInt("Upper right", int(c.Corners[1]), c.Corners[1] == 0)
+	w.WriteInt("Lower left", int(c.Corners[2]), c.Corners[2] == 0)
+	w.WriteInt("Lower right", int(c.Corners[3]), c.Corners[3] == 0)
+
+	return nil
+}
+
+func (c *BlockComponent) ReadFrom(r ecs.Reader) error {
+	r.ConsumeSection("corners")
+
+	for i := range c.Corners {
+		if err := ecs.WithChangedValue(r.ReadInt, func(value int) { c.Corners[i] = uint8(value) }); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

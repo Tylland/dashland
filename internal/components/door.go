@@ -47,7 +47,7 @@ func (c *DoorComponent) WriteTo(w ecs.Writer) error {
 }
 
 func (c *DoorComponent) ReadFrom(r ecs.Reader) error {
-	r.ConsumeLabel(ecs.ComponentName(c))
+	r.ConsumeSection(ecs.ComponentName(c))
 
 	ecs.WithChangedValue(r.ReadString, func(stage string) {
 		c.Stage = stage

@@ -3,7 +3,7 @@ package gui
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/ecs"
-	"github.com/tylland/dashland/internal/game"
+	"github.com/tylland/dashland/internal/game/types"
 )
 
 // EntityItem is one selectable item. Its look is a rl.Texture2D, which is either
@@ -23,7 +23,7 @@ type EntityItem struct {
 // Must be called after InitWindow and outside BeginDrawing/EndDrawing.
 func NewEntityItem(entityType ecs.EntityType, texture *rl.Texture2D, source rl.Rectangle) *EntityItem {
 	return &EntityItem{
-		Name:    game.EntityTypeName(entityType),
+		Name:    types.EntityTypeName(entityType),
 		Type:    entityType,
 		Texture: texture,
 		Source:  source,

@@ -15,6 +15,7 @@ import (
 const (
 	TokenIndent    = " "
 	TokenLabel     = "#"
+	TokenVersion   = "@"
 	TokenChanged   = "*"
 	TokenDefault   = " "
 	TokenComment   = "//"

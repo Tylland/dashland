@@ -80,7 +80,7 @@ func (p *PositionComponent) WriteTo(ew ecs.Writer) error {
 }
 
 func (p *PositionComponent) ReadFrom(r ecs.Reader) error {
-	r.ConsumeLabel(ecs.ComponentName(p))
+	r.ConsumeSection(ecs.ComponentName(p))
 
 	ecs.WithChangedValue(r.ReadInt, func(x int) {
 		p.CurrentBlockPosition.X = x

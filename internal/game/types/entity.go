@@ -1,4 +1,4 @@
-package game
+package types
 
 import "github.com/tylland/dashland/internal/ecs"
 

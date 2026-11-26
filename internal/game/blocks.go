@@ -7,6 +7,12 @@ import (
 	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
+)
+
+const (
+	BlockWidth  float32 = 32
+	BlockHeight float32 = 32
 )
 
 const (
@@ -44,6 +50,9 @@ func BlockHasCharacteristic(entity *ecs.Entity, characteristic characteristics.C
 	return component != nil && component.Has(characteristic)
 }
 
+// cornerIndex returns the corner texture index for a block corner.
+// A strict soil corner requires all three neighboring cells to match,
+// while void corners allow the diagonal neighbor to differ.
 func cornerIndex(neighbors [9]bool, corner CornerPosition, strict bool) uint8 {
 	if corner == CornerOverLeft && neighbors[MiddleLeft] && (neighbors[OverLeft] || !strict) && neighbors[OverCenter] {
 		return 1
@@ -68,53 +77,18 @@ func UpdateBlock(entity *ecs.Entity, blockMap *BlockMap) {
 	}
 
 	switch entity.Type {
-	case EntitySoil:
-		neighbors := blockMap.CheckNeighbourTypes(EntityVoid, position.CurrentBlockPosition)
+	case types.EntitySoil:
+		neighbors := blockMap.CheckNeighbourTypes(types.EntityVoid, position.CurrentBlockPosition)
 		block.Corners[CornerOverLeft] = cornerIndex(neighbors, CornerOverLeft, true)
 		block.Corners[CornerOverRight] = cornerIndex(neighbors, CornerOverRight, true)
 		block.Corners[CornerUnderRight] = cornerIndex(neighbors, CornerUnderRight, true)
 		block.Corners[CornerUnderLeft] = cornerIndex(neighbors, CornerUnderLeft, true)
-	case EntityVoid:
-		neighbors := blockMap.CheckNeighbourTypes(EntitySoil, position.CurrentBlockPosition)
+	case types.EntityVoid:
+		neighbors := blockMap.CheckNeighbourTypes(types.EntitySoil, position.CurrentBlockPosition)
 		block.Corners[CornerOverLeft] = cornerIndex(neighbors, CornerOverLeft, false)
 		block.Corners[CornerOverRight] = cornerIndex(neighbors, CornerOverRight, false)
 		block.Corners[CornerUnderRight] = cornerIndex(neighbors, CornerUnderRight, false)
 		block.Corners[CornerUnderLeft] = cornerIndex(neighbors, CornerUnderLeft, false)
-	}
-}
-
-func renderBlockCorners(entity *ecs.Entity, entityMap *EntityMap, row float32) {
-	position := ecs.GetComponent[components.PositionComponent](entity)
-	block := ecs.GetComponent[components.BlockComponent](entity)
-	if position == nil || block == nil || entityMap.groundCorners == nil {
-		return
-	}
-
-	cornerWidth := entityMap.BlockWidth / 2
-	cornerHeight := entityMap.BlockHeight / 2
-	x := float32(position.CurrentBlockPosition.X) * entityMap.BlockWidth
-	y := float32(position.CurrentBlockPosition.Y) * entityMap.BlockHeight
-
-	rl.DrawTextureRec(*entityMap.groundCorners, rl.NewRectangle(float32(block.Corners[CornerOverLeft])*cornerWidth, row*cornerHeight, cornerWidth, cornerHeight), rl.NewVector2(x, y), rl.White)
-	rl.DrawTextureRec(*entityMap.groundCorners, rl.NewRectangle(float32(block.Corners[CornerOverRight])*cornerWidth, row*cornerHeight, cornerWidth, cornerHeight), rl.NewVector2(x+cornerWidth, y), rl.White)
-	rl.DrawTextureRec(*entityMap.groundCorners, rl.NewRectangle(float32(block.Corners[CornerUnderRight])*cornerWidth, row*cornerHeight, cornerWidth, cornerHeight), rl.NewVector2(x+cornerWidth, y+cornerHeight), rl.White)
-	rl.DrawTextureRec(*entityMap.groundCorners, rl.NewRectangle(float32(block.Corners[CornerUnderLeft])*cornerWidth, row*cornerHeight, cornerWidth, cornerHeight), rl.NewVector2(x, y+cornerHeight), rl.White)
-}
-
-func RenderBlock(entity *ecs.Entity, blockMap *BlockMap, entityMap *EntityMap) {
-	position := ecs.GetComponent[components.PositionComponent](entity)
-	if position == nil {
-		return
-	}
-	switch entity.Type {
-	case EntitySoil:
-		renderBlockCorners(entity, entityMap, 1)
-	case EntityVoid:
-		renderBlockCorners(entity, entityMap, 0)
-	default:
-		if blockMap.blockTextures != nil {
-			rl.DrawTextureRec(*blockMap.blockTextures, rl.NewRectangle(float32(entity.Type)*blockMap.BlockWidth, 0, blockMap.BlockWidth, blockMap.BlockHeight), position.Vector2, rl.White)
-		}
 	}
 }
 
@@ -158,7 +132,7 @@ func ReadBlockFrom(entity *ecs.Entity, r ecs.Reader, blockMap *BlockMap) error {
 		return fmt.Errorf("block entity %q is missing required components", entity.ID)
 	}
 
-	r.ConsumeLabel("position")
+	r.ConsumeSection("position")
 	if err := ecs.WithChangedValue(r.ReadInt, func(x int) { position.CurrentBlockPosition.X = x }); err != nil {
 		return err
 	}
@@ -168,14 +142,14 @@ func ReadBlockFrom(entity *ecs.Entity, r ecs.Reader, blockMap *BlockMap) error {
 	position.PreviousBlockPosition = position.CurrentBlockPosition
 	position.Vector2 = rl.NewVector2(float32(position.CurrentBlockPosition.X)*blockMap.BlockWidth, float32(position.CurrentBlockPosition.Y)*blockMap.BlockHeight)
 
-	r.ConsumeLabel("characteristics")
+	r.ConsumeSection("characteristics")
 	if err := ecs.WithChangedValue(r.ReadEnum, func(value uint32) { character.Set(characteristics.Characteristics(value)) }); err != nil {
 		return err
 	}
 	if err := collider.ReadFrom(r); err != nil {
 		return err
 	}
-	r.ConsumeLabel("corners")
+	r.ConsumeSection("corners")
 	for i := range block.Corners {
 		if err := ecs.WithChangedValue(r.ReadInt, func(value int) { block.Corners[i] = uint8(value) }); err != nil {
 			return err

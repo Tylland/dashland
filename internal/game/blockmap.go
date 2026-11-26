@@ -10,13 +10,17 @@ import (
 )
 
 type BlockMap struct {
-	MapSize
+	common.MapSize
 	blockTextures *rl.Texture2D
 	blocks        []*ecs.Entity
 }
 
-func NewBlockMap(mapSize MapSize, blockTextures *rl.Texture2D) *BlockMap {
+func NewBlockMap(mapSize common.MapSize, blockTextures *rl.Texture2D) *BlockMap {
 	return &BlockMap{MapSize: mapSize, blockTextures: blockTextures, blocks: make([]*ecs.Entity, mapSize.Count())}
+}
+
+func (bm *BlockMap) GetBlockTextures() *rl.Texture2D {
+	return bm.blockTextures
 }
 
 func (bm *BlockMap) CheckBlockAtPosition(blockType ecs.EntityType, position common.BlockPosition) bool {

@@ -29,10 +29,11 @@ type Value struct {
 	Float   bool
 }
 
-// Section is a "# label" followed by its values.
+// Section is a "# label@version" followed by its values.
 type Section struct {
-	Label  string
-	Values []*Value
+	Label   string
+	Version int
+	Values  []*Value
 }
 
 type Document struct{ Sections []*Section }

@@ -7,6 +7,7 @@ import (
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
 	"github.com/tylland/dashland/internal/game"
+	"github.com/tylland/dashland/internal/game/types"
 )
 
 type BlockCollisionSystem struct {
@@ -83,7 +84,7 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 
 			if interacts {
 				// If player collides with a door trigger -> stage change
-				if actor.Type == game.EntityPlayer && target.Type == game.EntityExitDoor {
+				if actor.Type == types.EntityPlayer && target.Type == types.EntityExitDoor {
 					door := ecs.GetComponent[components.DoorComponent](target)
 
 					if door != nil && door.State == components.DoorOpen {

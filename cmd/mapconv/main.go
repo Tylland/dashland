@@ -8,8 +8,10 @@ import (
 	"strings"
 
 	"github.com/lafriks/go-tiled"
+	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/ecs"
 	"github.com/tylland/dashland/internal/game"
+	"github.com/tylland/dashland/internal/game/types"
 )
 
 const (
@@ -42,7 +44,7 @@ func convertMap(fileName string) {
 
 	tiledMap := must(tiled.LoadFile(fileName))
 
-	mapSize := game.NewMapSize(tiledMap.Width, tiledMap.Height, tiledMap.TileWidth, tiledMap.TileHeight)
+	mapSize := common.NewMapSize(tiledMap.Width, tiledMap.Height, tiledMap.TileWidth, tiledMap.TileHeight)
 	stage := game.NewStage(name, mapSize, nil, nil, nil)
 	world := ecs.NewWorld()
 
@@ -63,11 +65,11 @@ func convertMap(fileName string) {
 			stage.EnterPosition = pos
 		}
 
-		game.InitEntities(world, stage, game.EntityCategoryObject, tiledMap.Layers[1].Tiles)
-		game.InitEntities(world, stage, game.EntityCategoryEnemy, tiledMap.Layers[2].Tiles)
+		game.InitEntities(world, stage, types.EntityCategoryObject, tiledMap.Layers[1].Tiles)
+		game.InitEntities(world, stage, types.EntityCategoryEnemy, tiledMap.Layers[2].Tiles)
 
 		if len(tiledMap.ObjectGroups) > 0 {
-			game.InitObjectsEntities(world, stage, game.EntityCategoryObject, tiledMap.ObjectGroups[0])
+			game.InitObjectsEntities(world, stage, types.EntityCategoryObject, tiledMap.ObjectGroups[0])
 		}
 
 		outputDir := filepath.Join(StagesRootPath, stage.Name)

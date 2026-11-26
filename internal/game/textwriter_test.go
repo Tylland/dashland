@@ -10,6 +10,7 @@ import (
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
 )
 
 const saved = `# header
@@ -42,7 +43,7 @@ func commonPrefix(expected, actual string) string {
 func TestWriter(t *testing.T) {
 	EntityIdCounters.Reset()
 
-	ent := ecs.NewEntity(NewEntityHeader(EntityExitDoor))
+	ent := ecs.NewEntity(NewEntityHeader(types.EntityExitDoor))
 	ent.AddComponent(components.NewPositionComponent(common.NewBlockPosition(10, 10), rl.NewVector2(320.0, 329.0)))
 
 	var buf bytes.Buffer
@@ -61,7 +62,7 @@ func TestWriter(t *testing.T) {
 
 func TestRoundtrip(t *testing.T) {
 	EntityIdCounters.Reset()
-	ent := ecs.NewEntity(NewEntityHeader(EntityExitDoor))
+	ent := ecs.NewEntity(NewEntityHeader(types.EntityExitDoor))
 	ent.AddComponent(components.NewPositionComponent(common.NewBlockPosition(10, 10), rl.NewVector2(320.0, 329.0)))
 
 	var buf bytes.Buffer

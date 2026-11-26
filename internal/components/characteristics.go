@@ -45,7 +45,7 @@ func (c *CharacteristicComponent) WriteTo(w ecs.Writer) error {
 }
 
 func (c *CharacteristicComponent) ReadFrom(r ecs.Reader) error {
-	r.ConsumeLabel(ecs.ComponentName(c))
+	r.ConsumeSection(ecs.ComponentName(c))
 
 	if enum, changed, err := r.ReadEnum(); err == nil {
 		if changed {

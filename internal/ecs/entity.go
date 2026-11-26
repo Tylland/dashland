@@ -31,7 +31,7 @@ func (e *EntityHeader) WriteTo(ew Writer) error {
 }
 
 func (e *EntityHeader) ReadFrom(r Reader) error {
-	r.ConsumeLabel("header")
+	r.ConsumeSection("header")
 
 	if value, _, err := r.ReadString(); err == nil {
 		e.ID = EntityID(value)

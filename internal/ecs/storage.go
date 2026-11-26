@@ -16,12 +16,12 @@ type WriterTo interface {
 type Reader interface {
 	Rewind() error
 	ConsumeLine() error
-	ConsumeLabel(lbl string) error
+	ConsumeSection(lbl string) int
+	ReadSection() (string, int, error)
 	ReadBool() (bool, bool, error)
 	ReadEnum() (uint32, bool, error)
 	ReadFloat() (float32, bool, error)
 	ReadInt() (int, bool, error)
-	ReadLabel() (string, error)
 	ReadString() (string, bool, error)
 }
 

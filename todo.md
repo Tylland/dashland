@@ -13,6 +13,7 @@
 - [ ] Improve entity counting in Stage to avoid duplicates?
 - [ ] Rework EntityID generation?
 - [ ] Add layers to editor?
+- [ ] Add version to components and save in section?
 
 
 

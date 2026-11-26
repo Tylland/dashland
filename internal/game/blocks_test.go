@@ -9,14 +9,15 @@ import (
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
 )
 
 func TestBlockIsAnEntityAndRoundTrips(t *testing.T) {
-	size := NewMapSize(2, 2, 16, 16)
+	size := common.NewMapSize(2, 2, 16, 16)
 	stage := NewStage("test", size, nil, nil, nil)
 	world := ecs.NewWorld()
 	position := common.NewBlockPosition(1, 0)
-	block, err := NewEntityAndHeader(EntitySoil, world, stage, position)
+	block, err := NewEntityAndHeader(types.EntitySoil, world, stage, position)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +41,7 @@ func TestBlockIsAnEntityAndRoundTrips(t *testing.T) {
 		t.Fatalf("write block: %v", err)
 	}
 
-	header := NewEntityHeader(EntitySoil)
+	header := NewEntityHeader(types.EntitySoil)
 	loaded, err := NewEntity(header, world, stage, common.NewBlockPosition(0, 0))
 	if err != nil {
 		t.Fatal(err)
@@ -63,15 +64,15 @@ func TestBlockIsAnEntityAndRoundTrips(t *testing.T) {
 }
 
 func TestSetBlockReplacesWorldEntity(t *testing.T) {
-	size := NewMapSize(1, 1, 16, 16)
+	size := common.NewMapSize(1, 1, 16, 16)
 	stage := NewStage("test", size, nil, nil, nil)
 	world := ecs.NewWorld()
 	position := common.NewBlockPosition(0, 0)
-	first, err := NewEntityAndHeader(EntitySoil, world, stage, position)
+	first, err := NewEntityAndHeader(types.EntitySoil, world, stage, position)
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := NewEntityAndHeader(EntityVoid, world, stage, position)
+	second, err := NewEntityAndHeader(types.EntityVoid, world, stage, position)
 	if err != nil {
 		t.Fatal(err)
 	}

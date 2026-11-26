@@ -26,9 +26,8 @@ func TestDocumentReaderReadsSectionsAndValues(t *testing.T) {
 	}}
 	reader := NewDocumentReader(doc)
 
-	if err := reader.ConsumeLabel("header"); err != nil {
-		t.Fatal(err)
-	}
+	reader.ConsumeSection("header")
+
 	if got, changed, err := reader.ReadString(); err != nil || changed || got != "entity-1" {
 		t.Fatalf("ReadString() = (%q, %t, %v), want (%q, false, nil)", got, changed, err, "entity-1")
 	}
@@ -39,9 +38,8 @@ func TestDocumentReaderReadsSectionsAndValues(t *testing.T) {
 		t.Fatalf("ReadInt() = (%d, %t, %v), want (42, false, nil)", got, changed, err)
 	}
 
-	if err := reader.ConsumeLabel("properties"); err != nil {
-		t.Fatal(err)
-	}
+	reader.ConsumeSection("properties")
+
 	if got, changed, err := reader.ReadBool(); err != nil || changed || !got {
 		t.Fatalf("ReadBool() = (%t, %t, %v), want (true, false, nil)", got, changed, err)
 	}
@@ -57,13 +55,12 @@ func TestDocumentReaderReportsInvalidValues(t *testing.T) {
 	reader := NewDocumentReader(&Document{Sections: []*Section{
 		{Label: "properties", Values: []*Value{{Name: "Layer", Kind: KindEnum, Text: "Ground"}}},
 	}})
-	if err := reader.ConsumeLabel("properties"); err != nil {
-		t.Fatal(err)
-	}
+
+	reader.ConsumeSection("properties")
+
 	if _, _, err := reader.ReadEnum(); err == nil {
 		t.Fatal("ReadEnum() expected an error for a non-numeric enum value")
 	}
-	if err := reader.ConsumeLabel("missing"); err == nil {
-		t.Fatal("ConsumeLabel() expected an error for a missing section")
-	}
+
+	reader.ConsumeSection("missing")
 }

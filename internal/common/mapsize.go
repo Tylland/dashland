@@ -1,4 +1,4 @@
-package game
+package common
 
 import "github.com/tylland/dashland/internal/ecs"
 
@@ -28,7 +28,7 @@ func (s *MapSize) WriteTo(w ecs.Writer) error {
 }
 
 func (s *MapSize) ReadFrom(r ecs.Reader) error {
-	r.ConsumeLabel("size")
+	r.ConsumeSection("size")
 
 	ecs.WithChangedValue(r.ReadInt, func(width int) {
 		s.Width = width

@@ -39,8 +39,8 @@ func (r *TextReader) ConsumeLine() error {
 	return err
 }
 
-func (r *TextReader) ConsumeLabel(expected string) error {
-	label, err := r.ReadLabel()
+func (r *TextReader) ConsumeSection(expected string) int {
+	label, ver, err := r.ReadSection()
 
 	if err != nil {
 		panic(err)
@@ -51,7 +51,7 @@ func (r *TextReader) ConsumeLabel(expected string) error {
 		panic("invalid label: " + label)
 	}
 
-	return err
+	return ver
 }
 
 func (r *TextReader) readLine() (string, error) {
@@ -151,20 +151,34 @@ func (r *TextReader) ReadInt() (int, bool, error) {
 	return int(v), changed, nil
 }
 
-func (r *TextReader) ReadLabel() (string, error) {
+func (r *TextReader) ReadSection() (string, int, error) {
+	lbl := ""
+	ver := 1
 	line, err := r.readLine()
 
 	if err != nil {
-		return "", fmt.Errorf("read line: %w", err)
+		return "", ver, fmt.Errorf("read line: %w", err)
 	}
 
 	if strings.HasPrefix(line, TokenLabel) {
 		line = strings.TrimPrefix(line, TokenLabel)
 	} else {
-		return "", fmt.Errorf("invalid format, %q is missing for label", TokenLabel)
+		return "", ver, fmt.Errorf("invalid format, %q is missing for label", TokenLabel)
 	}
 
-	return strings.TrimSpace(line), nil
+	parts := strings.Split(line, "@")
+
+	if len(parts) == 2 {
+		if v, err := strconv.Atoi(strings.TrimSpace(parts[1])); err == nil {
+			ver = v
+		}
+	}
+
+	if len(parts) > 0 {
+		lbl = strings.TrimSpace(parts[0])
+	}
+
+	return lbl, ver, nil
 }
 
 func (r *TextReader) ReadString() (string, bool, error) {

@@ -8,6 +8,7 @@ import (
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
 	"github.com/tylland/dashland/internal/game"
+	"github.com/tylland/dashland/internal/game/types"
 )
 
 var ColHoovered = rl.NewColor(255, 255, 0, 125)
@@ -30,9 +31,23 @@ func (s *EditorRenderer) Update(world *ecs.World, deltaTime float32) {
 	stage := s.ws.Stage()
 
 	stage.Update(deltaTime)
-	stage.Render(deltaTime)
 
 	for _, entity := range world.Entities() {
+		if entity.Category == types.EntityCategoryBlock {
+			position := ecs.GetComponent[components.PositionComponent](entity)
+			sprite := ecs.GetComponent[components.SpriteComponent](entity)
+
+			if position != nil && sprite != nil {
+				s.drawBlock(entity, position, sprite)
+			}
+		}
+	}
+
+	for _, entity := range world.Entities() {
+		if entity.Category == types.EntityCategoryBlock {
+			continue
+		}
+
 		position := ecs.GetComponent[components.PositionComponent](entity)
 		sprite := ecs.GetComponent[components.SpriteComponent](entity)
 
@@ -68,6 +83,49 @@ func (s *EditorRenderer) Update(world *ecs.World, deltaTime float32) {
 
 func (s *EditorRenderer) RunWhenPaused() bool {
 	return true
+}
+
+func (s *EditorRenderer) drawBlock(entity *ecs.Entity, position *components.PositionComponent, sprite *components.SpriteComponent) {
+	block := ecs.GetComponent[components.BlockComponent](entity)
+
+	if !block.HasCorners {
+		rl.DrawTextureRec(
+			*sprite.Texture,
+			rl.NewRectangle(float32(entity.Type)*game.BlockWidth, 0, game.BlockWidth, game.BlockHeight),
+			position.Vector2,
+			rl.White,
+		)
+	} else {
+		s.drawBlockCorners(entity, position, sprite, block)
+	}
+
+	// switch entity.Type {
+	// case types.EntitySoil:
+	// 	s.drawBlockCorners(entity, position, 1)
+	// case types.EntityVoid:
+	// 	s.drawBlockCorners(entity, position, 0)
+	// default:
+	// 	blockTextures := s.stage.BlockMap.GetBlockTextures()
+	// 	if blockTextures != nil {
+	// 	}
+	// }
+}
+
+func (s *EditorRenderer) drawBlockCorners(entity *ecs.Entity,
+	position *components.PositionComponent,
+	sprite *components.SpriteComponent,
+	block *components.BlockComponent) {
+
+	row := float32(0.0)
+	cornerWidth := game.BlockWidth / 2
+	cornerHeight := game.BlockHeight / 2
+	x := float32(position.CurrentBlockPosition.X) * game.BlockWidth
+	y := float32(position.CurrentBlockPosition.Y) * game.BlockHeight
+
+	rl.DrawTextureRec(*sprite.Texture, rl.NewRectangle(float32(block.Corners[game.CornerOverLeft])*cornerWidth, row*cornerHeight, cornerWidth, cornerHeight), rl.NewVector2(x, y), rl.White)
+	rl.DrawTextureRec(*sprite.Texture, rl.NewRectangle(float32(block.Corners[game.CornerOverRight])*cornerWidth, row*cornerHeight, cornerWidth, cornerHeight), rl.NewVector2(x+cornerWidth, y), rl.White)
+	rl.DrawTextureRec(*sprite.Texture, rl.NewRectangle(float32(block.Corners[game.CornerUnderRight])*cornerWidth, row*cornerHeight, cornerWidth, cornerHeight), rl.NewVector2(x+cornerWidth, y+cornerHeight), rl.White)
+	rl.DrawTextureRec(*sprite.Texture, rl.NewRectangle(float32(block.Corners[game.CornerUnderLeft])*cornerWidth, row*cornerHeight, cornerWidth, cornerHeight), rl.NewVector2(x, y+cornerHeight), rl.White)
 }
 
 func (s *EditorRenderer) drawParticle(particle *components.ParticleComponent) {

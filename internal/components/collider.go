@@ -32,7 +32,7 @@ func (c *ColliderComponent) WriteTo(w ecs.Writer) error {
 }
 
 func (c *ColliderComponent) ReadFrom(r ecs.Reader) error {
-	r.ConsumeLabel(ecs.ComponentName(c))
+	r.ConsumeSection(ecs.ComponentName(c))
 	r.ConsumeLine()
 	r.ConsumeLine()
 	r.ConsumeLine()

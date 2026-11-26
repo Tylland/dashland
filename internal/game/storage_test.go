@@ -11,6 +11,7 @@ import (
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
 	"github.com/tylland/dashland/specs"
 )
 
@@ -76,16 +77,16 @@ func TestBoulderTextRoundtrip(t *testing.T) {
 	blockPosition := common.NewBlockPosition(123, 456)
 
 	world := ecs.NewWorld()
-	stage := NewStage("test", NewMapSize(10, 10, 32, 32), nil, nil, nil)
+	stage := NewStage("test", common.NewMapSize(10, 10, 32, 32), nil, nil, nil)
 
-	source := specs.Must(NewEntityAndHeader(EntityBoulder, world, stage, blockPosition))
+	source := specs.Must(NewEntityAndHeader(types.EntityBoulder, world, stage, blockPosition))
 	source.WriteTo(writer)
 
 	fmt.Print(buffer.String())
 
 	reader := NewTextReader(&buffer)
 
-	target := specs.Must(NewEntityAndHeader(EntityBoulder, world, stage, blockPosition))
+	target := specs.Must(NewEntityAndHeader(types.EntityBoulder, world, stage, blockPosition))
 	target.ReadFrom(reader)
 
 	if err := reader.ConsumeLine(); err != io.EOF {

@@ -13,6 +13,7 @@ import (
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
+	"github.com/tylland/dashland/internal/game/types"
 	"github.com/tylland/dashland/internal/utils"
 )
 
@@ -22,7 +23,7 @@ type SoundPlayer interface {
 
 type Stage struct {
 	Name string
-	MapSize
+	common.MapSize
 	*BlockMap
 	*EntityMap
 	EnterPosition      common.BlockPosition
@@ -40,7 +41,7 @@ type Stage struct {
 	counters           *EntityCounters
 }
 
-func NewStage(name string, size MapSize, blockTexture, entityTextures, groundCorners *rl.Texture2D) *Stage {
+func NewStage(name string, size common.MapSize, blockTexture, entityTextures, groundCorners *rl.Texture2D) *Stage {
 	return &Stage{Name: name,
 		MapSize:           size,
 		BlockMap:          NewBlockMap(size, blockTexture),
@@ -81,23 +82,15 @@ func (s *Stage) ClampedBlockPosition(position rl.Vector2) (common.BlockPosition,
 	return common.NewBlockPosition(x, y), xi && yi
 }
 
-func (s *Stage) Render(deltaTime float32) {
-	for _, block := range s.blocks {
-		if block != nil {
-			RenderBlock(block, s.BlockMap, s.EntityMap)
-		}
-	}
-}
-
 // VisitBlock stores the visited block at position and returns the block it
 // replaced. The replaced block is nil when the cell was empty.
 func (s *Stage) VisitBlock(block *ecs.Entity, position common.BlockPosition) *ecs.Entity {
 	if old, ok := s.GetBlockAtPosition(position); ok {
-		fmt.Printf("Block at position %d,%d changed from %s", position.X, position.Y, EntityTypeName(old.Type))
+		fmt.Printf("Block at position %d,%d changed from %s", position.X, position.Y, types.EntityTypeName(old.Type))
 	}
 
 	replaced := s.BlockMap.SetBlock(block, position)
-	fmt.Printf(" to %s \n", EntityTypeName(block.Type))
+	fmt.Printf(" to %s \n", types.EntityTypeName(block.Type))
 	return replaced
 }
 
@@ -173,7 +166,7 @@ func (s *Stage) CheckBlocked(world *ecs.World, position common.BlockPosition, co
 }
 
 func (s *Stage) CheckPositionOccupied(position common.BlockPosition) bool {
-	if !s.CheckBlockAtPosition(EntityVoid, position) {
+	if !s.CheckBlockAtPosition(types.EntityVoid, position) {
 		return true
 	}
 
@@ -214,7 +207,7 @@ func (s *Stage) Save(path string) ([]string, error) {
 
 		writer.Close()
 
-		counters.Increment(EntityTypeName(b.Type))
+		counters.Increment(types.EntityTypeName(b.Type))
 	}
 
 	for _, e := range s.entities {
@@ -233,7 +226,7 @@ func (s *Stage) Save(path string) ([]string, error) {
 
 		writer.Close()
 
-		counters.Increment(EntityTypeName(e.Type))
+		counters.Increment(types.EntityTypeName(e.Type))
 	}
 
 	buf := &strings.Builder{}
@@ -293,14 +286,14 @@ func (s *Stage) Load(world *ecs.World, path string) error {
 		header.ReadFrom(reader)
 		reader.Rewind()
 
-		if header.Category == EntityCategoryBlock {
+		if header.Category == types.EntityCategoryBlock {
 			block, err := NewEntity(header, world, s, blockPosition)
 			if err != nil {
-				return fmt.Errorf("creating block %q from %q: %w", EntityTypeName(header.Type), fileName, err)
+				return fmt.Errorf("creating block %q from %q: %w", types.EntityTypeName(header.Type), fileName, err)
 			}
 			if err := ReadBlockFrom(block, reader, s.BlockMap); err != nil {
 				world.RemoveEntity(block)
-				return fmt.Errorf("reading block %q from %q: %w", EntityTypeName(header.Type), fileName, err)
+				return fmt.Errorf("reading block %q from %q: %w", types.EntityTypeName(header.Type), fileName, err)
 			}
 			position := ecs.GetComponent[components.PositionComponent](block)
 			s.BlockMap.SetBlock(block, position.CurrentBlockPosition)
@@ -308,7 +301,7 @@ func (s *Stage) Load(world *ecs.World, path string) error {
 			entity, err := NewEntity(header, world, s, blockPosition)
 
 			if err != nil {
-				return fmt.Errorf("reading %q from %q: %w", EntityTypeName(header.Type), fileName, err)
+				return fmt.Errorf("reading %q from %q: %w", types.EntityTypeName(header.Type), fileName, err)
 			}
 
 			entity.ReadFrom(reader)
@@ -316,7 +309,7 @@ func (s *Stage) Load(world *ecs.World, path string) error {
 			s.EntityMap.SetEntity(entity, position.CurrentBlockPosition)
 		}
 
-		counters.Increment(EntityTypeName(header.Type))
+		counters.Increment(types.EntityTypeName(header.Type))
 	}
 
 	fmt.Printf("\nLoading stage %q from directory %q\n", s.Name, path)
@@ -376,7 +369,7 @@ func (s *Stage) WriteTo(w ecs.Writer) error {
 }
 
 func (s *Stage) ReadFrom(r ecs.Reader) error {
-	r.ConsumeLabel("stage")
+	r.ConsumeSection("stage")
 
 	if err := ecs.WithChangedValue(r.ReadString, func(name string) {
 		s.Name = name
@@ -396,7 +389,7 @@ func (s *Stage) ReadFrom(r ecs.Reader) error {
 		s.EntityMap = NewEntityMap(s.MapSize, s.entityTextures, s.groundCorners)
 	}
 
-	r.ConsumeLabel("enter position")
+	r.ConsumeSection("enter position")
 	if err := ecs.WithChangedValue(r.ReadInt, func(x int) {
 		s.EnterPosition.X = x
 	}); err != nil {
@@ -408,7 +401,7 @@ func (s *Stage) ReadFrom(r ecs.Reader) error {
 		return err
 	}
 
-	r.ConsumeLabel("exit position")
+	r.ConsumeSection("exit position")
 	if err := ecs.WithChangedValue(r.ReadInt, func(x int) {
 		s.ExitPosition.X = x
 	}); err != nil {
@@ -420,14 +413,14 @@ func (s *Stage) ReadFrom(r ecs.Reader) error {
 		return err
 	}
 
-	r.ConsumeLabel("exit condition")
+	r.ConsumeSection("exit condition")
 	if err := ecs.WithChangedValue(r.ReadBool, func(exitCondition bool) {
 		s.ExitCondition = exitCondition
 	}); err != nil {
 		return err
 	}
 
-	r.ConsumeLabel("diamonds")
+	r.ConsumeSection("diamonds")
 	if err := ecs.WithChangedValue(r.ReadInt, func(diamondsRequired int) {
 		s.DiamondsRequired = diamondsRequired
 	}); err != nil {
@@ -444,7 +437,7 @@ func (s *Stage) ReadFrom(r ecs.Reader) error {
 		return err
 	}
 
-	r.ConsumeLabel("time")
+	r.ConsumeSection("time")
 	if err := ecs.WithChangedValue(r.ReadInt, func(timeLimit int) {
 		s.TimeLimit = timeLimit
 	}); err != nil {
@@ -461,7 +454,7 @@ func (s *Stage) ReadFrom(r ecs.Reader) error {
 		return err
 	}
 
-	r.ConsumeLabel("magic wall")
+	r.ConsumeSection("magic wall")
 	if err := ecs.WithChangedValue(r.ReadBool, func(magicWallActive bool) {
 		s.MagicWallActive = magicWallActive
 	}); err != nil {

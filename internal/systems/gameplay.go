@@ -10,6 +10,7 @@ import (
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
 	"github.com/tylland/dashland/internal/game"
+	"github.com/tylland/dashland/internal/game/types"
 )
 
 type GameplaySystem struct {
@@ -68,11 +69,11 @@ func (s *GameplaySystem) RunWhenPaused() bool {
 }
 
 func (s *GameplaySystem) handleBlockCollision(world *ecs.World, collision *game.BlockCollisionEvent) {
-	if collision.Block.Type == game.EntitySoil && collision.Entity.Type == game.EntityPlayer {
+	if collision.Block.Type == types.EntitySoil && collision.Entity.Type == types.EntityPlayer {
 		poistion := ecs.GetComponent[components.PositionComponent](collision.Entity)
 		step := ecs.GetComponent[components.BlockStep](collision.Entity)
 
-		block, err := game.NewEntityAndHeader(game.EntityVoid, world, s.stage, poistion.CurrentBlockPosition.Add(step.Increment))
+		block, err := game.NewEntityAndHeader(types.EntityVoid, world, s.stage, poistion.CurrentBlockPosition.Add(step.Increment))
 		if err != nil {
 			fmt.Printf("creating void block: %v\n", err)
 			return
@@ -83,11 +84,11 @@ func (s *GameplaySystem) handleBlockCollision(world *ecs.World, collision *game.
 		}
 	}
 
-	if collision.Block.Type == game.EntitySoil && collision.Entity.Type == game.EntityBoulder {
+	if collision.Block.Type == types.EntitySoil && collision.Entity.Type == types.EntityBoulder {
 		s.sound.PlayFx("boulder_collision")
 	}
 
-	if collision.Block.Type == game.EntitySoil && collision.Entity.Type == game.EntityDiamond {
+	if collision.Block.Type == types.EntitySoil && collision.Entity.Type == types.EntityDiamond {
 		s.sound.PlayFx("diamond_collision")
 	}
 }
@@ -102,7 +103,7 @@ func (s *GameplaySystem) handleEntityBlocks(world *ecs.World, event *game.Entity
 		return
 	}
 
-	if actor.Type != game.EntityBoulder && actor.Type != game.EntityDiamond {
+	if actor.Type != types.EntityBoulder && actor.Type != types.EntityDiamond {
 		return
 	}
 
@@ -137,10 +138,10 @@ func (s *GameplaySystem) handleEntityBlocks(world *ecs.World, event *game.Entity
 
 	// Spawn the transformed entity below the magic wall
 	var newType ecs.EntityType
-	if actor.Type == game.EntityBoulder {
-		newType = game.EntityDiamond
+	if actor.Type == types.EntityBoulder {
+		newType = types.EntityDiamond
 	} else {
-		newType = game.EntityBoulder
+		newType = types.EntityBoulder
 	}
 
 	newEntity, err := game.NewEntityAndHeader(newType, world, s.stage, outputPos)
@@ -148,7 +149,7 @@ func (s *GameplaySystem) handleEntityBlocks(world *ecs.World, event *game.Entity
 		s.stage.SetEntity(newEntity, outputPos)
 		// Gravity will detect empty space below and start it falling naturally
 
-		if newType == game.EntityDiamond {
+		if newType == types.EntityDiamond {
 			s.sound.PlayFx("diamond_created")
 		}
 	}
@@ -158,7 +159,7 @@ func (s *GameplaySystem) handleEntityBlocks(world *ecs.World, event *game.Entity
 
 func (s *GameplaySystem) setMagicWallAnimation(world *ecs.World, animName string) {
 	for _, entity := range world.Entities() {
-		if entity.Type == game.EntityMagicWall {
+		if entity.Type == types.EntityMagicWall {
 			anim := ecs.GetComponent[components.AnimationComponent](entity)
 			if anim != nil {
 				anim.Current = animName
@@ -198,7 +199,7 @@ func (s *GameplaySystem) handleExitOpen(world *ecs.World) {
 		ecs.RemoveComponent[components.ColliderComponent](exit)
 		ecs.RemoveComponent[components.SpriteComponent](exit)
 
-		exit.AddComponent(components.NewSpriteComponent(common.NewSprite(assets.LoadTexture("entities"), s.stage.BlockWidth, s.stage.BlockHeight, float32(game.EntityExitDoor)*s.stage.BlockWidth, 0, 0)))
+		exit.AddComponent(components.NewSpriteComponent(common.NewSprite(assets.LoadTexture("entities"), s.stage.BlockWidth, s.stage.BlockHeight, float32(types.EntityExitDoor)*s.stage.BlockWidth, 0, 0)))
 		exit.AddComponent(components.NewColliderComponent(collider.LayerTrigger, collider.LayerNone, collider.LayerPlayer))
 
 		door := ecs.GetComponent[components.DoorComponent](exit)
@@ -211,11 +212,11 @@ func (s *GameplaySystem) handleExitOpen(world *ecs.World) {
 
 func (s *GameplaySystem) handleDamage(world *ecs.World, damage *game.DamageEvent) {
 
-	if damage.Target.Type == game.EntityPlayer {
+	if damage.Target.Type == types.EntityPlayer {
 		s.DamageOnPlayer(world, damage.Target)
 	}
 
-	if damage.Target.Type == game.EntityFirefly || damage.Target.Type == game.EntityButterfly {
+	if damage.Target.Type == types.EntityFirefly || damage.Target.Type == types.EntityButterfly {
 		s.OnDamageOnEnemy(world, damage.Source, damage.Target)
 	}
 }
@@ -239,13 +240,13 @@ func (s *GameplaySystem) OnDamageOnEnemy(world *ecs.World, boulder *ecs.Entity, 
 
 	position := enemyPosition.CurrentBlockPosition
 
-	if enemy.Type == game.EntityFirefly {
+	if enemy.Type == types.EntityFirefly {
 		s.sound.PlayFx("explosion")
-		s.CreateSquare(world, game.EntityExplosion, position, 1, 1)
+		s.CreateSquare(world, types.EntityExplosion, position, 1, 1)
 	}
 
-	if enemy.Type == game.EntityButterfly {
-		s.CreateSquare(world, game.EntityDiamond, position, 1, 1)
+	if enemy.Type == types.EntityButterfly {
+		s.CreateSquare(world, types.EntityDiamond, position, 1, 1)
 	}
 }
 
@@ -291,7 +292,7 @@ func (s *GameplaySystem) CreateDiamonds(world *ecs.World, position common.BlockP
 		for x := -width; x <= width; x++ {
 			diamondPosition := position.Offset(x, y)
 			if s.stage.CheckCharacteristics(diamondPosition, characteristics.Destructable) {
-				block, err := game.NewEntityAndHeader(game.EntityVoid, world, s.stage, diamondPosition)
+				block, err := game.NewEntityAndHeader(types.EntityVoid, world, s.stage, diamondPosition)
 				if err != nil {
 					fmt.Printf("creating void block at %d:%d: %v\n", diamondPosition.X, diamondPosition.Y, err)
 					continue
@@ -306,7 +307,7 @@ func (s *GameplaySystem) CreateDiamonds(world *ecs.World, position common.BlockP
 					world.EnqueueRemoval(doomed)
 				}
 
-				diamond, err := game.NewEntityAndHeader(game.EntityDiamond, world, s.stage, diamondPosition)
+				diamond, err := game.NewEntityAndHeader(types.EntityDiamond, world, s.stage, diamondPosition)
 
 				if err == nil {
 					s.stage.SetEntity(diamond, diamondPosition)
@@ -321,7 +322,7 @@ func (s *GameplaySystem) CreateSquare(world *ecs.World, entityType ecs.EntityTyp
 		for x := -width; x <= width; x++ {
 			pos := center.Offset(x, y)
 			if s.stage.CheckCharacteristics(pos, characteristics.Destructable) {
-				block, err := game.NewEntityAndHeader(game.EntityVoid, world, s.stage, pos)
+				block, err := game.NewEntityAndHeader(types.EntityVoid, world, s.stage, pos)
 				if err != nil {
 					fmt.Printf("creating void block at %d:%d: %v\n", pos.X, pos.Y, err)
 					continue

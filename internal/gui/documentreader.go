@@ -26,28 +26,28 @@ func (r *DocumentReader) Rewind() error {
 	return nil
 }
 
-func (r *DocumentReader) ReadLabel() (string, error) {
+func (r *DocumentReader) ReadSection() (string, int, error) {
 	if r.doc == nil || r.section+1 >= len(r.doc.Sections) {
-		return "", fmt.Errorf("read label: no more sections")
+		return "", -1, fmt.Errorf("read label: no more sections")
 	}
 	r.section++
 	r.value = 0
 	section := r.doc.Sections[r.section]
 	if section == nil {
-		return "", fmt.Errorf("read label: section %d is nil", r.section)
+		return "", -1, fmt.Errorf("read label: section %d is nil", r.section)
 	}
-	return section.Label, nil
+	return section.Label, section.Version, nil
 }
 
-func (r *DocumentReader) ConsumeLabel(expected string) error {
-	label, err := r.ReadLabel()
+func (r *DocumentReader) ConsumeSection(expected string) int {
+	label, ver, err := r.ReadSection()
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if label != expected {
-		return fmt.Errorf("invalid section label %q: expected %q", label, expected)
+		panic(fmt.Errorf("invalid section label %q: expected %q", label, expected))
 	}
-	return nil
+	return ver
 }
 
 func (r *DocumentReader) nextValue() (*Value, error) {

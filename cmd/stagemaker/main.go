@@ -32,8 +32,10 @@ import (
 	"github.com/tylland/dashland/cmd/stagemaker/renderer"
 	"github.com/tylland/dashland/cmd/stagemaker/tool"
 	"github.com/tylland/dashland/internal/assets"
+	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/ecs"
 	"github.com/tylland/dashland/internal/game"
+	"github.com/tylland/dashland/internal/game/types"
 	"github.com/tylland/dashland/internal/gui"
 )
 
@@ -76,7 +78,7 @@ func main() {
 		fd.OpenDirectory(lastDir)
 		fd.OnSelected = func(path string) {
 			if fd.Mode == gui.FileDialogModeDirectory {
-				stage := game.NewStage("<new stage>", game.NewMapSize(30, 20, 32, 32), assets.LoadTexture("blocks"), assets.LoadTexture("entities"), assets.LoadTexture("groundCorners"))
+				stage := game.NewStage("<new stage>", common.NewMapSize(30, 20, 32, 32), assets.LoadTexture("blocks"), assets.LoadTexture("entities"), assets.LoadTexture("groundCorners"))
 				doc := gui.NewDocument(stage)
 
 				vd.Open(stage, doc, filepath.Join(path, "stage.txt"))
@@ -307,7 +309,7 @@ func openStage(world *ecs.World, path string) (*game.Stage, error) {
 	entityTextures := assets.LoadTexture("entities")
 	groundCorners := assets.LoadTexture("ground_corners")
 
-	mapSize := game.MapSize{}
+	mapSize := common.MapSize{}
 	stage := game.NewStage("generated", mapSize, blockTexture, entityTextures, groundCorners)
 
 	err := stage.Load(world, path)
@@ -332,12 +334,12 @@ func createEnemyItem(entityType ecs.EntityType) *gui.EntityItem {
 
 func CreateEntityItems() []*gui.EntityItem {
 	return []*gui.EntityItem{
-		createEntityItem(game.EntityDiamond),
-		createEntityItem(game.EntityBoulder),
-		createEntityItem(game.EntityMagicWall),
-		createEntityItem(game.EntityExitDoor),
-		createEnemyItem(game.EntityFirefly),
-		createEnemyItem(game.EntityButterfly),
+		createEntityItem(types.EntityDiamond),
+		createEntityItem(types.EntityBoulder),
+		createEntityItem(types.EntityMagicWall),
+		createEntityItem(types.EntityExitDoor),
+		createEnemyItem(types.EntityFirefly),
+		createEnemyItem(types.EntityButterfly),
 	}
 }
 
