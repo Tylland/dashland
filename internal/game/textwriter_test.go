@@ -44,7 +44,7 @@ func TestWriter(t *testing.T) {
 	EntityIdCounters.Reset()
 
 	ent := ecs.NewEntity(NewEntityHeader(types.EntityExitDoor))
-	ent.AddComponent(components.NewPositionComponent(common.NewBlockPosition(10, 10), rl.NewVector2(320.0, 329.0)))
+	ent.AddComponent(components.NewPosition(common.NewBlockPosition(10, 10), rl.NewVector2(320.0, 329.0)))
 
 	var buf bytes.Buffer
 	writer := NewTextWriter(&buf)
@@ -63,7 +63,7 @@ func TestWriter(t *testing.T) {
 func TestRoundtrip(t *testing.T) {
 	EntityIdCounters.Reset()
 	ent := ecs.NewEntity(NewEntityHeader(types.EntityExitDoor))
-	ent.AddComponent(components.NewPositionComponent(common.NewBlockPosition(10, 10), rl.NewVector2(320.0, 329.0)))
+	ent.AddComponent(components.NewPosition(common.NewBlockPosition(10, 10), rl.NewVector2(320.0, 329.0)))
 
 	var buf bytes.Buffer
 	writer := NewTextWriter(&buf)

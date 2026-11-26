@@ -23,8 +23,8 @@ func NewInputBehavior(stage *game.Stage) *InputBehavior {
 
 func (s *InputBehavior) Update(world *ecs.World, deltaTime float32) {
 	for _, entity := range world.Entities() {
-		input := ecs.GetComponent[components.InputComponent](entity)
-		position := ecs.GetComponent[components.PositionComponent](entity)
+		input := ecs.GetComponent[components.Input](entity)
+		position := ecs.GetComponent[components.Position](entity)
 		step := ecs.GetComponent[components.BlockStep](entity)
 
 		if input != nil && position != nil && step != nil {
@@ -33,7 +33,7 @@ func (s *InputBehavior) Update(world *ecs.World, deltaTime float32) {
 	}
 }
 
-func (s *InputBehavior) nextStep(entity *ecs.Entity, input *components.InputComponent, position *components.PositionComponent, step *components.BlockStep) {
+func (s *InputBehavior) nextStep(entity *ecs.Entity, input *components.Input, position *components.Position, step *components.BlockStep) {
 
 	if position.Vector2 == step.Target {
 		var direction common.BlockVector = common.BlockVector{}
@@ -85,8 +85,8 @@ func (s *InputBehavior) nextStep(entity *ecs.Entity, input *components.InputComp
 		}
 
 		// set walk animation based on direction
-		anim := ecs.GetComponent[components.AnimationComponent](entity)
-		sprite := ecs.GetComponent[components.SpriteComponent](entity)
+		anim := ecs.GetComponent[components.Animation](entity)
+		sprite := ecs.GetComponent[components.Sprite](entity)
 
 		if anim != nil && sprite != nil {
 			anim.Current = animation

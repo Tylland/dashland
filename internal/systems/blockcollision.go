@@ -3,7 +3,7 @@ package systems
 import (
 	"fmt"
 
-	"github.com/tylland/dashland/internal/characteristics"
+	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
 	"github.com/tylland/dashland/internal/game"
@@ -22,10 +22,10 @@ func NewBlockCollisionSystem(stage *game.Stage) *BlockCollisionSystem {
 
 func (s *BlockCollisionSystem) Update(world *ecs.World, deltaTime float32) {
 	for _, entity := range world.Entities() {
-		position := ecs.GetComponent[components.PositionComponent](entity)
+		position := ecs.GetComponent[components.Position](entity)
 		step := ecs.GetComponent[components.BlockStep](entity)
-		collider := ecs.GetComponent[components.ColliderComponent](entity)
-		character := ecs.GetComponent[components.CharacteristicComponent](entity)
+		collider := ecs.GetComponent[components.Collider](entity)
+		character := ecs.GetComponent[components.Characteristic](entity)
 
 		if position != nil && step != nil && collider != nil && character != nil {
 			s.checkEntityCollisions(world, entity, position, step, collider, character)
@@ -33,7 +33,7 @@ func (s *BlockCollisionSystem) Update(world *ecs.World, deltaTime float32) {
 	}
 }
 
-func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ecs.Entity, position *components.PositionComponent, step *components.BlockStep, collider *components.ColliderComponent, character *components.CharacteristicComponent) {
+func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ecs.Entity, position *components.Position, step *components.BlockStep, collider *components.Collider, character *components.Characteristic) {
 	if step.Increment.IsZero() {
 		return
 	}
@@ -41,14 +41,14 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 	targetPosition := position.CurrentBlockPosition.Add(step.Increment)
 
 	if block, ok := s.stage.GetBlockAtPosition(targetPosition); ok {
-		blockCollider := ecs.GetComponent[components.ColliderComponent](block)
+		blockCollider := ecs.GetComponent[components.Collider](block)
 		if blockCollider != nil {
 			obstructs, interacts := collider.Collide(blockCollider)
 
 			if obstructs {
 				fmt.Printf("%s is obstructed by %s\n", actor.ID, block.ID)
 
-				if character.Has(characteristics.Falling) {
+				if character.Has(common.Falling) {
 					s.StopFalling(actor, step, character)
 				} else {
 					step.Cancel()
@@ -65,7 +65,7 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 	}
 
 	if target, ok := s.stage.GetEntityAtPosition(targetPosition); ok {
-		targetCollider := ecs.GetComponent[components.ColliderComponent](target)
+		targetCollider := ecs.GetComponent[components.Collider](target)
 
 		if targetCollider != nil {
 			obstructs, interacts := collider.Collide(targetCollider)
@@ -73,7 +73,7 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 			if obstructs {
 				fmt.Printf("%s is obstructed by %s\n", actor.ID, target.ID)
 
-				if character.Has(characteristics.Falling) {
+				if character.Has(common.Falling) {
 					s.StopFalling(actor, step, character)
 				} else {
 					step.Cancel()
@@ -85,7 +85,7 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 			if interacts {
 				// If player collides with a door trigger -> stage change
 				if actor.Type == types.EntityPlayer && target.Type == types.EntityExitDoor {
-					door := ecs.GetComponent[components.DoorComponent](target)
+					door := ecs.GetComponent[components.Door](target)
 
 					if door != nil && door.State == components.DoorOpen {
 						world.AddEvent("stagechange", game.NewStageChangeEvent(door.Stage, door.Position))
@@ -93,7 +93,7 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 					}
 				}
 
-				if character.Has(characteristics.Falling) {
+				if character.Has(common.Falling) {
 					fmt.Printf("%s is falling\n", actor.ID)
 				}
 
@@ -105,7 +105,7 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 					return
 				}
 
-				collectable := ecs.GetComponent[components.CollectableComponent](target)
+				collectable := ecs.GetComponent[components.Collectable](target)
 
 				if collectable != nil {
 					world.AddEvent("collect", game.NewCollectEvent(actor, target))
@@ -118,9 +118,9 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 	}
 }
 
-func (s *BlockCollisionSystem) StopFalling(entity *ecs.Entity, step *components.BlockStep, characteristic *components.CharacteristicComponent) {
+func (s *BlockCollisionSystem) StopFalling(entity *ecs.Entity, step *components.BlockStep, characteristic *components.Characteristic) {
 	fmt.Printf("Entity %s stop falling!!\n", entity.ID)
 
 	step.Cancel()
-	characteristic.Remove(characteristics.Falling)
+	characteristic.Remove(common.Falling)
 }

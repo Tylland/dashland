@@ -37,8 +37,8 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 
 	for _, entity := range world.Entities() {
 		if entity.Category == types.EntityCategoryBlock {
-			position := ecs.GetComponent[components.PositionComponent](entity)
-			sprite := ecs.GetComponent[components.SpriteComponent](entity)
+			position := ecs.GetComponent[components.Position](entity)
+			sprite := ecs.GetComponent[components.Sprite](entity)
 
 			if position != nil && sprite != nil {
 				s.drawBlock(entity, position, sprite)
@@ -51,8 +51,8 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 			continue
 		}
 
-		position := ecs.GetComponent[components.PositionComponent](entity)
-		sprite := ecs.GetComponent[components.SpriteComponent](entity)
+		position := ecs.GetComponent[components.Position](entity)
+		sprite := ecs.GetComponent[components.Sprite](entity)
 
 		if position != nil && sprite != nil {
 			rl.DrawTextureRec(*sprite.Texture, sprite.Source, position.Vector2, rl.White)
@@ -60,7 +60,7 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 	}
 
 	for _, entity := range world.Entities() {
-		flash := ecs.GetComponent[components.FlashComponent](entity)
+		flash := ecs.GetComponent[components.Flash](entity)
 
 		if flash != nil {
 			rl.DrawRectangle(
@@ -72,7 +72,7 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 			)
 		}
 
-		particle := ecs.GetComponent[components.ParticleComponent](entity)
+		particle := ecs.GetComponent[components.Particle](entity)
 
 		if particle != nil {
 			s.drawParticle(particle)
@@ -95,8 +95,8 @@ func (s *Renderer) RunWhenPaused() bool {
 	return true
 }
 
-func (s *Renderer) drawBlock(entity *ecs.Entity, position *components.PositionComponent, sprite *components.SpriteComponent) {
-	block := ecs.GetComponent[components.BlockComponent](entity)
+func (s *Renderer) drawBlock(entity *ecs.Entity, position *components.Position, sprite *components.Sprite) {
+	block := ecs.GetComponent[components.BlockCorners](entity)
 
 	if !block.HasCorners {
 		rl.DrawTextureRec(
@@ -111,9 +111,9 @@ func (s *Renderer) drawBlock(entity *ecs.Entity, position *components.PositionCo
 }
 
 func (s *Renderer) drawBlockCorners(entity *ecs.Entity,
-	position *components.PositionComponent,
-	sprite *components.SpriteComponent,
-	block *components.BlockComponent) {
+	position *components.Position,
+	sprite *components.Sprite,
+	block *components.BlockCorners) {
 
 	row := float32(0.0)
 	cornerWidth := s.stage.BlockWidth / 2
@@ -127,7 +127,7 @@ func (s *Renderer) drawBlockCorners(entity *ecs.Entity,
 	rl.DrawTextureRec(*sprite.Texture, rl.NewRectangle(float32(block.Corners[game.CornerUnderLeft])*cornerWidth, row*cornerHeight, cornerWidth, cornerHeight), rl.NewVector2(x, y+cornerHeight), rl.White)
 }
 
-func (s *Renderer) drawParticle(particle *components.ParticleComponent) {
+func (s *Renderer) drawParticle(particle *components.Particle) {
 	src := rl.NewRectangle(0, 0, float32(s.mist.Width), float32(s.mist.Height))
 	for _, p := range particle.Parts {
 		a := p.Alpha * (0.75 + 0.25*float32(math.Sin(s.elapsedTime*0.5+float64(p.Phase))))

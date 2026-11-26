@@ -9,7 +9,6 @@ import (
 	"time"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
@@ -117,9 +116,9 @@ func (s *Stage) IsMagicWallActive() bool {
 	return s.MagicWallActive
 }
 
-func (s *Stage) CheckCharacteristics(position common.BlockPosition, character characteristics.Characteristics) bool {
+func (s *Stage) CheckCharacteristics(position common.BlockPosition, character common.Characteristics) bool {
 	if block, ok := s.GetBlock(position.X, position.Y); ok {
-		if component, ok := block.Component[components.CharacteristicComponent](); ok {
+		if component, ok := block.Component[components.Characteristic](); ok {
 			if component.Has(character) {
 				return true
 			}
@@ -127,7 +126,7 @@ func (s *Stage) CheckCharacteristics(position common.BlockPosition, character ch
 	}
 
 	if entity, ok := s.GetEntityAtPosition(position); ok {
-		characteristics := ecs.GetComponent[components.CharacteristicComponent](entity)
+		characteristics := ecs.GetComponent[components.Characteristic](entity)
 
 		return characteristics != nil && characteristics.Has(character)
 	}
@@ -135,10 +134,10 @@ func (s *Stage) CheckCharacteristics(position common.BlockPosition, character ch
 	return false
 }
 
-func (s *Stage) CheckBlocked(world *ecs.World, position common.BlockPosition, collider *components.ColliderComponent) bool {
+func (s *Stage) CheckBlocked(world *ecs.World, position common.BlockPosition, collider *components.Collider) bool {
 
 	if block, ok := s.GetBlock(position.X, position.Y); ok {
-		blockCollider := ecs.GetComponent[components.ColliderComponent](block)
+		blockCollider := ecs.GetComponent[components.Collider](block)
 		if blockCollider != nil {
 			obstructs, _ := collider.Collide(blockCollider)
 			if obstructs {
@@ -148,12 +147,12 @@ func (s *Stage) CheckBlocked(world *ecs.World, position common.BlockPosition, co
 	}
 
 	if entity, ok := s.GetEntityAtPosition(position); ok {
-		entCharacter := ecs.GetComponent[components.CharacteristicComponent](entity)
-		entCollider := ecs.GetComponent[components.ColliderComponent](entity)
+		entCharacter := ecs.GetComponent[components.Characteristic](entity)
+		entCollider := ecs.GetComponent[components.Collider](entity)
 
 		if entCharacter != nil && entCollider != nil {
 			// Falling entities are not considered obstacles
-			if entCharacter.Has(characteristics.Falling) {
+			if entCharacter.Has(common.Falling) {
 				return false
 			}
 			obstructs, _ := collider.Collide(entCollider)
@@ -298,7 +297,7 @@ func (s *Stage) Load(world *ecs.World, path string) error {
 			return fmt.Errorf("reading entity %q from %q: %w", types.EntityTypeName(header.Type), fileName, err)
 		}
 
-		if position, ok := entity.Component[components.PositionComponent](); ok {
+		if position, ok := entity.Component[components.Position](); ok {
 			if header.Category == types.EntityCategoryBlock {
 				s.BlockMap.SetBlock(entity, position.CurrentBlockPosition)
 			} else {

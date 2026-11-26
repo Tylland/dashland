@@ -1,4 +1,4 @@
-package characteristics
+package common
 
 import "strings"
 

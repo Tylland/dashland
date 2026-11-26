@@ -11,7 +11,7 @@ type Camera interface {
 }
 
 type PositionResolver interface {
-	Resolve() *components.PositionComponent
+	Resolve() *components.Position
 }
 
 type Screen struct {
@@ -22,10 +22,10 @@ type Screen struct {
 type SmoothFollowCamera struct {
 	camera   rl.Camera2D
 	screen   *Screen
-	position *components.PositionComponent
+	position *components.Position
 }
 
-func NewSmoothFollowCamera(screen *Screen, position *components.PositionComponent) *SmoothFollowCamera {
+func NewSmoothFollowCamera(screen *Screen, position *components.Position) *SmoothFollowCamera {
 	camera := SmoothFollowCamera{screen: screen, position: position}
 	camera.init()
 

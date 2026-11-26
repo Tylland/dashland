@@ -1,12 +1,12 @@
 package components
 
-type InputComponent struct {
+type Input struct {
 	RightKeyPressed bool
 	LeftKeyPressed  bool
 	DownKeyPressed  bool
 	UpKeyPressed    bool
 }
 
-func NewInputComponent() *InputComponent {
-	return &InputComponent{}
+func NewInput() *Input {
+	return &Input{}
 }

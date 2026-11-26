@@ -78,7 +78,7 @@ func (m *EntityMap) RemoveEntity(doomed *ecs.Entity, position common.BlockPositi
 }
 
 func (m *EntityMap) TryRemoveEntity(doomed *ecs.Entity) bool {
-	position := ecs.GetComponent[components.PositionComponent](doomed)
+	position := ecs.GetComponent[components.Position](doomed)
 	pos := position.CurrentBlockPosition
 
 	if m.entities[pos.Y*m.Width+pos.X] == doomed {

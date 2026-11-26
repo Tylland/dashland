@@ -5,12 +5,12 @@ import (
 	"github.com/tylland/dashland/internal/game/types"
 )
 
-type BlockComponent struct {
+type BlockCorners struct {
 	HasCorners bool     `version:"2"`
 	Corners    [4]uint8 `version:"1"`
 }
 
-func (c *BlockComponent) WriteTo(w ecs.Writer) error {
+func (c *BlockCorners) WriteTo(w ecs.Writer) error {
 	w.StartSection(Section(types.ComponentTypeBlock))
 
 	w.WriteBool("Has corners", c.HasCorners, true)
@@ -22,7 +22,7 @@ func (c *BlockComponent) WriteTo(w ecs.Writer) error {
 	return nil
 }
 
-func (c *BlockComponent) ReadFrom(r ecs.Reader) error {
+func (c *BlockCorners) ReadFrom(r ecs.Reader) error {
 	ver := r.ConsumeSection(types.ComponentTypeBlock.Name)
 
 	if ver >= 2 {

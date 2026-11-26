@@ -28,7 +28,7 @@ func (s *CollectorSystem) Update(world *ecs.World, deltaTime float32) {
 func (s *CollectorSystem) handleCollect(world *ecs.World, collect *game.CollectEvent) {
 	fmt.Printf("Player collected %s!!\n", collect.Collectable.ID)
 
-	collactable := ecs.GetComponent[components.CollectableComponent](collect.Collectable)
+	collactable := ecs.GetComponent[components.Collectable](collect.Collectable)
 
 	if collactable != nil && collactable.Name == "diamond" {
 		inventory := ecs.GetComponent[components.Inventory](collect.Collector)

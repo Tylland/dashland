@@ -6,15 +6,15 @@ import (
 	"github.com/tylland/dashland/internal/game/types"
 )
 
-type SpriteComponent struct {
+type Sprite struct {
 	*common.Sprite
 }
 
-func NewSpriteComponent(sprite *common.Sprite) *SpriteComponent {
-	return &SpriteComponent{Sprite: sprite}
+func NewSprite(sprite *common.Sprite) *Sprite {
+	return &Sprite{Sprite: sprite}
 }
 
-func (c *SpriteComponent) WriteTo(w ecs.Writer) error {
+func (c *Sprite) WriteTo(w ecs.Writer) error {
 	w.StartSection(Section(types.ComponentTypeSprite))
 
 	w.WriteFloat("Width", c.Width, true)
@@ -24,7 +24,7 @@ func (c *SpriteComponent) WriteTo(w ecs.Writer) error {
 	return nil
 }
 
-func (c *SpriteComponent) ReadFrom(r ecs.Reader) error {
+func (c *Sprite) ReadFrom(r ecs.Reader) error {
 	r.ConsumeSection(types.ComponentTypeSprite.Name)
 	r.ConsumeLine()
 	r.ConsumeLine()

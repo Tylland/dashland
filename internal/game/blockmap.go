@@ -145,13 +145,13 @@ func (bm *BlockMap) GetNearbyBlocks(position *common.BlockPosition) []*ecs.Entit
 // 	}
 // }
 
-func (bm *BlockMap) IsBlocked(pos common.BlockPosition, collider *components.ColliderComponent) bool {
+func (bm *BlockMap) IsBlocked(pos common.BlockPosition, collider *components.Collider) bool {
 	if pos.X < 0 || pos.Y < 0 || pos.X >= bm.Width || pos.Y >= bm.Height {
 		return true
 	}
 
 	if block, ok := bm.GetBlockAtPosition(pos); ok {
-		blockCollider := ecs.GetComponent[components.ColliderComponent](block)
+		blockCollider := ecs.GetComponent[components.Collider](block)
 		if blockCollider == nil {
 			return false
 		}

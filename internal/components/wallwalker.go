@@ -1,10 +1,10 @@
 package components
 
-type WallWalkerComponent struct {
+type WallWalker struct {
 	HasWall   bool
 	Clockwise bool
 }
 
-func NewWallWalkerComponent(clockwise bool) *WallWalkerComponent {
-	return &WallWalkerComponent{Clockwise: clockwise}
+func NewWallWalker(clockwise bool) *WallWalker {
+	return &WallWalker{Clockwise: clockwise}
 }

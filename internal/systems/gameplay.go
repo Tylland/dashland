@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/tylland/dashland/internal/assets"
-	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/collider"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
@@ -70,7 +69,7 @@ func (s *GameplaySystem) RunWhenPaused() bool {
 
 func (s *GameplaySystem) handleBlockCollision(world *ecs.World, collision *game.BlockCollisionEvent) {
 	if collision.Block.Type == types.EntitySoil && collision.Entity.Type == types.EntityPlayer {
-		poistion := ecs.GetComponent[components.PositionComponent](collision.Entity)
+		poistion := ecs.GetComponent[components.Position](collision.Entity)
 		step := ecs.GetComponent[components.BlockStep](collision.Entity)
 
 		block, err := game.NewEntityAndHeader(types.EntityVoid, world, s.stage, poistion.CurrentBlockPosition.Add(step.Increment))
@@ -98,8 +97,8 @@ func (s *GameplaySystem) handleEntityBlocks(world *ecs.World, event *game.Entity
 	target := event.Target
 	actor := event.Actor
 
-	targetCharacteristic := ecs.GetComponent[components.CharacteristicComponent](target)
-	if targetCharacteristic == nil || !targetCharacteristic.Has(characteristics.IsMagicWall) {
+	targetCharacteristic := ecs.GetComponent[components.Characteristic](target)
+	if targetCharacteristic == nil || !targetCharacteristic.Has(common.IsMagicWall) {
 		return
 	}
 
@@ -114,7 +113,7 @@ func (s *GameplaySystem) handleEntityBlocks(world *ecs.World, event *game.Entity
 	}
 
 	// Determine output position (one cell below the magic wall entity)
-	targetPosition := ecs.GetComponent[components.PositionComponent](target)
+	targetPosition := ecs.GetComponent[components.Position](target)
 	if targetPosition == nil {
 		return
 	}
@@ -132,7 +131,7 @@ func (s *GameplaySystem) handleEntityBlocks(world *ecs.World, event *game.Entity
 	}
 
 	// Remove the falling entity
-	actorPosition := ecs.GetComponent[components.PositionComponent](actor)
+	actorPosition := ecs.GetComponent[components.Position](actor)
 	s.stage.RemoveEntity(actor, actorPosition.CurrentBlockPosition)
 	world.EnqueueRemoval(actor)
 
@@ -160,19 +159,19 @@ func (s *GameplaySystem) handleEntityBlocks(world *ecs.World, event *game.Entity
 func (s *GameplaySystem) setMagicWallAnimation(world *ecs.World, animName string) {
 	for _, entity := range world.Entities() {
 		if entity.Type == types.EntityMagicWall {
-			anim := ecs.GetComponent[components.AnimationComponent](entity)
+			anim := ecs.GetComponent[components.Animation](entity)
 			if anim != nil {
 				anim.Current = animName
 			}
 
 			// When active, remove CanHoldGravity so objects above fall into the wall.
 			// When inactive/expired, restore it so objects rest on top.
-			characteristic := ecs.GetComponent[components.CharacteristicComponent](entity)
+			characteristic := ecs.GetComponent[components.Characteristic](entity)
 			if characteristic != nil {
 				if animName == "active" {
-					characteristic.Remove(characteristics.CanHoldGravity)
+					characteristic.Remove(common.CanHoldGravity)
 				} else {
-					characteristic.Add(characteristics.CanHoldGravity)
+					characteristic.Add(common.CanHoldGravity)
 				}
 			}
 		}
@@ -196,13 +195,13 @@ func (s *GameplaySystem) handleCollision(world *ecs.World, collision *game.Entit
 func (s *GameplaySystem) handleExitOpen(world *ecs.World) {
 
 	if exit, ok := s.stage.GetEntityAtPosition(s.stage.ExitPosition); ok {
-		ecs.RemoveComponent[components.ColliderComponent](exit)
-		ecs.RemoveComponent[components.SpriteComponent](exit)
+		ecs.RemoveComponent[components.Collider](exit)
+		ecs.RemoveComponent[components.Sprite](exit)
 
-		exit.AddComponent(components.NewSpriteComponent(common.NewSprite(assets.LoadTexture("entities"), s.stage.BlockWidth, s.stage.BlockHeight, float32(types.EntityExitDoor)*s.stage.BlockWidth, 0, 0)))
-		exit.AddComponent(components.NewColliderComponent(collider.LayerTrigger, collider.LayerNone, collider.LayerPlayer))
+		exit.AddComponent(components.NewSprite(common.NewSprite(assets.LoadTexture("entities"), s.stage.BlockWidth, s.stage.BlockHeight, float32(types.EntityExitDoor)*s.stage.BlockWidth, 0, 0)))
+		exit.AddComponent(components.NewCollider(collider.LayerTrigger, collider.LayerNone, collider.LayerPlayer))
 
-		door := ecs.GetComponent[components.DoorComponent](exit)
+		door := ecs.GetComponent[components.Door](exit)
 		door.State = components.DoorOpen
 	}
 
@@ -230,7 +229,7 @@ func (s *GameplaySystem) OnDamageOnEnemy(world *ecs.World, boulder *ecs.Entity, 
 		return
 	}
 
-	enemyPosition := ecs.GetComponent[components.PositionComponent](enemy)
+	enemyPosition := ecs.GetComponent[components.Position](enemy)
 
 	s.stage.TryRemoveEntity(enemy)
 	world.EnqueueRemoval(enemy)
@@ -259,7 +258,7 @@ func (s *GameplaySystem) OnBoulderPlayerCollision(world *ecs.World, boulder *ecs
 		return
 	}
 
-	enemyPosition := ecs.GetComponent[components.PositionComponent](enemy)
+	enemyPosition := ecs.GetComponent[components.Position](enemy)
 
 	s.stage.TryRemoveEntity(enemy)
 	world.EnqueueRemoval(enemy)
@@ -278,7 +277,7 @@ func (s *GameplaySystem) DamageOnPlayer(world *ecs.World, player *ecs.Entity) {
 	s.sound.PlayFx("player_hurt")
 	s.sound.PlayFx("player_died")
 
-	playerPosition := ecs.GetComponent[components.PositionComponent](player)
+	playerPosition := ecs.GetComponent[components.Position](player)
 	position := playerPosition.CurrentBlockPosition
 
 	world.EnqueueRemoval(player)
@@ -291,7 +290,7 @@ func (s *GameplaySystem) CreateDiamonds(world *ecs.World, position common.BlockP
 	for y := -height; y <= height; y++ {
 		for x := -width; x <= width; x++ {
 			diamondPosition := position.Offset(x, y)
-			if s.stage.CheckCharacteristics(diamondPosition, characteristics.Destructable) {
+			if s.stage.CheckCharacteristics(diamondPosition, common.Destructable) {
 				block, err := game.NewEntityAndHeader(types.EntityVoid, world, s.stage, diamondPosition)
 				if err != nil {
 					fmt.Printf("creating void block at %d:%d: %v\n", diamondPosition.X, diamondPosition.Y, err)
@@ -321,7 +320,7 @@ func (s *GameplaySystem) CreateSquare(world *ecs.World, entityType ecs.EntityTyp
 	for y := -height; y <= height; y++ {
 		for x := -width; x <= width; x++ {
 			pos := center.Offset(x, y)
-			if s.stage.CheckCharacteristics(pos, characteristics.Destructable) {
+			if s.stage.CheckCharacteristics(pos, common.Destructable) {
 				block, err := game.NewEntityAndHeader(types.EntityVoid, world, s.stage, pos)
 				if err != nil {
 					fmt.Printf("creating void block at %d:%d: %v\n", pos.X, pos.Y, err)

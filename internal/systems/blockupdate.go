@@ -19,8 +19,8 @@ func (s *BlockUpdateSystem) Update(world *ecs.World, deltaTime float32) {
 
 	for _, entity := range world.Entities() {
 		if entity.Type == types.EntityVoid || entity.Type == types.EntitySoil {
-			position := ecs.GetComponent[components.PositionComponent](entity)
-			block := ecs.GetComponent[components.BlockComponent](entity)
+			position := ecs.GetComponent[components.Position](entity)
+			block := ecs.GetComponent[components.BlockCorners](entity)
 
 			if position != nil && block != nil {
 				s.updateBlock(entity, s.stage.BlockMap, position, block)
@@ -48,7 +48,7 @@ func cornerIndex(neighbors [9]bool, corner game.CornerPosition, strict bool) uin
 	return 0
 }
 
-func (s *BlockUpdateSystem) updateBlock(entity *ecs.Entity, blockMap *game.BlockMap, position *components.PositionComponent, block *components.BlockComponent) {
+func (s *BlockUpdateSystem) updateBlock(entity *ecs.Entity, blockMap *game.BlockMap, position *components.Position, block *components.BlockCorners) {
 	switch entity.Type {
 	case types.EntitySoil:
 		neighbors := blockMap.CheckNeighbourTypes(types.EntityVoid, position.CurrentBlockPosition)

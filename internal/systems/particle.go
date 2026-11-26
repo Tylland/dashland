@@ -18,7 +18,7 @@ func (s *ParticleSystem) Update(world *ecs.World, deltaTime float32) {
 	s.elapsedTime += deltaTime
 
 	for _, entity := range world.Entities() {
-		particle := ecs.GetComponent[components.ParticleComponent](entity)
+		particle := ecs.GetComponent[components.Particle](entity)
 
 		if particle != nil {
 			s.updateMist(particle, deltaTime, 0)
@@ -32,7 +32,7 @@ func flow(x, y, t float64) float64 {
 	return a
 }
 
-func (s *ParticleSystem) updateMist(particle *components.ParticleComponent, dt float32, wind float32) {
+func (s *ParticleSystem) updateMist(particle *components.Particle, dt float32, wind float32) {
 	for _, p := range particle.Parts {
 
 		ang := flow(float64(p.X), float64(p.X), float64(s.elapsedTime))

@@ -12,17 +12,17 @@ const (
 	CollectableDiamond CollectableType = 1
 )
 
-type CollectableComponent struct {
+type Collectable struct {
 	Name      string
 	Amount    int
 	Collected bool
 }
 
-func NewCollectableComponent(name string, amount int) *CollectableComponent {
-	return &CollectableComponent{Name: name, Amount: amount, Collected: false}
+func NewCollectable(name string, amount int) *Collectable {
+	return &Collectable{Name: name, Amount: amount, Collected: false}
 }
 
-func (c *CollectableComponent) WriteTo(w ecs.Writer) error {
+func (c *Collectable) WriteTo(w ecs.Writer) error {
 	w.StartSection(Section(types.ComponentTypeCollectable))
 	w.WriteString("Name", c.Name, false)
 	w.WriteInt("Amount", c.Amount, false)
@@ -30,7 +30,7 @@ func (c *CollectableComponent) WriteTo(w ecs.Writer) error {
 	return nil
 }
 
-func (c *CollectableComponent) ReadFrom(r ecs.Reader) error {
+func (c *Collectable) ReadFrom(r ecs.Reader) error {
 	r.ConsumeSection(types.ComponentTypeCollectable.Name)
 	r.ConsumeLine()
 

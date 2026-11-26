@@ -124,7 +124,7 @@ func NewEntityAndHeader(entityType ecs.EntityType, world *ecs.World, stage *Stag
 func NewFlash(world *ecs.World) *ecs.Entity {
 	entity := ecs.NewEntity(NewEntityHeader(types.EntityFlash))
 
-	entity.AddComponent(components.NewFlashComponent())
+	entity.AddComponent(components.NewFlash())
 	entity.AddComponent(components.NewLifetime(0.1))
 
 	world.AddEntity(entity)

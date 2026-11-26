@@ -1,8 +1,8 @@
 package components
 
-type FlashComponent struct {
+type Flash struct {
 }
 
-func NewFlashComponent() *FlashComponent {
-	return &FlashComponent{}
+func NewFlash() *Flash {
+	return &Flash{}
 }

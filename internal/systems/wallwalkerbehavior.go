@@ -1,7 +1,6 @@
 package systems
 
 import (
-	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
@@ -18,11 +17,11 @@ func NewWallWalkerBehavior(stage *game.Stage) *WallWalkerBehavior {
 
 func (s *WallWalkerBehavior) Update(world *ecs.World, deltaTime float32) {
 	for _, entity := range world.Entities() {
-		position := ecs.GetComponent[components.PositionComponent](entity)
+		position := ecs.GetComponent[components.Position](entity)
 		step := ecs.GetComponent[components.BlockStep](entity)
-		collider := ecs.GetComponent[components.ColliderComponent](entity)
-		characteristic := ecs.GetComponent[components.CharacteristicComponent](entity)
-		wallwalker := ecs.GetComponent[components.WallWalkerComponent](entity)
+		collider := ecs.GetComponent[components.Collider](entity)
+		characteristic := ecs.GetComponent[components.Characteristic](entity)
+		wallwalker := ecs.GetComponent[components.WallWalker](entity)
 
 		if position != nil && step != nil && collider != nil && characteristic != nil && wallwalker != nil {
 			s.UpdateTarget(world, position, step, collider, characteristic, wallwalker)
@@ -30,10 +29,10 @@ func (s *WallWalkerBehavior) Update(world *ecs.World, deltaTime float32) {
 	}
 }
 
-func (s *WallWalkerBehavior) UpdateTarget(world *ecs.World, position *components.PositionComponent, step *components.BlockStep, collider *components.ColliderComponent, characteristic *components.CharacteristicComponent, wallwalker *components.WallWalkerComponent) {
+func (s *WallWalkerBehavior) UpdateTarget(world *ecs.World, position *components.Position, step *components.BlockStep, collider *components.Collider, characteristic *components.Characteristic, wallwalker *components.WallWalker) {
 	current := position.CurrentBlockPosition
 
-	if !characteristic.Has(characteristics.IsEnemy) {
+	if !characteristic.Has(common.IsEnemy) {
 		return
 	}
 

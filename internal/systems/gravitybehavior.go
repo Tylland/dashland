@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
@@ -23,10 +22,10 @@ func NewGravityBehavior(stage *game.Stage) *GravityBehavior {
 
 func (g *GravityBehavior) Update(world *ecs.World, deltaTime float32) {
 	for _, entity := range world.Entities() {
-		position := ecs.GetComponent[components.PositionComponent](entity)
+		position := ecs.GetComponent[components.Position](entity)
 		step := ecs.GetComponent[components.BlockStep](entity)
-		collider := ecs.GetComponent[components.ColliderComponent](entity)
-		characteristic := ecs.GetComponent[components.CharacteristicComponent](entity)
+		collider := ecs.GetComponent[components.Collider](entity)
+		characteristic := ecs.GetComponent[components.Characteristic](entity)
 
 		if position != nil && step != nil && collider != nil && characteristic != nil {
 			g.ApplyGravityOnEntity(world, entity, position, step, collider, characteristic)
@@ -34,23 +33,23 @@ func (g *GravityBehavior) Update(world *ecs.World, deltaTime float32) {
 	}
 }
 
-func (g *GravityBehavior) StartFalling(entity *ecs.Entity, characteristic *components.CharacteristicComponent) {
+func (g *GravityBehavior) StartFalling(entity *ecs.Entity, characteristic *components.Characteristic) {
 	fmt.Printf("Entity %s start falling!!\n", entity.ID)
 
-	characteristic.Add(characteristics.Falling)
+	characteristic.Add(common.Falling)
 }
 
-func (g *GravityBehavior) StopFalling(entity *ecs.Entity, step *components.BlockStep, characteristic *components.CharacteristicComponent) {
+func (g *GravityBehavior) StopFalling(entity *ecs.Entity, step *components.BlockStep, characteristic *components.Characteristic) {
 	fmt.Printf("Entity %s stop falling!!\n", entity.ID)
 
 	step.Increment.Clear()
-	characteristic.Remove(characteristics.Falling)
+	characteristic.Remove(common.Falling)
 }
 
-func (g *GravityBehavior) ApplyGravityOnEntity(world *ecs.World, entity *ecs.Entity, position *components.PositionComponent, step *components.BlockStep, collider *components.ColliderComponent, characteristic *components.CharacteristicComponent) {
+func (g *GravityBehavior) ApplyGravityOnEntity(world *ecs.World, entity *ecs.Entity, position *components.Position, step *components.BlockStep, collider *components.Collider, characteristic *components.Characteristic) {
 	current := position.CurrentBlockPosition
 
-	if !characteristic.Has(characteristics.CanFall) {
+	if !characteristic.Has(common.CanFall) {
 		return
 	}
 
@@ -60,7 +59,7 @@ func (g *GravityBehavior) ApplyGravityOnEntity(world *ecs.World, entity *ecs.Ent
 	}
 
 	// If already falling
-	if characteristic.Has(characteristics.Falling) {
+	if characteristic.Has(common.Falling) {
 		step.Move(common.DirectionDown, moveSpeed)
 		fmt.Printf("%s continue falling", entity.ID)
 
@@ -70,13 +69,13 @@ func (g *GravityBehavior) ApplyGravityOnEntity(world *ecs.World, entity *ecs.Ent
 	under := current.Add(common.DirectionDown)
 
 	// Start falling if no support below
-	if !g.stage.CheckCharacteristics(under, characteristics.CanHoldGravity) {
+	if !g.stage.CheckCharacteristics(under, common.CanHoldGravity) {
 		step.Move(common.DirectionDown, moveSpeed)
 		g.StartFalling(entity, characteristic)
 		return
 	}
 
-	if !g.stage.CheckCharacteristics(under, characteristics.GravityRollOff) {
+	if !g.stage.CheckCharacteristics(under, common.GravityRollOff) {
 		return
 	}
 
@@ -99,12 +98,12 @@ func (g *GravityBehavior) ApplyGravityOnEntity(world *ecs.World, entity *ecs.Ent
 		secondSideUnder = current.Add(common.DirectionRightDown)
 	}
 
-	if !g.stage.CheckCharacteristics(firstSide, characteristics.CanHoldGravity) && !g.stage.CheckCharacteristics(firstSideUnder, characteristics.CanHoldGravity) {
+	if !g.stage.CheckCharacteristics(firstSide, common.CanHoldGravity) && !g.stage.CheckCharacteristics(firstSideUnder, common.CanHoldGravity) {
 		step.Move(common.DirectionRightDown, moveSpeed)
 		return
 	}
 
-	if !g.stage.CheckCharacteristics(secondSide, characteristics.CanHoldGravity) && !g.stage.CheckCharacteristics(secondSideUnder, characteristics.CanHoldGravity) {
+	if !g.stage.CheckCharacteristics(secondSide, common.CanHoldGravity) && !g.stage.CheckCharacteristics(secondSideUnder, common.CanHoldGravity) {
 		step.Move(common.DirectionLeftDown, moveSpeed)
 		return
 	}

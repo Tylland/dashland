@@ -58,11 +58,11 @@ type PlayerCollisionEvent struct {
 	world          *ecs.World
 	Player         *ecs.Entity
 	Entity         *ecs.Entity
-	EntityPosition *components.PositionComponent
+	EntityPosition *components.Position
 	EntityFalling  bool
 }
 
-func NewPlayerCollisionEvent(world *ecs.World, player *ecs.Entity, entity *ecs.Entity, entityPosition *components.PositionComponent, entityFalling bool) *PlayerCollisionEvent {
+func NewPlayerCollisionEvent(world *ecs.World, player *ecs.Entity, entity *ecs.Entity, entityPosition *components.Position, entityFalling bool) *PlayerCollisionEvent {
 	return &PlayerCollisionEvent{
 		world:          world,
 		Player:         player,

@@ -7,15 +7,15 @@ import (
 	"github.com/tylland/dashland/internal/game/types"
 )
 
-type PositionComponent struct {
+type Position struct {
 	PreviousBlockPosition common.BlockPosition
 	CurrentBlockPosition  common.BlockPosition
 	//	TargetBlockPosition   common.BlockPosition
 	rl.Vector2
 }
 
-func NewPositionComponent(blockPosition common.BlockPosition, position rl.Vector2) *PositionComponent {
-	return &PositionComponent{
+func NewPosition(blockPosition common.BlockPosition, position rl.Vector2) *Position {
+	return &Position{
 		PreviousBlockPosition: blockPosition,
 		CurrentBlockPosition:  blockPosition,
 		//		TargetBlockPosition:   blockPosition,
@@ -23,8 +23,8 @@ func NewPositionComponent(blockPosition common.BlockPosition, position rl.Vector
 	}
 }
 
-func NewPositionComponentZero() *PositionComponent {
-	return &PositionComponent{
+func NewPositionComponentZero() *Position {
+	return &Position{
 		PreviousBlockPosition: common.NewBlockPosition(0, 0),
 		CurrentBlockPosition:  common.NewBlockPosition(0, 0),
 		//		TargetBlockPosition:   common.NewBlockPosition(0, 0),
@@ -55,22 +55,22 @@ func NewPositionComponentZero() *PositionComponent {
 // }
 
 // Update BlockPosition and saves
-func (c *PositionComponent) GetBlockTarget(velocity *VelocityComponent) common.BlockPosition {
+func (c *Position) GetBlockTarget(velocity *Velocity) common.BlockPosition {
 	return c.CurrentBlockPosition.Add(velocity.BlockVector)
 }
 
 // Update BlockPosition and saves
-func (c *PositionComponent) Update(position common.BlockPosition) {
+func (c *Position) Update(position common.BlockPosition) {
 	c.PreviousBlockPosition = c.CurrentBlockPosition
 	c.CurrentBlockPosition = position
 }
 
 // Rollback rolls back the position to the previous block position
-func (c *PositionComponent) Rollback() {
+func (c *Position) Rollback() {
 	c.CurrentBlockPosition = c.PreviousBlockPosition
 }
 
-func (c *PositionComponent) WriteTo(w ecs.Writer) error {
+func (c *Position) WriteTo(w ecs.Writer) error {
 	w.StartSection(Section(types.ComponentTypePosition))
 
 	w.WriteInt("X", c.CurrentBlockPosition.X, false)
@@ -81,7 +81,7 @@ func (c *PositionComponent) WriteTo(w ecs.Writer) error {
 	return nil
 }
 
-func (c *PositionComponent) ReadFrom(r ecs.Reader) error {
+func (c *Position) ReadFrom(r ecs.Reader) error {
 	r.ConsumeSection(types.ComponentTypePosition.Name)
 
 	ecs.WithChangedValue(r.ReadInt, func(x int) {

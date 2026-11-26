@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
@@ -22,7 +21,7 @@ func TestPositionComponentTextRoundtrip(t *testing.T) {
 	blockPosition := common.NewBlockPosition(123, 456)
 	position := rl.NewVector2(123.1, 456.1)
 
-	source := components.NewPositionComponent(blockPosition, position)
+	source := components.NewPosition(blockPosition, position)
 
 	source.WriteTo(writer)
 
@@ -49,15 +48,15 @@ func TestCharacteristicsComponentTextRoundtrip(t *testing.T) {
 	var buffer bytes.Buffer
 	writer := NewTextWriter(&buffer)
 
-	character := characteristics.CanFall | characteristics.Pushable
+	character := common.CanFall | common.Pushable
 
-	source := components.NewCharacteristicsComponent(character)
+	source := components.NewCharacteristics(character)
 
 	source.WriteTo(writer)
 
 	reader := NewTextReader(&buffer)
 
-	target := components.NewCharacteristicsComponent(characteristics.None)
+	target := components.NewCharacteristics(common.None)
 
 	target.ReadFrom(reader)
 

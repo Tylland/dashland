@@ -4,7 +4,6 @@ import (
 	"math"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/collider"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
@@ -30,15 +29,15 @@ func (v Vector) Normalized() Vector {
 func NewPlayerEntity(world *ecs.World, stage *Stage, position common.BlockPosition, texture *rl.Texture2D) *ecs.Entity {
 	player := ecs.NewEntity(NewEntityHeader(types.EntityPlayer))
 
-	player.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity))
-	player.AddComponent(components.NewInputComponent())
-	player.AddComponent(components.NewPositionComponent(position, stage.GetPosition(position)))
+	player.AddComponent(components.NewCharacteristics(common.CanHoldGravity))
+	player.AddComponent(components.NewInput())
+	player.AddComponent(components.NewPosition(position, stage.GetPosition(position)))
 	player.AddComponent(components.NewBlockStep(stage.GetPosition(position)))
-	player.AddComponent(components.NewColliderComponent(collider.LayerPlayer, collider.LayerNone, collider.LayerAll))
-	player.AddComponent(components.NewSpriteComponent(common.NewSprite(texture, stage.BlockWidth, stage.BlockHeight, float32(1)*stage.BlockWidth, 0, 0)))
+	player.AddComponent(components.NewCollider(collider.LayerPlayer, collider.LayerNone, collider.LayerAll))
+	player.AddComponent(components.NewSprite(common.NewSprite(texture, stage.BlockWidth, stage.BlockHeight, float32(1)*stage.BlockWidth, 0, 0)))
 
 	// Example animations for the player: idle and walk.
-	animations := map[string]components.Animation{
+	animations := map[string]common.Animation{
 		"idle":        {BaseX: 0, BaseY: 0 * stage.BlockHeight, FrameCount: 1, FrameDuration: 5, Loop: true},
 		"stand_left":  {BaseX: 0, BaseY: 0 * stage.BlockHeight, FrameCount: 1, FrameDuration: 5, Loop: true},
 		"stand_up":    {BaseX: 1 * stage.BlockWidth, BaseY: 0 * stage.BlockHeight, FrameCount: 1, FrameDuration: 5, Loop: true},
@@ -50,7 +49,7 @@ func NewPlayerEntity(world *ecs.World, stage *Stage, position common.BlockPositi
 		"walk_down":   {BaseX: 0, BaseY: 4 * stage.BlockHeight, FrameCount: 4, FrameDuration: 0.100, Loop: true},
 	}
 
-	player.AddComponent(components.NewAnimationComponent(animations, "idle"))
+	player.AddComponent(components.NewAnimation(animations, "idle"))
 	player.AddComponent(components.NewInventory())
 	player.AddComponent(components.NewHealth(1))
 

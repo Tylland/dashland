@@ -3,7 +3,6 @@ package entity
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/tylland/dashland/internal/assets"
-	"github.com/tylland/dashland/internal/characteristics"
 	"github.com/tylland/dashland/internal/collider"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
@@ -14,11 +13,11 @@ func NewWallBlock(header *ecs.EntityHeader, size common.MapSize, bpos common.Blo
 	sprite := common.NewSprite(assets.LoadTexture("blocks"), size.BlockWidth, size.BlockHeight, float32(header.Type)*size.BlockWidth, 0, 0)
 
 	entity := ecs.NewEntity(header)
-	entity.AddComponent(components.NewPositionComponent(bpos, pos))
-	entity.AddComponent(components.NewSpriteComponent(sprite))
-	entity.AddComponent(components.NewCharacteristicsComponent(characteristics.CanHoldGravity | characteristics.GravityRollOff | characteristics.Destructable))
-	entity.AddComponent(components.NewColliderComponent(collider.LayerWall, collider.LayerAll, collider.LayerNone))
-	entity.AddComponent(&components.BlockComponent{HasCorners: false})
+	entity.AddComponent(components.NewPosition(bpos, pos))
+	entity.AddComponent(components.NewSprite(sprite))
+	entity.AddComponent(components.NewCharacteristics(common.CanHoldGravity | common.GravityRollOff | common.Destructable))
+	entity.AddComponent(components.NewCollider(collider.LayerWall, collider.LayerAll, collider.LayerNone))
+	entity.AddComponent(&components.BlockCorners{HasCorners: false})
 
 	return entity, nil
 }

@@ -5,22 +5,22 @@ import (
 	"github.com/tylland/dashland/internal/game/types"
 )
 
-type PushableComponent struct {
+type Pushable struct {
 	Mass float32
 }
 
-func NewPushableComponent(mass float32) *PushableComponent {
-	return &PushableComponent{Mass: mass}
+func NewPushable(mass float32) *Pushable {
+	return &Pushable{Mass: mass}
 }
 
-func (c *PushableComponent) WriteTo(w ecs.Writer) error {
+func (c *Pushable) WriteTo(w ecs.Writer) error {
 	w.StartSection(Section(types.ComponentTypePushable))
 	w.WriteFloat("Mass", c.Mass, true)
 
 	return nil
 }
 
-func (c *PushableComponent) ReadFrom(r ecs.Reader) error {
+func (c *Pushable) ReadFrom(r ecs.Reader) error {
 	r.ConsumeSection(types.ComponentTypePushable.Name)
 	r.ConsumeLine()
 

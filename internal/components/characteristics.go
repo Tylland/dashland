@@ -1,56 +1,56 @@
 package components
 
 import (
-	"github.com/tylland/dashland/internal/characteristics"
+	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/ecs"
 	"github.com/tylland/dashland/internal/game/types"
 )
 
-type CharacteristicComponent struct {
-	characteristics characteristics.Characteristics
+type Characteristic struct {
+	characteristics common.Characteristics
 }
 
-func NewCharacteristicsComponent(char characteristics.Characteristics) *CharacteristicComponent {
-	return &CharacteristicComponent{characteristics: char}
+func NewCharacteristics(char common.Characteristics) *Characteristic {
+	return &Characteristic{characteristics: char}
 }
 
-func (c *CharacteristicComponent) Has(characteristic characteristics.Characteristics) bool {
+func (c *Characteristic) Has(characteristic common.Characteristics) bool {
 	return c.characteristics&characteristic == characteristic
 }
 
-func (c *CharacteristicComponent) HasNot(characteristic characteristics.Characteristics) bool {
+func (c *Characteristic) HasNot(characteristic common.Characteristics) bool {
 	return c.characteristics&^characteristic == 0
 }
 
-func (c *CharacteristicComponent) Add(characteristic characteristics.Characteristics) {
+func (c *Characteristic) Add(characteristic common.Characteristics) {
 	c.characteristics = c.characteristics | characteristic
 }
 
-func (c *CharacteristicComponent) Remove(characteristic characteristics.Characteristics) {
+func (c *Characteristic) Remove(characteristic common.Characteristics) {
 	c.characteristics = c.characteristics &^ characteristic
 }
 
-func (c *CharacteristicComponent) Value() characteristics.Characteristics {
+func (c *Characteristic) Value() common.Characteristics {
 	return c.characteristics
 }
 
-func (c *CharacteristicComponent) Set(value characteristics.Characteristics) {
+func (c *Characteristic) Set(value common.Characteristics) {
 	c.characteristics = value
 }
 
-func (c *CharacteristicComponent) WriteTo(w ecs.Writer) error {
+func (c *Characteristic) WriteTo(w ecs.Writer) error {
 	w.StartSection(Section(types.ComponentTypeCharacteristics))
 	w.WriteEnum("Characteristics", c.characteristics, true, "")
 
 	return nil
 }
 
-func (c *CharacteristicComponent) ReadFrom(r ecs.Reader) error {
+func (c *Characteristic) ReadFrom(r ecs.Reader) error {
 	r.ConsumeSection(types.ComponentTypeCharacteristics.Name)
 
 	if enum, changed, err := r.ReadEnum(); err == nil {
 		if changed {
-			c.characteristics = characteristics.Characteristics(enum)
+			c.characteristics = common.Characteristics(enum)
 		}
 	}
 

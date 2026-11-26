@@ -6,18 +6,9 @@ import (
 	"github.com/tylland/dashland/internal/game/types"
 )
 
-// Animation describes a named animation sequence inside a sprite sheet.
+// Animation holds a set of named animations and which is active.
 type Animation struct {
-	BaseX         float32
-	BaseY         float32
-	FrameCount    uint
-	FrameDuration float32
-	Loop          bool
-}
-
-// AnimationComponent holds a set of named animations and which is active.
-type AnimationComponent struct {
-	Animations map[string]Animation
+	Animations map[string]common.Animation
 	Current    string // name of the current animation
 	active     string // internal: last-applied animation name
 	// runtime state
@@ -25,12 +16,12 @@ type AnimationComponent struct {
 	FrameTimer float32
 }
 
-func NewAnimationComponent(anims map[string]Animation, initial string) *AnimationComponent {
-	return &AnimationComponent{Animations: anims, Current: initial}
+func NewAnimation(anims map[string]common.Animation, initial string) *Animation {
+	return &Animation{Animations: anims, Current: initial}
 }
 
 // ApplyAnimation copies animation properties into the given sprite and resets frame if switching.
-func (ac *AnimationComponent) ApplyAnimation(s *common.Sprite) {
+func (ac *Animation) ApplyAnimation(s *common.Sprite) {
 	if s == nil || ac == nil || ac.Current == "" {
 		return
 	}
@@ -56,7 +47,7 @@ func (ac *AnimationComponent) ApplyAnimation(s *common.Sprite) {
 }
 
 // Advance progresses the animation timer and updates the sprite frame when needed.
-func (ac *AnimationComponent) Advance(deltaTime float32, s *common.Sprite) {
+func (ac *Animation) Advance(deltaTime float32, s *common.Sprite) {
 	if ac == nil || s == nil || ac.Current == "" {
 		return
 	}
@@ -87,7 +78,7 @@ func clamp(val, max uint) uint {
 	return max
 }
 
-func (c *AnimationComponent) WriteTo(w ecs.Writer) error {
+func (c *Animation) WriteTo(w ecs.Writer) error {
 	w.StartSection(Section(types.ComponentTypeAnimation))
 	w.WriteInt("Animations", len(c.Animations), true)
 	w.WriteString("Current", c.Current, false)
@@ -98,7 +89,7 @@ func (c *AnimationComponent) WriteTo(w ecs.Writer) error {
 	return nil
 }
 
-func (c *AnimationComponent) ReadFrom(r ecs.Reader) error {
+func (c *Animation) ReadFrom(r ecs.Reader) error {
 	r.ConsumeSection(types.ComponentTypeAnimation.Name)
 	r.ConsumeLine()
 	r.ConsumeLine()

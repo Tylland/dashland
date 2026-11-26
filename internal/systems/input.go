@@ -15,7 +15,7 @@ func NewInputSystem() *InputSystem {
 
 func (s *InputSystem) Update(world *ecs.World, deltaTime float32) {
 	for _, entity := range world.Entities() {
-		input := ecs.GetComponent[components.InputComponent](entity)
+		input := ecs.GetComponent[components.Input](entity)
 
 		if input != nil {
 			s.updateInput(input)
@@ -24,7 +24,7 @@ func (s *InputSystem) Update(world *ecs.World, deltaTime float32) {
 	}
 }
 
-func (s *InputSystem) updateInput(input *components.InputComponent) {
+func (s *InputSystem) updateInput(input *components.Input) {
 	input.RightKeyPressed = rl.IsKeyDown(rl.KeyRight) || rl.IsKeyDown(rl.KeyD)
 	input.LeftKeyPressed = rl.IsKeyDown(rl.KeyLeft) || rl.IsKeyDown(rl.KeyA)
 	input.DownKeyPressed = rl.IsKeyDown(rl.KeyDown) || rl.IsKeyDown(rl.KeyS)

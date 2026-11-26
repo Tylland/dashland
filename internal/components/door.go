@@ -27,17 +27,17 @@ func (s DoorState) String() string {
 	}
 }
 
-type DoorComponent struct {
+type Door struct {
 	Stage    string
 	Position common.BlockPosition
 	State    DoorState
 }
 
-func NewDoorComponent(stage string, pos common.BlockPosition, state DoorState) *DoorComponent {
-	return &DoorComponent{Stage: stage, Position: pos, State: state}
+func NewDoor(stage string, pos common.BlockPosition, state DoorState) *Door {
+	return &Door{Stage: stage, Position: pos, State: state}
 }
 
-func (c *DoorComponent) WriteTo(w ecs.Writer) error {
+func (c *Door) WriteTo(w ecs.Writer) error {
 	w.StartSection(Section(types.ComponentTypeDoor))
 
 	w.WriteString("Stage", c.Stage, false)
@@ -48,7 +48,7 @@ func (c *DoorComponent) WriteTo(w ecs.Writer) error {
 	return nil
 }
 
-func (c *DoorComponent) ReadFrom(r ecs.Reader) error {
+func (c *Door) ReadFrom(r ecs.Reader) error {
 	r.ConsumeSection(types.ComponentTypeDoor.Name)
 
 	ecs.WithChangedValue(r.ReadString, func(stage string) {

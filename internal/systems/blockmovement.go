@@ -2,7 +2,7 @@ package systems
 
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/tylland/dashland/internal/characteristics"
+	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
 	"github.com/tylland/dashland/internal/ecs"
 	"github.com/tylland/dashland/internal/game"
@@ -23,7 +23,7 @@ func NewBlockMovement(stage *game.Stage) *BlockMovement {
 func (s *BlockMovement) Update(world *ecs.World, deltaTime float32) {
 	// Handle entities movement
 	for _, entity := range world.Entities() {
-		position := ecs.GetComponent[components.PositionComponent](entity)
+		position := ecs.GetComponent[components.Position](entity)
 		step := ecs.GetComponent[components.BlockStep](entity)
 
 		if position != nil && step != nil {
@@ -32,7 +32,7 @@ func (s *BlockMovement) Update(world *ecs.World, deltaTime float32) {
 	}
 }
 
-func (s *BlockMovement) moveEntity(entity *ecs.Entity, position *components.PositionComponent, step *components.BlockStep, deltaTime float32) {
+func (s *BlockMovement) moveEntity(entity *ecs.Entity, position *components.Position, step *components.BlockStep, deltaTime float32) {
 
 	if !step.Increment.IsZero() {
 		// if entity.ID == "player" {
@@ -46,17 +46,17 @@ func (s *BlockMovement) moveEntity(entity *ecs.Entity, position *components.Posi
 			step.Commit(s.stage.GetPosition(target))
 
 		} else {
-			character := ecs.GetComponent[components.CharacteristicComponent](entity)
+			character := ecs.GetComponent[components.Characteristic](entity)
 
 			if character != nil {
-				character.Remove(characteristics.Falling)
+				character.Remove(common.Falling)
 			}
 
 			step.Cancel()
 
 			// movement cancelled -> switch to idle animation
-			anim := ecs.GetComponent[components.AnimationComponent](entity)
-			sprite := ecs.GetComponent[components.SpriteComponent](entity)
+			anim := ecs.GetComponent[components.Animation](entity)
+			sprite := ecs.GetComponent[components.Sprite](entity)
 			if anim != nil {
 				anim.Current = "idle"
 				if sprite != nil {
@@ -70,7 +70,7 @@ func (s *BlockMovement) moveEntity(entity *ecs.Entity, position *components.Posi
 	s.moveToTarget(position, step, deltaTime)
 }
 
-func (s *BlockMovement) moveToTarget(position *components.PositionComponent, step *components.BlockStep, deltaTime float32) {
+func (s *BlockMovement) moveToTarget(position *components.Position, step *components.BlockStep, deltaTime float32) {
 	targetPos := step.Target
 	currentPos := position.Vector2
 
