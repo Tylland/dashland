@@ -154,7 +154,7 @@ func (g *DashlandGame) setupStage(stage *game.Stage, position common.BlockPositi
 		systems.NewLifecycleSystem(),
 	)
 
-	g.world.AddSystem(systems.NewRenderSystem(stage, g.camera))
+	g.world.AddSystem(systems.NewRender(stage, g.camera))
 	g.world.AddSystem(systems.NewCleanup(stage, g))
 
 	g.stage = stage

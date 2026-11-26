@@ -137,14 +137,6 @@ func (bm *BlockMap) GetNearbyBlocks(position *common.BlockPosition) []*ecs.Entit
 	return nearbyBlocks
 }
 
-// func (bm *BlockMap) Update(deltaTime float32) {
-// 	for i := len(bm.blocks) - 1; i >= 0; i-- {
-// 		if bm.blocks[i] != nil {
-// 			UpdateBlock(bm.blocks[i], bm)
-// 		}
-// 	}
-// }
-
 func (bm *BlockMap) IsBlocked(pos common.BlockPosition, collider *components.Collider) bool {
 	if pos.X < 0 || pos.Y < 0 || pos.X >= bm.Width || pos.Y >= bm.Height {
 		return true
@@ -161,16 +153,3 @@ func (bm *BlockMap) IsBlocked(pos common.BlockPosition, collider *components.Col
 
 	return true
 }
-
-// func (bm *BlockMap) Render() {
-// 	for index, block := range bm.blocks {
-// 		x := index % int(bm.Width)
-// 		y := index / int(bm.Width)
-
-// 		rl.DrawTextureRec(bm.blockTextures, rl.NewRectangle(float32(block.blockType)*bm.blockWidth, 0, bm.blockWidth, bm.blockHeight), rl.NewVector2(float32(x)*bm.blockWidth, float32(y)*bm.blockHeight), rl.White)
-// 	}
-
-// 	for _, block := range bm.blocks {
-// 		rl.DrawTextureRec(bm.blockTextures, rl.NewRectangle(float32(block.blockType)*bm.blockWidth, 0, bm.blockWidth, bm.blockHeight), rl.NewVector2(float32(block.position.X)*bm.blockWidth, float32(block.position.Y)*bm.blockHeight), rl.White)
-// 	}
-// }

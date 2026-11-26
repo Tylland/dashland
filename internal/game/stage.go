@@ -192,18 +192,13 @@ func (s *Stage) Save(path string) ([]string, error) {
 			continue
 		}
 
-		fileName := BlockFileName(b)
+		fileName := EntityFileName(b)
 
 		writer, err := NewTextFileWriter(path + "/" + fileName)
 
 		if err != nil {
 			return nil, err
 		}
-
-		// if err := WriteBlockTo(b, writer); err != nil {
-		// 	writer.Close()
-		// 	return nil, err
-		// }
 
 		b.WriteTo(writer)
 

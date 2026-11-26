@@ -77,7 +77,7 @@ func (t *DefaultTool) WorldMouseDown(world rl.Vector2, button rl.MouseButton) {
 		}
 		if block, ok := t.ws.Stage().GetBlockAtPosition(pos); ok {
 			t.ws.SetSelectedTarget(&Target{Kind: TargetBlock, Position: pos})
-			path := filepath.Join(t.ws.StagePath(), game.BlockFileName(block))
+			path := filepath.Join(t.ws.StagePath(), game.EntityFileName(block))
 			preview := gui.LoadPreview(path)
 
 			t.ws.Inspect(&gui.EntityInspection{Openpath: path, Preview: preview})

@@ -18,7 +18,7 @@ type Renderer struct {
 	mist        rl.Texture2D
 }
 
-func NewRenderSystem(stage *game.Stage, camera game.Camera) *Renderer {
+func NewRender(stage *game.Stage, camera game.Camera) *Renderer {
 	// Soft radial puff texture used by every mist particle
 	img := rl.GenImageGradientRadial(256, 256, 0.0, rl.White, rl.Blank)
 	mist := rl.LoadTextureFromImage(img)
@@ -81,6 +81,7 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 
 	rl.EndMode2D()
 
+	rl.DrawFPS(10, int32(rl.GetScreenHeight()-30))
 	s.drawTimer()
 	s.drawInventory(world)
 
