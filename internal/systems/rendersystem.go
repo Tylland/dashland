@@ -37,32 +37,22 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 
 	for _, entity := range world.Entities() {
 		if entity.Category == types.EntityCategoryBlock {
-			position, _ := entity.Component[components.Position]()
-			sprite, _ := entity.Component[components.Sprite]()
-
-			if position != nil && sprite != nil {
+			if position, sprite, ok := entity.ComponentTuple[components.Position, components.Sprite](); ok {
 				s.drawBlock(entity, position, sprite)
 			}
 		}
 	}
 
 	for _, entity := range world.Entities() {
-		if entity.Category == types.EntityCategoryBlock {
-			continue
-		}
-
-		position, _ := entity.Component[components.Position]()
-		sprite, _ := entity.Component[components.Sprite]()
-
-		if position != nil && sprite != nil {
-			rl.DrawTextureRec(*sprite.Texture, sprite.Source, position.Vector2, rl.White)
+		if entity.Category != types.EntityCategoryBlock {
+			if position, sprite, ok := entity.ComponentTuple[components.Position, components.Sprite](); ok {
+				rl.DrawTextureRec(*sprite.Texture, sprite.Source, position.Vector2, rl.White)
+			}
 		}
 	}
 
 	for _, entity := range world.Entities() {
-		flash := ecs.GetComponent[components.Flash](entity)
-
-		if flash != nil {
+		if _, ok := entity.Component[components.Flash](); ok {
 			rl.DrawRectangle(
 				0,
 				0,
@@ -72,9 +62,7 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 			)
 		}
 
-		particle := ecs.GetComponent[components.Particle](entity)
-
-		if particle != nil {
+		if particle, ok := entity.Component[components.Particle](); ok {
 			s.drawParticle(particle)
 		}
 	}
@@ -97,17 +85,17 @@ func (s *Renderer) RunWhenPaused() bool {
 }
 
 func (s *Renderer) drawBlock(entity *ecs.Entity, position *components.Position, sprite *components.Sprite) {
-	block := ecs.GetComponent[components.BlockCorners](entity)
-
-	if !block.HasCorners {
-		rl.DrawTextureRec(
-			*sprite.Texture,
-			rl.NewRectangle(float32(entity.Type)*s.stage.BlockWidth, 0, s.stage.BlockWidth, s.stage.BlockHeight),
-			position.Vector2,
-			rl.White,
-		)
-	} else {
-		s.drawBlockCorners(entity, position, sprite, block)
+	if block, ok := entity.Component[components.BlockCorners](); ok {
+		if !block.HasCorners {
+			rl.DrawTextureRec(
+				*sprite.Texture,
+				rl.NewRectangle(float32(entity.Type)*game.BlockWidth, 0, game.BlockWidth, game.BlockHeight),
+				position.Vector2,
+				rl.White,
+			)
+		} else {
+			s.drawBlockCorners(entity, position, sprite, block)
+		}
 	}
 }
 
@@ -171,7 +159,7 @@ func (s *Renderer) drawInventory(world *ecs.World) {
 		return
 	}
 
-	inventory := ecs.GetComponent[components.Inventory](player)
+	inventory, _ := player.Component[components.Inventory]()
 	if inventory == nil {
 		return
 	}

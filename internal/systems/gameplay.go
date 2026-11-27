@@ -96,7 +96,7 @@ func (s *GameplaySystem) handleEntityBlocks(world *ecs.World, event *game.Entity
 	target := event.Target
 	actor := event.Actor
 
-	targetCharacteristic := ecs.GetComponent[components.Characteristic](target)
+	targetCharacteristic, _ := target.Component[components.Characteristic]()
 	if targetCharacteristic == nil || !targetCharacteristic.Has(common.IsMagicWall) {
 		return
 	}
@@ -106,13 +106,13 @@ func (s *GameplaySystem) handleEntityBlocks(world *ecs.World, event *game.Entity
 	}
 
 	// Check the entity was falling (direction is down)
-	step := ecs.GetComponent[components.BlockStep](actor)
+	step, _ := actor.Component[components.BlockStep]()
 	if step == nil || step.Direction.Y <= 0 {
 		return
 	}
 
 	// Determine output position (one cell below the magic wall entity)
-	targetPosition := ecs.GetComponent[components.Position](target)
+	targetPosition, _ := target.Component[components.Position]()
 	if targetPosition == nil {
 		return
 	}
@@ -130,7 +130,7 @@ func (s *GameplaySystem) handleEntityBlocks(world *ecs.World, event *game.Entity
 	}
 
 	// Remove the falling entity
-	actorPosition := ecs.GetComponent[components.Position](actor)
+	actorPosition, _ := actor.Component[components.Position]()
 	s.stage.RemoveEntity(actor, actorPosition.CurrentBlockPosition)
 	world.EnqueueRemoval(actor)
 
@@ -158,14 +158,14 @@ func (s *GameplaySystem) handleEntityBlocks(world *ecs.World, event *game.Entity
 func (s *GameplaySystem) setMagicWallAnimation(world *ecs.World, animName string) {
 	for _, entity := range world.Entities() {
 		if entity.Type == types.EntityMagicWall {
-			anim := ecs.GetComponent[components.Animation](entity)
+			anim, _ := entity.Component[components.Animation]()
 			if anim != nil {
 				anim.Current = animName
 			}
 
 			// When active, remove CanHoldGravity so objects above fall into the wall.
 			// When inactive/expired, restore it so objects rest on top.
-			characteristic := ecs.GetComponent[components.Characteristic](entity)
+			characteristic, _ := entity.Component[components.Characteristic]()
 			if characteristic != nil {
 				if animName == "active" {
 					characteristic.Remove(common.CanHoldGravity)
@@ -194,14 +194,15 @@ func (s *GameplaySystem) handleCollision(world *ecs.World, collision *game.Entit
 func (s *GameplaySystem) handleExitOpen(world *ecs.World) {
 
 	if exit, ok := s.stage.GetEntityAtPosition(s.stage.ExitPosition); ok {
-		ecs.RemoveComponent[components.Collider](exit)
-		ecs.RemoveComponent[components.Sprite](exit)
+		exit.RemoveComponent[components.Collider]()
+		exit.RemoveComponent[components.Sprite]()
 
 		exit.AddComponent(components.NewSprite(common.NewSprite(assets.LoadTexture("entities"), s.stage.BlockWidth, s.stage.BlockHeight, float32(types.EntityExitDoor)*s.stage.BlockWidth, 0, 0)))
 		exit.AddComponent(components.NewCollider(collider.LayerTrigger, collider.LayerNone, collider.LayerPlayer))
 
-		door := ecs.GetComponent[components.Door](exit)
-		door.State = components.DoorOpen
+		if door, ok := exit.Component[components.Door](); ok {
+			door.State = components.DoorOpen
+		}
 	}
 
 	game.NewFlash(world)
@@ -222,13 +223,13 @@ func (s *GameplaySystem) handleDamage(world *ecs.World, damage *game.DamageEvent
 func (s *GameplaySystem) OnDamageOnEnemy(world *ecs.World, boulder *ecs.Entity, enemy *ecs.Entity) {
 	fmt.Println("Boulder and enemy collision detected!!")
 
-	boulderStep := ecs.GetComponent[components.BlockStep](boulder)
+	boulderStep, _ := boulder.Component[components.BlockStep]()
 
 	if boulderStep.Direction.IsZero() {
 		return
 	}
 
-	enemyPosition := ecs.GetComponent[components.Position](enemy)
+	enemyPosition, _ := enemy.Component[components.Position]()
 
 	s.stage.TryRemoveEntity(enemy)
 	world.EnqueueRemoval(enemy)
@@ -251,13 +252,13 @@ func (s *GameplaySystem) OnDamageOnEnemy(world *ecs.World, boulder *ecs.Entity, 
 func (s *GameplaySystem) OnBoulderPlayerCollision(world *ecs.World, boulder *ecs.Entity, enemy *ecs.Entity) {
 	fmt.Println("Boulder and enemy collision detected!!")
 
-	boulderStep := ecs.GetComponent[components.BlockStep](boulder)
+	boulderStep, _ := boulder.Component[components.BlockStep]()
 
 	if boulderStep.Direction.IsZero() {
 		return
 	}
 
-	enemyPosition := ecs.GetComponent[components.Position](enemy)
+	enemyPosition, _ := enemy.Component[components.Position]()
 
 	s.stage.TryRemoveEntity(enemy)
 	world.EnqueueRemoval(enemy)
@@ -276,11 +277,12 @@ func (s *GameplaySystem) DamageOnPlayer(world *ecs.World, player *ecs.Entity) {
 	s.sound.PlayFx("player_hurt")
 	s.sound.PlayFx("player_died")
 
-	playerPosition := ecs.GetComponent[components.Position](player)
-	position := playerPosition.CurrentBlockPosition
+	if playerPosition, ok := player.Component[components.Position](); ok {
+		position := playerPosition.CurrentBlockPosition
 
-	world.EnqueueRemoval(player)
-	s.CreateDiamonds(world, position, 2, 2)
+		world.EnqueueRemoval(player)
+		s.CreateDiamonds(world, position, 2, 2)
+	}
 
 	world.AddEvent("stagechange", game.NewStageChangeEvent(s.stage.Name, s.stage.EnterPosition))
 }

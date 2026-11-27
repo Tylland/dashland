@@ -177,17 +177,3 @@ func (e *Entity) ReadFrom(r Reader) error {
 
 	return nil
 }
-
-// Deprecated: use entity.Component direct.
-func GetComponent[T Component](entity *Entity) *T {
-	if comp, ok := entity.Component[T](); ok {
-		return comp
-	}
-
-	return nil
-}
-
-// Deprecated: use entity.RemoveComponent direct.
-func RemoveComponent[T Component](entity *Entity) {
-	entity.RemoveComponent[T]()
-}
