@@ -18,10 +18,7 @@ func NewPushBehavior(stage *game.Stage) *PushBehavior {
 func (p *PushBehavior) Update(world *ecs.World, deltaTime float32) {
 	player := world.GetEntity("player")
 	if player != nil {
-		position := ecs.GetComponent[components.Position](player)
-		step := ecs.GetComponent[components.BlockStep](player)
-
-		if position != nil && step != nil {
+		if position, step, ok := player.ComponentTuple[components.Position, components.BlockStep](); ok {
 			p.handlePlayerPush(world, position, step)
 		}
 	}
@@ -32,19 +29,13 @@ func (s *PushBehavior) handlePlayerPush(world *ecs.World, playerPosition *compon
 	targetBlockPos := playerPosition.CurrentBlockPosition.Add(playerStep.Increment)
 
 	if target := s.stage.GetEntity(targetBlockPos); target != nil {
-		targetPosition := ecs.GetComponent[components.Position](target)
-		targetPushable := ecs.GetComponent[components.Pushable](target)
-		targetStep := ecs.GetComponent[components.BlockStep](target)
+		if targetPosition, _, targetStep, ok := target.ComponentTriple[components.Position, components.Pushable, components.BlockStep](); ok {
+			if !playerStep.Increment.IsZero() && playerStep.Increment.IsHorizontal() {
+				pushPos := targetPosition.CurrentBlockPosition.Add(playerStep.Increment)
 
-		if targetPosition == nil || targetPushable == nil {
-			return
-		}
-
-		if !playerStep.Increment.IsZero() && playerStep.Increment.IsHorizontal() {
-			pushPos := targetPosition.CurrentBlockPosition.Add(playerStep.Increment)
-
-			if s.stage.CheckBlockAtPosition(types.EntityVoid, pushPos) && s.stage.GetEntity(pushPos) == nil {
-				targetStep.Move(playerStep.Increment, moveSpeed)
+				if s.stage.CheckBlockAtPosition(types.EntityVoid, pushPos) && s.stage.GetEntity(pushPos) == nil {
+					targetStep.Move(playerStep.Increment, moveSpeed)
+				}
 			}
 		}
 	}

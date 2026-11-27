@@ -23,8 +23,8 @@ func NewBlockMovement(stage *game.Stage) *BlockMovement {
 func (s *BlockMovement) Update(world *ecs.World, deltaTime float32) {
 	// Handle entities movement
 	for _, entity := range world.Entities() {
-		position := ecs.GetComponent[components.Position](entity)
-		step := ecs.GetComponent[components.BlockStep](entity)
+		position, _ := entity.Component[components.Position]()
+		step, _ := entity.Component[components.BlockStep]()
 
 		if position != nil && step != nil {
 			s.moveEntity(entity, position, step, deltaTime)
@@ -46,7 +46,7 @@ func (s *BlockMovement) moveEntity(entity *ecs.Entity, position *components.Posi
 			step.Commit(s.stage.GetPosition(target))
 
 		} else {
-			character := ecs.GetComponent[components.Characteristic](entity)
+			character, _ := entity.Component[components.Characteristic]()
 
 			if character != nil {
 				character.Remove(common.Falling)
@@ -55,9 +55,7 @@ func (s *BlockMovement) moveEntity(entity *ecs.Entity, position *components.Posi
 			step.Cancel()
 
 			// movement cancelled -> switch to idle animation
-			anim := ecs.GetComponent[components.Animation](entity)
-			sprite := ecs.GetComponent[components.Sprite](entity)
-			if anim != nil {
+			if anim, sprite, ok := entity.ComponentTuple[components.Animation, components.Sprite](); ok {
 				anim.Current = "idle"
 				if sprite != nil {
 					anim.ApplyAnimation(sprite.Sprite)

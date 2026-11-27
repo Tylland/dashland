@@ -26,7 +26,7 @@ func (s *Cleanup) RunWhenPaused() bool {
 
 func (s *Cleanup) Update(world *ecs.World, deltaTime float32) {
 	for _, doomed := range world.RemovalQueue() {
-		if position := ecs.GetComponent[components.Position](doomed); position != nil {
+		if position, ok := doomed.Component[components.Position](); ok {
 			s.stage.RemoveEntity(doomed, position.CurrentBlockPosition)
 		}
 

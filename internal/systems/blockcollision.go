@@ -22,12 +22,8 @@ func NewBlockCollisionSystem(stage *game.Stage) *BlockCollisionSystem {
 
 func (s *BlockCollisionSystem) Update(world *ecs.World, deltaTime float32) {
 	for _, entity := range world.Entities() {
-		position := ecs.GetComponent[components.Position](entity)
-		step := ecs.GetComponent[components.BlockStep](entity)
-		collider := ecs.GetComponent[components.Collider](entity)
-		character := ecs.GetComponent[components.Characteristic](entity)
-
-		if position != nil && step != nil && collider != nil && character != nil {
+		if position, step, collider, character, ok :=
+			entity.ComponentQuadruple[components.Position, components.BlockStep, components.Collider, components.Characteristic](); ok {
 			s.checkEntityCollisions(world, entity, position, step, collider, character)
 		}
 	}
@@ -41,8 +37,7 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 	targetPosition := position.CurrentBlockPosition.Add(step.Increment)
 
 	if block, ok := s.stage.GetBlockAtPosition(targetPosition); ok {
-		blockCollider := ecs.GetComponent[components.Collider](block)
-		if blockCollider != nil {
+		if blockCollider, ok := block.Component[components.Collider](); ok {
 			obstructs, interacts := collider.Collide(blockCollider)
 
 			if obstructs {
@@ -65,7 +60,7 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 	}
 
 	if target, ok := s.stage.GetEntityAtPosition(targetPosition); ok {
-		targetCollider := ecs.GetComponent[components.Collider](target)
+		targetCollider, _ := target.Component[components.Collider]()
 
 		if targetCollider != nil {
 			obstructs, interacts := collider.Collide(targetCollider)
@@ -85,11 +80,11 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 			if interacts {
 				// If player collides with a door trigger -> stage change
 				if actor.Type == types.EntityPlayer && target.Type == types.EntityExitDoor {
-					door := ecs.GetComponent[components.Door](target)
-
-					if door != nil && door.State == components.DoorOpen {
-						world.AddEvent("stagechange", game.NewStageChangeEvent(door.Stage, door.Position))
-						return
+					if door, ok := target.Component[components.Door](); ok {
+						if door.State == components.DoorOpen {
+							world.AddEvent("stagechange", game.NewStageChangeEvent(door.Stage, door.Position))
+							return
+						}
 					}
 				}
 
@@ -97,19 +92,17 @@ func (s *BlockCollisionSystem) checkEntityCollisions(world *ecs.World, actor *ec
 					fmt.Printf("%s is falling\n", actor.ID)
 				}
 
-				actorDamage := ecs.GetComponent[components.Damage](actor)
-				existingHealth := ecs.GetComponent[components.Health](target)
-
-				if actorDamage != nil && existingHealth != nil {
-					world.AddEvent("damage", game.NewDamageEvent(actor, target, actorDamage, existingHealth))
-					return
+				if actorDamage, ok := actor.Component[components.Damage](); ok {
+					if existingHealth, ok := target.Component[components.Health](); ok {
+						world.AddEvent("damage", game.NewDamageEvent(actor, target, actorDamage, existingHealth))
+						return
+					}
 				}
 
-				collectable := ecs.GetComponent[components.Collectable](target)
-
-				if collectable != nil {
+				if _, ok := target.Component[components.Collectable](); ok {
 					world.AddEvent("collect", game.NewCollectEvent(actor, target))
 					return
+
 				}
 
 				world.AddEvent("entitycollision", game.NewEntityCollisionEvent(actor, target))

@@ -23,11 +23,7 @@ func NewInputBehavior(stage *game.Stage) *InputBehavior {
 
 func (s *InputBehavior) Update(world *ecs.World, deltaTime float32) {
 	for _, entity := range world.Entities() {
-		input := ecs.GetComponent[components.Input](entity)
-		position := ecs.GetComponent[components.Position](entity)
-		step := ecs.GetComponent[components.BlockStep](entity)
-
-		if input != nil && position != nil && step != nil {
+		if input, position, step, ok := entity.ComponentTriple[components.Input, components.Position, components.BlockStep](); ok {
 			s.nextStep(entity, input, position, step)
 		}
 	}
@@ -85,10 +81,7 @@ func (s *InputBehavior) nextStep(entity *ecs.Entity, input *components.Input, po
 		}
 
 		// set walk animation based on direction
-		anim := ecs.GetComponent[components.Animation](entity)
-		sprite := ecs.GetComponent[components.Sprite](entity)
-
-		if anim != nil && sprite != nil {
+		if anim, sprite, ok := entity.ComponentTuple[components.Animation, components.Sprite](); ok {
 			anim.Current = animation
 			anim.ApplyAnimation(sprite.Sprite)
 		}

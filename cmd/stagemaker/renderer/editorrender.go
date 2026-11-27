@@ -30,10 +30,7 @@ func (s *EditorRenderer) Update(world *ecs.World, deltaTime float32) {
 
 	for _, entity := range world.Entities() {
 		if entity.Category == types.EntityCategoryBlock {
-			position, _ := entity.Component[components.Position]()
-			sprite, _ := entity.Component[components.Sprite]()
-
-			if position != nil && sprite != nil {
+			if position, sprite, ok := entity.ComponentTuple[components.Position, components.Sprite](); ok {
 				s.drawBlock(entity, position, sprite)
 			}
 		}
@@ -44,18 +41,13 @@ func (s *EditorRenderer) Update(world *ecs.World, deltaTime float32) {
 			continue
 		}
 
-		position := ecs.GetComponent[components.Position](entity)
-		sprite := ecs.GetComponent[components.Sprite](entity)
-
-		if position != nil && sprite != nil {
+		if position, sprite, ok := entity.ComponentTuple[components.Position, components.Sprite](); ok {
 			rl.DrawTextureRec(*sprite.Texture, sprite.Source, position.Vector2, rl.White)
 		}
 	}
 
 	for _, entity := range world.Entities() {
-		flash := ecs.GetComponent[components.Flash](entity)
-
-		if flash != nil {
+		if _, ok := entity.Component[components.Flash](); ok {
 			rl.DrawRectangle(
 				0,
 				0,
@@ -65,9 +57,7 @@ func (s *EditorRenderer) Update(world *ecs.World, deltaTime float32) {
 			)
 		}
 
-		particle := ecs.GetComponent[components.Particle](entity)
-
-		if particle != nil {
+		if particle, ok := entity.Component[components.Particle](); ok {
 			s.drawParticle(particle)
 		}
 	}

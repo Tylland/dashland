@@ -17,13 +17,7 @@ func NewWallWalkerBehavior(stage *game.Stage) *WallWalkerBehavior {
 
 func (s *WallWalkerBehavior) Update(world *ecs.World, deltaTime float32) {
 	for _, entity := range world.Entities() {
-		position := ecs.GetComponent[components.Position](entity)
-		step := ecs.GetComponent[components.BlockStep](entity)
-		collider := ecs.GetComponent[components.Collider](entity)
-		characteristic := ecs.GetComponent[components.Characteristic](entity)
-		wallwalker := ecs.GetComponent[components.WallWalker](entity)
-
-		if position != nil && step != nil && collider != nil && characteristic != nil && wallwalker != nil {
+		if position, step, collider, characteristic, wallwalker, ok := entity.ComponentQuintuple[components.Position, components.BlockStep, components.Collider, components.Characteristic, components.WallWalker](); ok {
 			s.UpdateTarget(world, position, step, collider, characteristic, wallwalker)
 		}
 	}
@@ -64,8 +58,8 @@ func (s *WallWalkerBehavior) UpdateTarget(world *ecs.World, position *components
 		aheadPos := current.Add(step.Direction)
 
 		// Check for obstacles (non-void blocks or entities)
-		hasSideObstacle := s.stage.CheckBlocked(world, sidePos, collider)
-		hasAheadObstacle := s.stage.CheckBlocked(world, aheadPos, collider)
+		hasSideObstacle := s.stage.CheckObstacle(world, sidePos, collider)
+		hasAheadObstacle := s.stage.CheckObstacle(world, aheadPos, collider)
 
 		if !hasSideObstacle && wallwalker.HasWall {
 			// Was following a wall but lost contact, turn

@@ -18,9 +18,7 @@ func (s *ParticleSystem) Update(world *ecs.World, deltaTime float32) {
 	s.elapsedTime += deltaTime
 
 	for _, entity := range world.Entities() {
-		particle := ecs.GetComponent[components.Particle](entity)
-
-		if particle != nil {
+		if particle, ok := entity.Component[components.Particle](); ok {
 			s.updateMist(particle, deltaTime, 0)
 		}
 	}

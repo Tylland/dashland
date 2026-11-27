@@ -16,13 +16,9 @@ func NewBlockUpdateSystem(stage *game.Stage) *BlockUpdateSystem {
 }
 
 func (s *BlockUpdateSystem) Update(world *ecs.World, deltaTime float32) {
-
 	for _, entity := range world.Entities() {
 		if entity.Type == types.EntityVoid || entity.Type == types.EntitySoil {
-			position := ecs.GetComponent[components.Position](entity)
-			block := ecs.GetComponent[components.BlockCorners](entity)
-
-			if position != nil && block != nil {
+			if position, block, ok := entity.ComponentTuple[components.Position, components.BlockCorners](); ok {
 				s.updateBlock(entity, s.stage.BlockMap, position, block)
 			}
 		}

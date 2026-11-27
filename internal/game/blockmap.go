@@ -143,12 +143,12 @@ func (bm *BlockMap) IsBlocked(pos common.BlockPosition, collider *components.Col
 	}
 
 	if block, ok := bm.GetBlockAtPosition(pos); ok {
-		blockCollider := ecs.GetComponent[components.Collider](block)
-		if blockCollider == nil {
-			return false
+		if blockCollider, ok := block.Component[components.Collider](); ok {
+			obstructs, _ := blockCollider.Collide(collider)
+			return obstructs
 		}
-		obstructs, _ := blockCollider.Collide(collider)
-		return obstructs
+
+		return false
 	}
 
 	return true

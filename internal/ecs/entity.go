@@ -102,6 +102,58 @@ func (e *Entity) Component[T any]() (*T, bool) {
 	return nil, false
 }
 
+func (e *Entity) ComponentTuple[T1 any, T2 any]() (*T1, *T2, bool) {
+	if comp1, ok := e.Component[T1](); ok {
+		if comp2, ok := e.Component[T2](); ok {
+			return comp1, comp2, true
+		}
+	}
+
+	return nil, nil, false
+}
+
+func (e *Entity) ComponentTriple[T1 Component, T2 Component, T3 Component]() (*T1, *T2, *T3, bool) {
+	if comp1, ok := e.Component[T1](); ok {
+		if comp2, ok := e.Component[T2](); ok {
+			if comp3, ok := e.Component[T3](); ok {
+				return comp1, comp2, comp3, true
+			}
+		}
+	}
+
+	return nil, nil, nil, false
+}
+
+func (e *Entity) ComponentQuadruple[T1 Component, T2 Component, T3 Component, T4 Component]() (*T1, *T2, *T3, *T4, bool) {
+	if comp1, ok := e.Component[T1](); ok {
+		if comp2, ok := e.Component[T2](); ok {
+			if comp3, ok := e.Component[T3](); ok {
+				if comp4, ok := e.Component[T4](); ok {
+					return comp1, comp2, comp3, comp4, true
+				}
+			}
+		}
+	}
+
+	return nil, nil, nil, nil, false
+}
+
+func (e *Entity) ComponentQuintuple[T1 Component, T2 Component, T3 Component, T4 Component, T5 Component]() (*T1, *T2, *T3, *T4, *T5, bool) {
+	if comp1, ok := e.Component[T1](); ok {
+		if comp2, ok := e.Component[T2](); ok {
+			if comp3, ok := e.Component[T3](); ok {
+				if comp4, ok := e.Component[T4](); ok {
+					if comp5, ok := e.Component[T5](); ok {
+						return comp1, comp2, comp3, comp4, comp5, true
+					}
+				}
+			}
+		}
+	}
+
+	return nil, nil, nil, nil, nil, false
+}
+
 func (e *Entity) WriteTo(w Writer) error {
 	e.EntityHeader.WriteTo(w)
 

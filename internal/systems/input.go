@@ -15,12 +15,9 @@ func NewInputSystem() *InputSystem {
 
 func (s *InputSystem) Update(world *ecs.World, deltaTime float32) {
 	for _, entity := range world.Entities() {
-		input := ecs.GetComponent[components.Input](entity)
-
-		if input != nil {
+		if input, ok := entity.Component[components.Input](); ok {
 			s.updateInput(input)
 		}
-
 	}
 }
 

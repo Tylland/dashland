@@ -12,8 +12,7 @@ func NewLifecycleSystem() *LifecycleSystem { return &LifecycleSystem{} }
 
 func (s *LifecycleSystem) Update(world *ecs.World, deltaTime float32) {
 	for _, entity := range world.Entities() {
-
-		if lifetime := ecs.GetComponent[components.Lifetime](entity); lifetime != nil {
+		if lifetime, ok := entity.Component[components.Lifetime](); ok {
 			lifetime.Remaining -= deltaTime
 
 			if lifetime.Remaining < 0 {

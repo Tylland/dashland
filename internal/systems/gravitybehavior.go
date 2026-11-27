@@ -22,13 +22,9 @@ func NewGravityBehavior(stage *game.Stage) *GravityBehavior {
 
 func (g *GravityBehavior) Update(world *ecs.World, deltaTime float32) {
 	for _, entity := range world.Entities() {
-		position := ecs.GetComponent[components.Position](entity)
-		step := ecs.GetComponent[components.BlockStep](entity)
-		collider := ecs.GetComponent[components.Collider](entity)
-		characteristic := ecs.GetComponent[components.Characteristic](entity)
-
-		if position != nil && step != nil && collider != nil && characteristic != nil {
-			g.ApplyGravityOnEntity(world, entity, position, step, collider, characteristic)
+		if position, step, collider, character, ok :=
+			entity.ComponentQuadruple[components.Position, components.BlockStep, components.Collider, components.Characteristic](); ok {
+			g.ApplyGravityOnEntity(world, entity, position, step, collider, character)
 		}
 	}
 }

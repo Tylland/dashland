@@ -37,8 +37,8 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 
 	for _, entity := range world.Entities() {
 		if entity.Category == types.EntityCategoryBlock {
-			position := ecs.GetComponent[components.Position](entity)
-			sprite := ecs.GetComponent[components.Sprite](entity)
+			position, _ := entity.Component[components.Position]()
+			sprite, _ := entity.Component[components.Sprite]()
 
 			if position != nil && sprite != nil {
 				s.drawBlock(entity, position, sprite)
@@ -51,8 +51,8 @@ func (s *Renderer) Update(world *ecs.World, deltaTime float32) {
 			continue
 		}
 
-		position := ecs.GetComponent[components.Position](entity)
-		sprite := ecs.GetComponent[components.Sprite](entity)
+		position, _ := entity.Component[components.Position]()
+		sprite, _ := entity.Component[components.Sprite]()
 
 		if position != nil && sprite != nil {
 			rl.DrawTextureRec(*sprite.Texture, sprite.Source, position.Vector2, rl.White)

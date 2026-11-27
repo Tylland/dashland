@@ -126,19 +126,17 @@ func (s *Stage) CheckCharacteristics(position common.BlockPosition, character co
 	}
 
 	if entity, ok := s.GetEntityAtPosition(position); ok {
-		characteristics := ecs.GetComponent[components.Characteristic](entity)
-
-		return characteristics != nil && characteristics.Has(character)
+		if component, ok := entity.Component[components.Characteristic](); ok {
+			return component != nil && component.Has(character)
+		}
 	}
 
 	return false
 }
 
-func (s *Stage) CheckBlocked(world *ecs.World, position common.BlockPosition, collider *components.Collider) bool {
-
+func (s *Stage) CheckObstacle(world *ecs.World, position common.BlockPosition, collider *components.Collider) bool {
 	if block, ok := s.GetBlock(position.X, position.Y); ok {
-		blockCollider := ecs.GetComponent[components.Collider](block)
-		if blockCollider != nil {
+		if blockCollider, ok := block.Component[components.Collider](); ok {
 			obstructs, _ := collider.Collide(blockCollider)
 			if obstructs {
 				return true
@@ -147,14 +145,11 @@ func (s *Stage) CheckBlocked(world *ecs.World, position common.BlockPosition, co
 	}
 
 	if entity, ok := s.GetEntityAtPosition(position); ok {
-		entCharacter := ecs.GetComponent[components.Characteristic](entity)
-		entCollider := ecs.GetComponent[components.Collider](entity)
-
-		if entCharacter != nil && entCollider != nil {
-			// Falling entities are not considered obstacles
+		if entCharacter, entCollider, ok := entity.ComponentTuple[components.Characteristic, components.Collider](); ok {
 			if entCharacter.Has(common.Falling) {
 				return false
 			}
+
 			obstructs, _ := collider.Collide(entCollider)
 			if obstructs {
 				return true

@@ -69,17 +69,16 @@ func (s *GameplaySystem) RunWhenPaused() bool {
 
 func (s *GameplaySystem) handleBlockCollision(world *ecs.World, collision *game.BlockCollisionEvent) {
 	if collision.Block.Type == types.EntitySoil && collision.Entity.Type == types.EntityPlayer {
-		poistion := ecs.GetComponent[components.Position](collision.Entity)
-		step := ecs.GetComponent[components.BlockStep](collision.Entity)
-
-		block, err := game.NewEntityAndHeader(types.EntityVoid, world, s.stage, poistion.CurrentBlockPosition.Add(step.Increment))
-		if err != nil {
-			fmt.Printf("creating void block: %v\n", err)
-			return
-		}
-		replaced := s.stage.VisitBlock(block, poistion.CurrentBlockPosition.Add(step.Increment))
-		if replaced != nil && replaced != block {
-			world.RemoveEntity(replaced)
+		if poistion, step, ok := collision.Entity.ComponentTuple[components.Position, components.BlockStep](); ok {
+			block, err := game.NewEntityAndHeader(types.EntityVoid, world, s.stage, poistion.CurrentBlockPosition.Add(step.Increment))
+			if err != nil {
+				fmt.Printf("creating void block: %v\n", err)
+				return
+			}
+			replaced := s.stage.VisitBlock(block, poistion.CurrentBlockPosition.Add(step.Increment))
+			if replaced != nil && replaced != block {
+				world.RemoveEntity(replaced)
+			}
 		}
 	}
 
