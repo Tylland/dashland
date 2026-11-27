@@ -14,7 +14,7 @@ func NewExitDoor(header *ecs.EntityHeader, size common.MapSize, blockPosition co
 
 	entity.AddComponent(components.NewPosition(blockPosition, position))
 	entity.AddComponent(components.NewCharacteristics(common.CanHoldGravity))
-	entity.AddComponent(components.NewSprite(common.NewSprite(assets.LoadTexture("entities"), size.BlockWidth, size.BlockHeight, float32(header.Type)*size.BlockWidth, 0, 0)))
+	entity.AddComponent(components.NewSprite(common.NewSprite(assets.LoadTexture("exitdoor"), size.BlockWidth, size.BlockHeight, float32(components.DoorHidden)*size.BlockWidth, 0, 0)))
 	entity.AddComponent(components.NewCollider(collider.LayerBedrock, collider.LayerAll, collider.LayerNone))
 	entity.AddComponent(components.NewDoor(targetStage, targetPosition, components.DoorHidden))
 

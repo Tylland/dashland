@@ -94,16 +94,12 @@ func (s *Renderer) drawBlock(entity *ecs.Entity, position *components.Position, 
 				rl.White,
 			)
 		} else {
-			s.drawBlockCorners(entity, position, sprite, block)
+			s.drawBlockCorners(position, sprite, block)
 		}
 	}
 }
 
-func (s *Renderer) drawBlockCorners(entity *ecs.Entity,
-	position *components.Position,
-	sprite *components.Sprite,
-	block *components.BlockCorners) {
-
+func (s *Renderer) drawBlockCorners(position *components.Position, sprite *components.Sprite, block *components.BlockCorners) {
 	row := float32(0.0)
 	cornerWidth := s.stage.BlockWidth / 2
 	cornerHeight := s.stage.BlockHeight / 2

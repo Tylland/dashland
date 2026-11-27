@@ -19,13 +19,12 @@ func (p *PushBehavior) Update(world *ecs.World, deltaTime float32) {
 	player := world.GetEntity("player")
 	if player != nil {
 		if position, step, ok := player.ComponentTuple[components.Position, components.BlockStep](); ok {
-			p.handlePlayerPush(world, position, step)
+			p.handlePlayerPush(position, step)
 		}
 	}
 }
 
-func (s *PushBehavior) handlePlayerPush(world *ecs.World, playerPosition *components.Position, playerStep *components.BlockStep) {
-
+func (s *PushBehavior) handlePlayerPush(playerPosition *components.Position, playerStep *components.BlockStep) {
 	targetBlockPos := playerPosition.CurrentBlockPosition.Add(playerStep.Increment)
 
 	if target := s.stage.GetEntity(targetBlockPos); target != nil {

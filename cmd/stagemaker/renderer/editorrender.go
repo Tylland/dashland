@@ -81,12 +81,12 @@ func (s *EditorRenderer) drawBlock(entity *ecs.Entity, position *components.Posi
 				rl.White,
 			)
 		} else {
-			s.drawBlockCorners(entity, position, sprite, block)
+			s.drawBlockCorners(position, sprite, block)
 		}
 	}
 }
 
-func (s *EditorRenderer) drawBlockCorners(entity *ecs.Entity,
+func (s *EditorRenderer) drawBlockCorners(
 	position *components.Position,
 	sprite *components.Sprite,
 	block *components.BlockCorners) {

@@ -3,7 +3,6 @@ package systems
 import (
 	"fmt"
 
-	"github.com/tylland/dashland/internal/assets"
 	"github.com/tylland/dashland/internal/collider"
 	"github.com/tylland/dashland/internal/common"
 	"github.com/tylland/dashland/internal/components"
@@ -195,13 +194,14 @@ func (s *GameplaySystem) handleExitOpen(world *ecs.World) {
 
 	if exit, ok := s.stage.GetEntityAtPosition(s.stage.ExitPosition); ok {
 		exit.RemoveComponent[components.Collider]()
-		exit.RemoveComponent[components.Sprite]()
-
-		exit.AddComponent(components.NewSprite(common.NewSprite(assets.LoadTexture("entities"), s.stage.BlockWidth, s.stage.BlockHeight, float32(types.EntityExitDoor)*s.stage.BlockWidth, 0, 0)))
 		exit.AddComponent(components.NewCollider(collider.LayerTrigger, collider.LayerNone, collider.LayerPlayer))
 
+		if sprite, ok := exit.Component[components.Sprite](); ok {
+			sprite.UpdateFrame(uint(components.DoorClosed))
+		}
+
 		if door, ok := exit.Component[components.Door](); ok {
-			door.State = components.DoorOpen
+			door.State = components.DoorClosed
 		}
 	}
 
